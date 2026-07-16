@@ -19,9 +19,9 @@ var (
 )
 
 
-func Init() {
-	RootCmd.Flags().BoolVarP(&isSetup,"setup","se",false,"executar configuração")
-	RootCmd.Flags().BoolVarP(&isStart,"start","st",false,"iniciar servidor ssh")
+func init() {
+	RootCmd.Flags().BoolVarP(&isSetup,"setup","s",false,"executar configuração")
+	RootCmd.Flags().BoolVarP(&isStart,"start","t",false,"iniciar servidor ssh")
 }
 
 func runMobdesk(cmd *cobra.Command, args []string) {

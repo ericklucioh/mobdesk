@@ -3,6 +3,12 @@
 ARG TERMUX_ARCH=latest
 FROM termux/termux-docker:${TERMUX_ARCH}
 
+USER root
+
+# Air espera o shell Unix tradicional neste caminho. O Termux usa $PREFIX/bin/sh.
+RUN mkdir -p /bin && \
+    ln -sf /data/data/com.termux/files/usr/bin/sh /bin/sh
+
 USER 1000:1000
 
 RUN pkg update -y && \
