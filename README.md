@@ -86,6 +86,18 @@ go vet ./...
 go build ./cmd/mobdesk
 ```
 
+Comandos pelo ambiente Docker/Termux:
+
+```bash
+make build-image  # constrói a imagem uma vez
+make run          # executa o Mobdesk uma vez
+make dev          # mantém o Air ativo e reinicia após alterações Go
+make test         # executa os testes no container
+make build        # gera bin/mobdesk no volume do projeto
+```
+
+`make dev` fica em execução durante a sessão de desenvolvimento. Ele não atualiza a TUI no mesmo processo: o Air recompila e reinicia o Mobdesk quando um arquivo observado é salvo.
+
 O teste definitivo deverá ocorrer no Termux do POCO F6. Docker ARM64 e emuladores podem validar lógica, TUI e partes do Ubuntu, mas não reproduzem completamente Android, PRoot, HyperOS e gerenciamento de energia.
 
 ## Direção futura
