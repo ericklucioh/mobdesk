@@ -56,3 +56,8 @@ arm64-image:
 
 clean-image:
 	docker image rm mobdesk-termux:$(TERMUX_ARCH)
+
+fmt:
+	go fmt ./...
+	
+check: fmt vet test build

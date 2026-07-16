@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/ericklucioh/mobdesk/internal/cobra"
 	"os"
-	"fmt"
 )
 
 func main() {

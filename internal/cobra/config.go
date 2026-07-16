@@ -7,10 +7,10 @@ import (
 )
 
 var RootCmd = cobra.Command{
-	Use: "mobdesk <text>",
+	Use:   "mobdesk <text>",
 	Short: "Gerenciador de ambiente no android",
-	Args: cobra.ArbitraryArgs,
-	Run: runMobdesk,
+	Args:  cobra.ArbitraryArgs,
+	Run:   runMobdesk,
 }
 
 var (
@@ -18,10 +18,9 @@ var (
 	isStart bool
 )
 
-
 func init() {
-	RootCmd.Flags().BoolVarP(&isSetup,"setup","s",false,"executar configuração")
-	RootCmd.Flags().BoolVarP(&isStart,"start","t",false,"iniciar servidor ssh")
+	RootCmd.Flags().BoolVarP(&isSetup, "setup", "s", false, "executar configuração")
+	RootCmd.Flags().BoolVarP(&isStart, "start", "t", false, "iniciar servidor ssh")
 }
 
 func runMobdesk(cmd *cobra.Command, args []string) {
