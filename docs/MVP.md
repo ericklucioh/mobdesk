@@ -44,18 +44,13 @@ Comandos de preparação:
 ```bash
 pkg update
 pkg upgrade -y
-pkg install -y proot-distro openssh tmux curl wget
-pkg install -y termux-services
+pkg install -y proot-distro openssh
 ```
 
-Pacotes e serviços a instalar ou verificar:
+Pacotes essenciais a instalar ou verificar:
 
 - `proot-distro`;
 - `openssh`;
-- `tmux`;
-- `curl`;
-- `git`, se necessário para operações do host;
-- `termux-services`, quando a persistência de serviços for habilitada.
 
 Comandos de SSH:
 
@@ -76,9 +71,6 @@ termux-wake-lock
 sv-enable sshd
 sv up sshd
 sv status sshd
-tmux new-session -d -s mobdesk
-tmux has-session -t mobdesk
-tmux attach -t mobdesk
 ```
 
 Também deve verificar:
@@ -107,62 +99,9 @@ proot-distro remove ubuntu
 
 O `remove` é destrutivo e não deve ser executado pelo fluxo normal do Mobdesk.
 
-Dentro do Ubuntu, instalar ou verificar:
+No MVP-1, não instalar ferramentas de desenvolvimento dentro do Ubuntu. A imagem base do Ubuntu e o shell são suficientes para validar a inicialização, o SSH e a entrada no ambiente.
 
-- certificados e ferramentas básicas: `ca-certificates`, `curl`, `wget`, `unzip`, `zip`;
-- compilação C/C++: `build-essential`, `pkg-config`;
-- versionamento: `git`;
-- editor: `neovim`;
-- sessões: `tmux`;
-- Go: `golang`;
-- Python: `python3`, `python3-pip`, `python3-venv`;
-- JavaScript: `nodejs`, `npm`;
-- Java: OpenJDK LTS disponível no Ubuntu;
-- navegação e diagnóstico: `ripgrep`, `fd-find`, `fzf`, `btop` ou `htop`.
-
-Comandos de instalação dentro do Ubuntu:
-
-```bash
-apt update
-apt upgrade -y
-apt install -y \
-  ca-certificates curl wget unzip zip \
-  build-essential pkg-config \
-  git neovim tmux \
-  golang \
-  python3 python3-pip python3-venv \
-  nodejs npm \
-  ripgrep fd-find fzf btop
-```
-
-Java deve usar o pacote OpenJDK LTS disponível na versão Ubuntu instalada:
-
-```bash
-apt search openjdk
-apt install -y openjdk-21-jdk
-java --version
-```
-
-O Mobdesk deve tratar nomes de pacotes variáveis como configuração, pois a disponibilidade pode mudar conforme a versão do Ubuntu.
-
-Comandos de verificação do Ubuntu:
-
-```bash
-command -v git
-command -v nvim
-command -v go
-command -v python3
-command -v node
-command -v npm
-command -v java
-git --version
-go version
-python3 --version
-node --version
-npm --version
-```
-
-O Mobdesk deve instalar apenas o conjunto essencial no MVP e permitir que ferramentas adicionais sejam adicionadas depois.
+Ferramentas como `git`, `neovim`, `golang`, `python3`, `nodejs`, `npm`, `ripgrep`, `fzf` e `btop` ficam para etapas posteriores.
 
 ### Configuração
 
@@ -173,7 +112,6 @@ O setup deve:
 - configurar o usuário do Ubuntu;
 - preparar o `sshd` do Termux;
 - gerar ou verificar chaves do servidor;
-- preparar tmux;
 - registrar versões instaladas;
 - ser idempotente;
 - poder continuar após uma falha;
@@ -218,7 +156,7 @@ Comandos principais encapsulados pelo `start`:
 ```bash
 termux-wake-lock
 sshd
-proot-distro login ubuntu -- bash -lc 'tmux attach -t mobdesk || tmux new -s mobdesk'
+proot-distro login ubuntu -- bash -l
 ```
 
 Para iniciar um projeto sem abrir um shell interativo:

@@ -28,7 +28,8 @@ func runSetup(ctx context.Context) error {
 	}
 
 	termuxPackages := []string{
-		"proot-distro", "openssh", "tmux", "curl", "wget", "git", "termux-services",
+		// O MVP-1 precisa apenas do runtime Ubuntu e do servidor SSH.
+		"proot-distro", "openssh",
 	}
 	if err := runCommand(ctx, "pkg", "update"); err != nil {
 		return err
@@ -45,22 +46,6 @@ func runSetup(ctx context.Context) error {
 		return err
 	}
 
-	ubuntuPackages := []string{
-		"ca-certificates", "curl", "wget", "unzip", "zip",
-		"build-essential", "pkg-config", "git", "neovim", "tmux",
-		"golang", "python3", "python3-pip", "python3-venv",
-		"nodejs", "npm", "ripgrep", "fd-find", "fzf", "btop",
-	}
-	if err := runUbuntu(ctx, "apt-get", "update"); err != nil {
-		return err
-	}
-	if err := runUbuntu(ctx, "apt-get", "upgrade", "-y"); err != nil {
-		return err
-	}
-	args = append([]string{"apt-get", "install", "-y"}, ubuntuPackages...)
-	if err := runUbuntu(ctx, args...); err != nil {
-		return err
-	}
 	if err := runUbuntu(ctx, "mkdir", "-p", "/root/workspace", "/root/.config/mobdesk", "/root/.local/share/mobdesk"); err != nil {
 		return err
 	}
@@ -72,7 +57,7 @@ func runSetup(ctx context.Context) error {
 	}
 
 	fmt.Println("\nSetup concluído.")
-	fmt.Println("Ubuntu instalado e ferramentas básicas configuradas.")
+	fmt.Println("Ubuntu base instalado e pronto para o MVP.")
 	fmt.Println("SSH preparado. Execute: mobdesk start")
 	return nil
 }
