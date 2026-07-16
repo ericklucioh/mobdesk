@@ -70,6 +70,7 @@ O repositório está no início da implementação. A entrada do programa fica e
 ## Documentação
 
 - [Missão](docs/MISSAO.md) — problema, público e valor;
+- [MVP 1](docs/MVP.md) — escopo, dependências e fluxo inicial;
 - [Estágios](docs/estagios_mobdesk.md) — evolução em seis níveis;
 - [Roadmap](docs/ROADMAP.md) — escopo dos MVPs e aplicações;
 - [Arquitetura](docs/ARQUITETURA.md) — camadas, execução, acesso e limites;
