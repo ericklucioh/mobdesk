@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -66,10 +67,53 @@ func runSetup(ctx context.Context) error {
 	if err := os.WriteFile(os.ExpandEnv("$HOME/.local/share/mobdesk/setup.done"), []byte("setup concluido\n"), 0o600); err != nil {
 		return fmt.Errorf("registrar setup concluído: %w", err)
 	}
+	if err := installLauncher(); err != nil {
+		return err
+	}
 
 	fmt.Println("\nSetup concluído.")
 	fmt.Println("Ubuntu instalado e ferramentas básicas configuradas.")
 	fmt.Println("SSH preparado. Execute: mobdesk start")
+	return nil
+}
+
+func installLauncher() error {
+	executable, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("detectar executável do Mobdesk: %w", err)
+	}
+	executable, err = filepath.Abs(executable)
+	if err != nil {
+		return fmt.Errorf("resolver caminho do executável do Mobdesk: %w", err)
+	}
+	if executable, err = filepath.EvalSymlinks(executable); err != nil {
+		return fmt.Errorf("resolver link do executável do Mobdesk: %w", err)
+	}
+
+	prefix := os.Getenv("PREFIX")
+	if prefix == "" {
+		prefix = "/data/data/com.termux/files/usr"
+	}
+	launcher := filepath.Join(prefix, "bin", "mobdesk")
+	if err := os.MkdirAll(filepath.Dir(launcher), 0o755); err != nil {
+		return fmt.Errorf("criar diretório do comando mobdesk: %w", err)
+	}
+
+	if info, err := os.Lstat(launcher); err == nil {
+		if info.Mode()&os.ModeSymlink == 0 {
+			return fmt.Errorf("não foi possível criar o comando mobdesk: %s já existe e não é um link", launcher)
+		}
+		if err := os.Remove(launcher); err != nil {
+			return fmt.Errorf("atualizar comando mobdesk: %w", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("verificar comando mobdesk: %w", err)
+	}
+
+	if err := os.Symlink(executable, launcher); err != nil {
+		return fmt.Errorf("criar comando mobdesk: %w", err)
+	}
+	fmt.Printf("Comando disponível globalmente: mobdesk -> %s\n", executable)
 	return nil
 }
 
