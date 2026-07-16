@@ -94,9 +94,27 @@ make run          # executa o Mobdesk uma vez
 make dev          # mantém o Air ativo e reinicia após alterações Go
 make test         # executa os testes no container
 make build        # gera bin/mobdesk no volume do projeto
+make clean-env    # apaga HOME e PREFIX persistentes do Termux
+make reset-env    # recria a imagem e os volumes do zero
 ```
 
 `make dev` fica em execução durante a sessão de desenvolvimento. Ele não atualiza a TUI no mesmo processo: o Air recompila e reinicia o Mobdesk quando um arquivo observado é salvo.
+
+## Estado persistente do ambiente
+
+O Compose mantém dois volumes nomeados:
+
+- `mobdesk_termux_home`: workspace e configurações do usuário;
+- `mobdesk_termux_prefix`: pacotes e ferramentas instalados pelo `pkg`.
+
+Por isso, Git, Go, Air e outras ferramentas continuam disponíveis entre execuções de `make run`, `make dev` e `make test`. Para testar uma instalação limpa, use:
+
+```bash
+make clean-env
+make termux
+```
+
+Isso remove apenas o ambiente Docker do Mobdesk. O código do projeto continua no diretório local, montado por bind em `/data/data/com.termux/files/home/mobdesk`.
 
 O teste definitivo deverá ocorrer no Termux do POCO F6. Docker ARM64 e emuladores podem validar lógica, TUI e partes do Ubuntu, mas não reproduzem completamente Android, PRoot, HyperOS e gerenciamento de energia.
 

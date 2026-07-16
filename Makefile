@@ -4,7 +4,7 @@ COMPOSE ?= docker compose
 SERVICE ?= termux
 TERMUX_ARCH ?= latest
 
-.PHONY: help termux build-image shell test vet build run dev clean-image arm64-image
+.PHONY: help termux build-image shell test vet build run dev clean-env reset-env clean-image arm64-image
 
 help:
 	@printf '%s\n' \
@@ -16,6 +16,8 @@ help:
 		'make build        - compila o Mobdesk dentro do container' \
 		'make run          - executa o binário do Mobdesk' \
 		'make dev          - inicia o Air com hot-reload' \
+		'make clean-env    - apaga os volumes persistentes do Termux' \
+		'make reset-env    - recria o ambiente do Termux do zero' \
 		'make arm64-image  - constrói a imagem Termux para linux/arm64' \
 		'make clean-image  - remove a imagem local do ambiente'
 
@@ -42,6 +44,12 @@ run:
 
 dev:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm $(SERVICE) air -c .air.toml
+
+clean-env:
+	$(COMPOSE) down --volumes --remove-orphans
+
+reset-env: clean-env build-image
+	@printf '%s\n' 'Ambiente Termux recriado. Execute make termux, make test ou make dev.'
 
 arm64-image:
 	docker buildx build --platform linux/arm64 --build-arg TERMUX_ARCH=aarch64 -f Dockerfile.termux -t mobdesk-termux:aarch64 --load .

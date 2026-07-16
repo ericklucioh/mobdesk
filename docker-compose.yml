@@ -13,4 +13,12 @@ services:
       TERM: xterm-256color
       COLORTERM: truecolor
     volumes:
+      - termux-home:/data/data/com.termux/files/home
+      - termux-prefix:/data/data/com.termux/files/usr
       - .:/data/data/com.termux/files/home/mobdesk
+
+volumes:
+  termux-home:
+    name: mobdesk_termux_home
+  termux-prefix:
+    name: mobdesk_termux_prefix

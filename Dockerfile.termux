@@ -7,7 +7,7 @@ USER 1000:1000
 
 RUN pkg update -y && \
     pkg upgrade -y && \
-    pkg install -y golang git make && \
+    pkg install -y golang make && \
     go install github.com/air-verse/air@latest
 
 WORKDIR /data/data/com.termux/files/home/mobdesk
