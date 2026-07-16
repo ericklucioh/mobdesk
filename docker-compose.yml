@@ -1,0 +1,16 @@
+services:
+  termux:
+    build:
+      context: .
+      dockerfile: Dockerfile.termux
+      args:
+        TERMUX_ARCH: ${TERMUX_ARCH:-latest}
+    image: mobdesk-termux:${TERMUX_ARCH:-latest}
+    working_dir: /data/data/com.termux/files/home/mobdesk
+    stdin_open: true
+    tty: true
+    environment:
+      TERM: xterm-256color
+      COLORTERM: truecolor
+    volumes:
+      - .:/data/data/com.termux/files/home/mobdesk

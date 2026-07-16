@@ -1,0 +1,16 @@
+# Ambiente local de desenvolvimento que reproduz o userland do Termux.
+# A imagem não reproduz Android, Dalvik, permissões do app ou Termux:API.
+ARG TERMUX_ARCH=latest
+FROM termux/termux-docker:${TERMUX_ARCH}
+
+USER 1000:1000
+
+RUN pkg update -y && \
+    pkg upgrade -y && \
+    pkg install -y golang git make
+
+WORKDIR /data/data/com.termux/files/home/mobdesk
+
+ENV PATH="/data/data/com.termux/files/usr/bin:/data/data/com.termux/files/home/go/bin:${PATH}"
+
+CMD ["bash"]
