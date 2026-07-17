@@ -46,6 +46,15 @@ X11, VNC e desktops completos podem oferecer uma experiência visual, mas aument
 
 Neko pode ser útil para navegador remoto com Firefox, áudio e WebRTC, mas é uma linha experimental separada. Depende de validar Firefox, Xorg, PulseAudio, GStreamer, WebRTC e PRoot no aparelho real.
 
+### Pesquisa de navegador remoto
+
+Selkies, Neko, noVNC e `jlesage/docker-firefox` foram comparados em
+[`PESQUISA_NAVEGADOR_REMOTO.md`](PESQUISA_NAVEGADOR_REMOTO.md). Para o PRoot
+atual, o baseline será Firefox + Xvfb + VNC + noVNC; Selkies standalone é o
+primeiro candidato para streaming mais eficiente. Neko permanece como opção de
+melhor experiência quando houver um runtime real de containers ou quando sua
+execução fora de Docker for validada no aparelho.
+
 ### Docker e VM
 
 PRoot não é Docker. Docker real e recursos de kernel exigem outro suporte de kernel, root, VM ou dispositivo apropriado. Isso está fora do objetivo educacional do MVP.
