@@ -28,16 +28,16 @@ func runSetup(ctx context.Context) error {
 	}
 
 	termuxPackages := []string{
-		// O MVP-1 precisa apenas do runtime Ubuntu e do servidor SSH.
-		"proot-distro", "openssh",
+		// O MVP-1 precisa apenas do runtime Ubuntu, SSH e diagnóstico de rede.
+		"proot-distro", "openssh", "iproute2",
 	}
 	if err := runCommand(ctx, "pkg", "update"); err != nil {
 		return err
 	}
-	if err := runCommand(ctx, "pkg", "upgrade", "-y"); err != nil {
+	if err := runCommand(ctx, "pkg", "upgrade", "-y", "-o", "Dpkg::Options::=--force-confold"); err != nil {
 		return err
 	}
-	args := append([]string{"install", "-y"}, termuxPackages...)
+	args := append([]string{"install", "-y", "-o", "Dpkg::Options::=--force-confold"}, termuxPackages...)
 	if err := runCommand(ctx, "pkg", args...); err != nil {
 		return err
 	}

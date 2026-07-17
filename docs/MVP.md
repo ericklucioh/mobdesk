@@ -44,13 +44,14 @@ Comandos de preparação:
 ```bash
 pkg update
 pkg upgrade -y
-pkg install -y proot-distro openssh
+pkg install -y proot-distro openssh iproute2
 ```
 
 Pacotes essenciais a instalar ou verificar:
 
 - `proot-distro`;
 - `openssh`;
+- `iproute2`, para detectar o IP local e verificar a porta SSH;
 
 Comandos de SSH:
 

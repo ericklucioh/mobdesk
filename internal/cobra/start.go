@@ -285,32 +285,58 @@ func printAccessInstructions() {
 
 func localIPv4Addresses() []string {
 	interfaces, err := net.Interfaces()
-	if err != nil {
-		return nil
-	}
 	addresses := make([]string, 0)
-	for _, networkInterface := range interfaces {
-		if networkInterface.Flags&net.FlagUp == 0 || networkInterface.Flags&net.FlagLoopback != 0 {
-			continue
-		}
-		interfaceAddresses, err := networkInterface.Addrs()
-		if err != nil {
-			continue
-		}
-		for _, interfaceAddress := range interfaceAddresses {
-			var ip net.IP
-			switch address := interfaceAddress.(type) {
-			case *net.IPNet:
-				ip = address.IP
-			case *net.IPAddr:
-				ip = address.IP
+	if err == nil {
+		for _, networkInterface := range interfaces {
+			if networkInterface.Flags&net.FlagUp == 0 || networkInterface.Flags&net.FlagLoopback != 0 {
+				continue
 			}
-			if ip4 := ip.To4(); ip4 != nil {
-				addresses = append(addresses, ip4.String())
+			interfaceAddresses, err := networkInterface.Addrs()
+			if err != nil {
+				continue
+			}
+			for _, interfaceAddress := range interfaceAddresses {
+				var ip net.IP
+				switch address := interfaceAddress.(type) {
+				case *net.IPNet:
+					ip = address.IP
+				case *net.IPAddr:
+					ip = address.IP
+				}
+				if ip4 := ip.To4(); ip4 != nil {
+					addresses = appendUnique(addresses, ip4.String())
+				}
+			}
+		}
+	}
+	if len(addresses) > 0 {
+		return addresses
+	}
+
+	// Em alguns Androids, net.Interfaces não expõe corretamente as interfaces
+	// de rede para o processo do Termux. O iproute2 é mais confiável nesse caso.
+	if output, err := exec.Command("ip", "-o", "-4", "addr", "show", "scope", "global").Output(); err == nil {
+		fields := strings.Fields(string(output))
+		for index, field := range fields {
+			if field != "inet" || index+1 >= len(fields) {
+				continue
+			}
+			address := strings.SplitN(fields[index+1], "/", 2)[0]
+			if net.ParseIP(address) != nil {
+				addresses = appendUnique(addresses, address)
 			}
 		}
 	}
 	return addresses
+}
+
+func appendUnique(addresses []string, address string) []string {
+	for _, existing := range addresses {
+		if existing == address {
+			return addresses
+		}
+	}
+	return append(addresses, address)
 }
 
 func runInteractive(ctx context.Context, name string, args ...string) error {
