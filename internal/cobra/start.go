@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -265,6 +266,9 @@ func waitForPortClosed(ctx context.Context, port int, timeout time.Duration) boo
 }
 
 func printAccessInstructions() {
+	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#7DD3FC"))
+	commandStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#A7F3D0"))
+
 	name := os.Getenv("USER")
 	if name == "" {
 		if current, err := user.Current(); err == nil {
@@ -276,14 +280,17 @@ func printAccessInstructions() {
 	}
 
 	addresses := localIPv4Addresses()
-	fmt.Println("\nServidor iniciado!")
+	fmt.Println("\nSERVIDOR INICIADO!")
 	if len(addresses) == 0 {
-		fmt.Printf("Acesse localmente: ssh -p %d %s@localhost\n", sshPort, name)
+		fmt.Println(headerStyle.Render("ACESSO LOCAL VIA SSH"))
+		command := fmt.Sprintf("ssh -p %d %s@localhost", sshPort, name)
+		fmt.Println(commandStyle.Render(command))
 		return
 	}
-	fmt.Println("Acesse de outro computador:")
+	fmt.Println(headerStyle.Render("ACESSO REMOTO VIA SSH"))
 	for _, address := range addresses {
-		fmt.Printf("ssh -p %d %s@%s\n", sshPort, name, address)
+		command := fmt.Sprintf("ssh -p %d %s@%s", sshPort, name, address)
+		fmt.Println(commandStyle.Render(command))
 	}
 }
 
