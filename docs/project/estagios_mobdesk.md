@@ -35,43 +35,72 @@ Android/HyperOS
 | 5 | Aplicação | Mobdesk Desktop | Oferecer uma experiência visual integrada pelo navegador |
 | 6 | Aplicação | Mobdesk Platform | Entregar uma workstation reproduzível, extensível e distribuível |
 
-## Estágio 1 — MVP: Ubuntu remoto
+## Estágio 1 — MVP: Ubuntu remoto mínimo
+FEITO!
 
 ### Escopo
 
-O Mobdesk estabelece um Ubuntu persistente via PRoot como ambiente principal de desenvolvimento. O usuário acessa o aparelho por SSH e executa projetos, ferramentas e servidores dentro desse Ubuntu.
+Validar o primeiro fluxo completo do Mobdesk em um Termux praticamente virgem:
 
-O Termux permanece responsável por instalar e iniciar o PRoot, oferecer a rede e fornecer a integração mínima com o Android.
+```text
+instalar Git, Go e Mobdesk
+    ↓
+mobdesk setup
+    ↓
+mobdesk start
+    ↓
+SSH na porta 8022
+    ↓
+Ubuntu via PRoot
+```
 
-Este estágio valida a hipótese central: o POCO F6 pode funcionar como uma workstation Linux ARM64 remota sem root, VM ou desktop gráfico completo.
+O Termux é o host de controle. O Ubuntu persistente via PRoot é aberto automaticamente tanto pelo `start` local quanto por conexões SSH remotas.
 
-### Ferramentas
+O acesso remoto termina diretamente no Ubuntu; o usuário não deve cair em um shell Termux intermediário.
+
+### Ferramentas e componentes
 
 - Android/HyperOS;
 - Termux como host;
+- Mobdesk em Go;
 - PRoot-Distro;
-- Ubuntu ARM64 persistente;
-- `apt` e `glibc`;
-- OpenSSH;
-- Git;
-- tmux;
-- Neovim;
-- Go, Node.js, Python, Rust e Java;
-- servidores HTTP locais;
-- Tailscale como opção de acesso privado.
+- Ubuntu base persistente;
+- OpenSSH do Termux;
+- `net-tools`/`ifconfig` para detectar o IP local;
+- senha do usuário Termux para autenticação SSH;
+- `termux-wake-lock` quando disponível;
+- wrapper SSH com `ForceCommand` para abrir o Ubuntu;
+- porta SSH `8022`.
+
+O setup não instala ferramentas de desenvolvimento no Ubuntu. Git, Neovim, Go, Python, Node.js, tmux, Tailscale e demais ferramentas ficam para os estágios seguintes.
+
+### Comandos entregues
+
+```text
+mobdesk setup   prepara Termux, SSH, PRoot e Ubuntu
+mobdesk start   inicia SSH e abre o Ubuntu
+mobdesk stop    encerra o servidor SSH
+```
+
+O `setup` é idempotente, cria o estado local, configura a senha SSH, instala o Ubuntu base e cria os diretórios mínimos de workspace.
+
+O `start` verifica o setup, inicia ou recarrega o `sshd`, detecta o IP via `ifconfig`, mostra um comando SSH destacado e abre o shell Ubuntu.
 
 ### Limites
 
-- configuração predominantemente manual;
-- acesso principal por terminal;
-- sem gerenciador próprio;
-- sem interface visual do Mobdesk;
+- sem TUI;
+- sem instalação de ferramentas de desenvolvimento;
+- sem gerenciamento de projetos;
+- sem `status`, `doctor` ou `install` implementados;
+- sem tmux e persistência avançada de sessões;
+- sem Tailscale;
+- sem portas adicionais para aplicações;
 - sem Docker real ou recursos adicionais de kernel;
-- integração com Android ainda limitada ao Termux hospedeiro.
+- acesso e configuração ainda dependem do terminal.
 
 ### Resultado
 
-Um Ubuntu persistente, acessível por SSH, capaz de hospedar código, dependências, ferramentas Linux e servidores de desenvolvimento.
+Um celular Android transforma-se em um servidor Ubuntu ARM64 mínimo, persistente e acessível diretamente por SSH, com instalação, inicialização e parada controladas pelo Mobdesk.
 
 ## Estágio 2 — MVP: Workstation TUI Ubuntu
 

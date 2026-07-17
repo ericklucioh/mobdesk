@@ -1,144 +1,147 @@
 # Mobdesk
 
-Workstation pessoal de desenvolvimento para Android, executada no próprio celular.
+Transforme seu celular Android em uma workstation Ubuntu pessoal.
 
-O Mobdesk foi pensado para estudantes e desenvolvedores que querem ir para a faculdade apenas com o celular e continuar programando em um ambiente próprio, sem deixar contas pessoais abertas em computadores compartilhados.
+O Mobdesk permite levar para a faculdade, viagens ou qualquer lugar um ambiente Linux próprio, sem depender de computadores compartilhados e sem deixar suas contas pessoais conectadas neles.
 
-## Visão
+No MVP atual, o fluxo é simples:
+
+```text
+Termux → Mobdesk → SSH → Ubuntu via PRoot
+```
+
+O Termux controla o aparelho. O Ubuntu persistente é o ambiente de trabalho. Ao conectar por SSH, você entra diretamente no Ubuntu.
+
+## O que já funciona
+
+- instalação automatizada a partir de um Termux praticamente virgem;
+- Ubuntu persistente via PRoot-Distro;
+- servidor SSH do Termux na porta `8022`;
+- acesso remoto direto ao Ubuntu;
+- detecção do IP local via `ifconfig`;
+- autenticação por senha;
+- comandos `setup`, `start` e `stop`;
+- execução no celular ou remotamente pelo computador;
+- ambiente reproduzível para desenvolvimento e testes.
+
+O MVP-1 é deliberadamente pequeno. Ele ainda não instala ferramentas de desenvolvimento no Ubuntu, não oferece TUI e não gerencia projetos. Essas capacidades fazem parte dos próximos estágios.
+
+## Instalação no Termux
+
+Instale o Termux por uma fonte confiável e abra o aplicativo. Depois:
+
+```bash
+pkg update
+pkg upgrade -y
+pkg install -y golang git
+go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
+./go/bin/mobdesk setup
+```
+
+Na primeira execução, o binário é chamado diretamente pelo caminho criado pelo Go. Depois do setup, o launcher global permite usar `mobdesk` normalmente.
+
+Durante o setup, o Mobdesk irá:
+
+- instalar `proot-distro`, `openssh` e `net-tools`;
+- baixar o Ubuntu base;
+- criar o workspace persistente;
+- configurar a senha SSH;
+- preparar o acesso SSH direto ao Ubuntu.
+
+## Usando o Mobdesk
+
+Inicie a workstation:
+
+```bash
+mobdesk start
+```
+
+O Mobdesk exibirá um comando parecido com:
+
+```bash
+ssh -p 8022 android@192.168.3.228
+```
+
+Execute esse comando em outro computador conectado à mesma rede. A sessão SSH abrirá diretamente no Ubuntu.
+
+Para encerrar o servidor SSH:
+
+```bash
+mobdesk stop
+```
+
+Para sair do Ubuntu sem parar o servidor:
+
+```bash
+exit
+```
+
+O IP local pode mudar quando o celular troca de rede. O Termux precisa permanecer ativo e o Android não pode suspender o aplicativo durante o uso remoto.
+
+## Desenvolvimento
+
+Clone o projeto e entre no diretório:
+
+```bash
+git clone https://github.com/ericklucioh/mobdesk.git
+cd mobdesk
+```
+
+O ambiente Docker simula o userland do Termux e mantém o workspace e o prefixo em volumes persistentes.
+
+```bash
+make build-image  # constrói a imagem local
+make dev          # inicia o Air com hot-reload
+make termux       # abre um shell Termux com a porta SSH publicada
+make shell        # abre outro shell no ambiente
+```
+
+Verificações:
+
+```bash
+make test
+make vet
+make build
+```
+
+Para apagar o ambiente persistente e começar do zero:
+
+```bash
+make reset-env
+```
+
+Esse comando remove os volumes do Termux/Ubuntu. O código local não é apagado. A instalação do Ubuntu ocupa aproximadamente `1,5 GB` nos volumes persistentes.
+
+Consulte [CONTRIBUINDO.md](docs/CONTRIBUINDO.md) antes de enviar alterações.
+
+## Arquitetura
 
 ```text
 Android/HyperOS
 └── Termux
     ├── Mobdesk em Go
-    └── Ubuntu ARM64 via PRoot
-        ├── ferramentas de desenvolvimento
-        ├── editor e TUI
-        ├── projetos
-        └── servidores locais
+    ├── OpenSSH :8022
+    └── PRoot-Distro
+        └── Ubuntu ARM64 persistente
 ```
 
-Termux funciona como host e camada de integração com Android. Ubuntu persistente via PRoot é o ambiente principal, oferecendo `apt`, `glibc` e maior compatibilidade com ferramentas Linux tradicionais.
+O projeto não depende de root, VM ou Docker no celular. PRoot melhora a compatibilidade do userland, mas não fornece um kernel Linux separado nem isolamento real de container.
 
-## Objetivo inicial
+## Próximos estágios
 
-```text
-instalar Go no Termux
-→ instalar/obter Mobdesk
-→ executar mobdesk start
-→ abrir a TUI
-→ configurar Ubuntu
-→ escolher ferramentas
-→ iniciar a workstation
-```
+1. Workstation TUI para setup, start, stop e diagnóstico;
+2. instalação de ferramentas de desenvolvimento sob demanda;
+3. sessões persistentes, projetos e serviços;
+4. central de gerenciamento acessível pelo navegador.
 
-A central será responsável por verificar o ambiente, instalar dependências, executar comandos no Termux e no Ubuntu, mostrar progresso e abrir o ambiente de trabalho.
-
-## MVP
-
-- TUI em Go com Bubble Tea, Bubbles e Lip Gloss;
-- CLI com Cobra;
-- instalação idempotente do Ubuntu ARM64;
-- controle do PRoot-Distro;
-- Git, Neovim/LazyVim, Python, Node.js e Go;
-- shell Ubuntu com PTY;
-- sessões persistentes com tmux;
-- diagnóstico e logs;
-- SSH e acesso remoto como evolução imediata;
-- execução de projetos educacionais em C, JavaScript, HTML, React, Java, Go e Python.
-
-O foco é estudo e desenvolvimento de projetos pequenos e médios. O Mobdesk não pretende substituir uma máquina de produção, executar cargas pesadas ou oferecer um desktop Linux gráfico completo.
-
-## Estado do projeto
-
-O repositório está no início da implementação. A entrada do programa fica em `cmd/mobdesk/main.go`; a CLI e a TUI serão construídas progressivamente.
-
-## Tecnologia
-
-- Go 1.26.5;
-- Cobra e pflag para CLI;
-- Bubble Tea v2;
-- Bubbles v2;
-- Lip Gloss v2;
-- OSC 52 para clipboard em terminais compatíveis;
-- PRoot-Distro;
-- Ubuntu ARM64;
-- Termux;
-- tmux;
-- OpenSSH;
-- Tailscale como opção de rede privada.
+Veja o [roadmap em seis estágios](docs/project/estagios_mobdesk.md).
 
 ## Documentação
 
-- [Missão](docs/MISSAO.md) — problema, público e valor;
-- [MVP 1](docs/MVP.md) — escopo, dependências e fluxo inicial;
-- [Estágios](docs/estagios_mobdesk.md) — evolução em seis níveis;
-- [Roadmap](docs/ROADMAP.md) — escopo dos MVPs e aplicações;
-- [Arquitetura](docs/ARQUITETURA.md) — camadas, execução, acesso e limites;
-- [Decisões](docs/DECISOES.md) — escolhas atuais e alternativas adiadas;
-- [Ferramentas](docs/FERRAMENTAS.md) — catálogo técnico e práticas.
-
-## Desenvolvimento
-
-Comandos de verificação, conforme o código existente:
-
-```bash
-go test ./...
-go vet ./...
-go build ./cmd/mobdesk
-```
-
-Comandos pelo ambiente Docker/Termux:
-
-```bash
-make build-image  # constrói a imagem uma vez
-make run          # executa o Mobdesk uma vez
-make dev          # mantém o Air ativo e reinicia após alterações Go
-make test         # executa os testes no container
-make build        # gera bin/mobdesk no volume do projeto
-make clean-env    # apaga HOME e PREFIX persistentes do Termux
-make reset-env    # recria a imagem e os volumes do zero
-```
-
-`make dev` fica em execução durante a sessão de desenvolvimento. Ele não atualiza a TUI no mesmo processo: o Air recompila e reinicia o Mobdesk quando um arquivo observado é salvo.
-
-## Estado persistente do ambiente
-
-O Compose mantém dois volumes nomeados:
-
-- `mobdesk_termux_home`: workspace e configurações do usuário;
-- `mobdesk_termux_prefix`: pacotes e ferramentas instalados pelo `pkg`.
-
-### Espaço ocupado
-
-A instalação do Ubuntu via PRoot ocupa aproximadamente **1,5 GB adicionais** nos volumes persistentes. Esse valor é uma referência observada no ambiente Docker e pode variar conforme a arquitetura, a versão da imagem e os pacotes instalados.
-
-No desenvolvimento Docker, considere ainda separadamente:
-
-- a imagem `mobdesk-termux`, com aproximadamente `1,3 GB`;
-- o cache de build do Docker, que pode ocupar cerca de `1,2 GB`;
-- os dois volumes persistentes, que passam a ocupar aproximadamente `1,5 GB` após a instalação do Ubuntu.
-
-O Ubuntu e seus pacotes permanecem nos volumes até a execução de `make clean-env`.
-
-Por isso, Git, Go, Air e outras ferramentas continuam disponíveis entre execuções de `make run`, `make dev` e `make test`. Para testar uma instalação limpa, use:
-
-```bash
-make clean-env
-make termux
-```
-
-Isso remove apenas o ambiente Docker do Mobdesk. O código do projeto continua no diretório local, montado por bind em `/data/data/com.termux/files/home/mobdesk`.
-
-O teste definitivo deverá ocorrer no Termux do POCO F6. Docker ARM64 e emuladores podem validar lógica, TUI e partes do Ubuntu, mas não reproduzem completamente Android, PRoot, HyperOS e gerenciamento de energia.
-
-## Direção futura
-
-Depois dos MVPs, o Mobdesk poderá ganhar:
-
-- central de projetos e serviços;
-- atalhos pela tela inicial com Termux:Widget;
-- terminal e ferramentas acessíveis pelo navegador;
-- interface web leve;
-- APK complementar;
-- ambientes reproduzíveis com Nix como camada opcional;
-- navegador remoto com Neko como experimento separado.
+- [MVP-1](docs/project/MVP.md) — escopo e funcionamento atual;
+- [Missão](docs/project/MISSAO.md) — problema, público e valor;
+- [Estágios](docs/project/estagios_mobdesk.md) — evolução do produto;
+- [Arquitetura](docs/project/ARQUITETURA.md) — camadas e limites técnicos;
+- [Decisões](docs/project/DECISOES.md) — decisões do projeto;
+- [Ferramentas](docs/project/FERRAMENTAS.md) — catálogo técnico;
+- [Como contribuir](docs/CONTRIBUINDO.md) — fluxo para colaboradores.
