@@ -12,4 +12,5 @@ var RootCmd = cobra.Command{
 func init() {
 	RootCmd.AddCommand(setupCmd)
 	RootCmd.AddCommand(startCmd)
+	RootCmd.AddCommand(stopCmd)
 }

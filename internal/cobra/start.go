@@ -26,6 +26,14 @@ var startCmd = &cobra.Command{
 	},
 }
 
+var stopCmd = &cobra.Command{
+	Use:   "stop",
+	Short: "parar o servidor SSH",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runStop(cmd.Context())
+	},
+}
+
 func runStart(ctx context.Context) error {
 	if _, err := os.Stat(os.ExpandEnv("$HOME/.local/share/mobdesk/setup.done")); err != nil {
 		if os.IsNotExist(err) {
@@ -68,6 +76,51 @@ func runStart(ctx context.Context) error {
 	printAccessInstructions()
 	fmt.Println("\nAbrindo Ubuntu...")
 	return runInteractive(ctx, "proot-distro", "login", "ubuntu", "--", "bash", "-l")
+}
+
+func runStop(ctx context.Context) error {
+	prefix := os.Getenv("PREFIX")
+	if prefix == "" {
+		prefix = "/data/data/com.termux/files/usr"
+	}
+	pidPath := filepath.Join(prefix, "var", "run", "sshd.pid")
+
+	pidBytes, err := os.ReadFile(pidPath)
+	if os.IsNotExist(err) {
+		if !portOpen(ctx, sshPort) {
+			unlockWakeLock()
+			fmt.Println("Servidor SSH já está parado.")
+			return nil
+		}
+		return fmt.Errorf("a porta %d está ocupada, mas o PID do sshd não foi encontrado em %s", sshPort, pidPath)
+	}
+	if err != nil {
+		return fmt.Errorf("ler PID do sshd: %w", err)
+	}
+
+	pid, err := strconv.Atoi(strings.TrimSpace(string(pidBytes)))
+	if err != nil {
+		return fmt.Errorf("PID do sshd inválido: %w", err)
+	}
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return fmt.Errorf("localizar processo do sshd: %w", err)
+	}
+	if err := process.Signal(syscall.SIGTERM); err != nil {
+		if !portOpen(ctx, sshPort) {
+			unlockWakeLock()
+			fmt.Println("Servidor SSH já estava parado.")
+			return nil
+		}
+		return fmt.Errorf("parar sshd: %w", err)
+	}
+
+	if !waitForPortClosed(ctx, sshPort, 3*time.Second) {
+		return fmt.Errorf("sshd recebeu o sinal de parada, mas a porta %d ainda está ativa", sshPort)
+	}
+	unlockWakeLock()
+	fmt.Println("Servidor SSH parado.")
+	return nil
 }
 
 func ensureSSHUbuntuCommand() (bool, error) {
@@ -146,6 +199,15 @@ func startWakeLock() {
 	}
 }
 
+func unlockWakeLock() {
+	if _, err := exec.LookPath("termux-wake-unlock"); err != nil {
+		return
+	}
+	if err := exec.Command("termux-wake-unlock").Run(); err != nil {
+		fmt.Printf("Aviso: não foi possível liberar o wake-lock: %v\n", err)
+	}
+}
+
 func startSSH(ctx context.Context) error {
 	fmt.Printf("Iniciando servidor SSH na porta %d...\n", sshPort)
 	command := exec.CommandContext(ctx, "sshd")
@@ -181,6 +243,21 @@ func waitForPort(ctx context.Context, port int, timeout time.Duration) bool {
 		}
 	}
 	return portOpen(ctx, port)
+}
+
+func waitForPortClosed(ctx context.Context, port int, timeout time.Duration) bool {
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		if !portOpen(ctx, port) {
+			return true
+		}
+		select {
+		case <-ctx.Done():
+			return false
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
+	return !portOpen(ctx, port)
 }
 
 func printAccessInstructions() {
