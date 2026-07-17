@@ -20,4 +20,7 @@ WORKDIR /data/data/com.termux/files/home/mobdesk
 
 ENV PATH="/data/data/com.termux/files/usr/bin:/data/data/com.termux/files/home/go/bin:${PATH}"
 
+# Porta padrão do servidor SSH do Termux.
+EXPOSE 8022
+
 CMD ["bash"]

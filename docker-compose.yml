@@ -12,6 +12,8 @@ services:
     environment:
       TERM: xterm-256color
       COLORTERM: truecolor
+    ports:
+      - "8022:8022"
     volumes:
       - termux-home:/data/data/com.termux/files/home
       - termux-prefix:/data/data/com.termux/files/usr
