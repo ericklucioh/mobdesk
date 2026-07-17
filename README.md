@@ -108,6 +108,18 @@ O Compose mantém dois volumes nomeados:
 - `mobdesk_termux_home`: workspace e configurações do usuário;
 - `mobdesk_termux_prefix`: pacotes e ferramentas instalados pelo `pkg`.
 
+### Espaço ocupado
+
+A instalação do Ubuntu via PRoot ocupa aproximadamente **1,5 GB adicionais** nos volumes persistentes. Esse valor é uma referência observada no ambiente Docker e pode variar conforme a arquitetura, a versão da imagem e os pacotes instalados.
+
+No desenvolvimento Docker, considere ainda separadamente:
+
+- a imagem `mobdesk-termux`, com aproximadamente `1,3 GB`;
+- o cache de build do Docker, que pode ocupar cerca de `1,2 GB`;
+- os dois volumes persistentes, que passam a ocupar aproximadamente `1,5 GB` após a instalação do Ubuntu.
+
+O Ubuntu e seus pacotes permanecem nos volumes até a execução de `make clean-env`.
+
 Por isso, Git, Go, Air e outras ferramentas continuam disponíveis entre execuções de `make run`, `make dev` e `make test`. Para testar uma instalação limpa, use:
 
 ```bash

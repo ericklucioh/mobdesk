@@ -43,7 +43,7 @@ run:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm $(SERVICE) bash -lc 'go run ./cmd/mobdesk'
 
 dev:
-	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm --service-ports $(SERVICE) air -c .air.toml
+	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm $(SERVICE) air -c .air.toml
 
 clean-env:
 	$(COMPOSE) down --volumes --remove-orphans
