@@ -49,6 +49,9 @@ func runSetup(ctx context.Context) error {
 	if err := runUbuntu(ctx, "mkdir", "-p", "/root/workspace", "/root/.config/mobdesk", "/root/.local/share/mobdesk"); err != nil {
 		return err
 	}
+	if err := ensurePassword(ctx); err != nil {
+		return err
+	}
 	if err := os.WriteFile(os.ExpandEnv("$HOME/.local/share/mobdesk/setup.done"), []byte("setup concluido\n"), 0o600); err != nil {
 		return fmt.Errorf("registrar setup concluído: %w", err)
 	}
@@ -59,6 +62,25 @@ func runSetup(ctx context.Context) error {
 	fmt.Println("\nSetup concluído.")
 	fmt.Println("Ubuntu base instalado e pronto para o MVP.")
 	fmt.Println("SSH preparado. Execute: mobdesk start")
+	return nil
+}
+
+func ensurePassword(ctx context.Context) error {
+	marker := os.ExpandEnv("$HOME/.local/share/mobdesk/password.done")
+	if _, err := os.Stat(marker); err == nil {
+		fmt.Println("Senha SSH já configurada.")
+		return nil
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("verificar senha SSH: %w", err)
+	}
+
+	fmt.Println("Configure a senha do usuário Termux para acesso via SSH.")
+	if err := runCommand(ctx, "passwd"); err != nil {
+		return fmt.Errorf("configurar senha SSH: %w", err)
+	}
+	if err := os.WriteFile(marker, []byte("senha configurada\n"), 0o600); err != nil {
+		return fmt.Errorf("registrar senha SSH configurada: %w", err)
+	}
 	return nil
 }
 

@@ -11,11 +11,5 @@ var RootCmd = cobra.Command{
 
 func init() {
 	RootCmd.AddCommand(setupCmd)
-	RootCmd.AddCommand(&cobra.Command{
-		Use:   "start",
-		Short: "iniciar o ambiente e o servidor SSH",
-		Run: func(cmd *cobra.Command, args []string) {
-			runStart()
-		},
-	})
+	RootCmd.AddCommand(startCmd)
 }
