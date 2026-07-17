@@ -145,3 +145,7 @@ Veja o [roadmap em seis estágios](docs/project/estagios_mobdesk.md).
 - [Decisões](docs/project/DECISOES.md) — decisões do projeto;
 - [Ferramentas](docs/project/FERRAMENTAS.md) — catálogo técnico;
 - [Como contribuir](docs/CONTRIBUINDO.md) — fluxo para colaboradores.
+
+## Licença
+
+Distribuído sob a [licença MIT](LICENSE).
