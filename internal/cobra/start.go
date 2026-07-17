@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -54,6 +55,9 @@ func runStart(ctx context.Context) error {
 	configChanged, err := ensureSSHUbuntuCommand()
 	if err != nil {
 		return err
+	}
+	if err := ensureIfconfig(ctx); err != nil {
+		fmt.Printf("Aviso: não foi possível preparar a detecção do IP local: %v\n", err)
 	}
 
 	startWakeLock()
@@ -284,50 +288,52 @@ func printAccessInstructions() {
 }
 
 func localIPv4Addresses() []string {
-	interfaces, err := net.Interfaces()
-	addresses := make([]string, 0)
-	if err == nil {
-		for _, networkInterface := range interfaces {
-			if networkInterface.Flags&net.FlagUp == 0 || networkInterface.Flags&net.FlagLoopback != 0 {
-				continue
-			}
-			interfaceAddresses, err := networkInterface.Addrs()
-			if err != nil {
-				continue
-			}
-			for _, interfaceAddress := range interfaceAddresses {
-				var ip net.IP
-				switch address := interfaceAddress.(type) {
-				case *net.IPNet:
-					ip = address.IP
-				case *net.IPAddr:
-					ip = address.IP
-				}
-				if ip4 := ip.To4(); ip4 != nil {
-					addresses = appendUnique(addresses, ip4.String())
-				}
+	ifconfig, err := exec.LookPath("ifconfig")
+	if err != nil {
+		return nil
+	}
+	output, err := exec.Command(ifconfig).Output()
+	if err != nil {
+		return nil
+	}
+	return extractIPv4Addresses(string(output))
+}
+
+var ifconfigIPv4Pattern = regexp.MustCompile(`^\s+inet\s+((?:[0-9]{1,3}\.){3}[0-9]{1,3})\b`)
+
+func extractIPv4Addresses(output string) []string {
+	preferred := make([]string, 0)
+	others := make([]string, 0)
+	interfaceName := ""
+
+	for _, line := range strings.Split(output, "\n") {
+		if len(line) > 0 && line[0] != ' ' && line[0] != '\t' {
+			fields := strings.Fields(line)
+			if len(fields) > 0 {
+				interfaceName = strings.TrimSuffix(fields[0], ":")
 			}
 		}
-	}
-	if len(addresses) > 0 {
-		return addresses
+
+		match := ifconfigIPv4Pattern.FindStringSubmatch(line)
+		if len(match) != 2 || match[1] == "127.0.0.1" || net.ParseIP(match[1]) == nil {
+			continue
+		}
+		if interfaceName == "wlan0" {
+			preferred = appendUnique(preferred, match[1])
+		} else {
+			others = appendUnique(others, match[1])
+		}
 	}
 
-	// Em alguns Androids, net.Interfaces não expõe corretamente as interfaces
-	// de rede para o processo do Termux. O iproute2 é mais confiável nesse caso.
-	if output, err := exec.Command("ip", "-o", "-4", "addr", "show", "scope", "global").Output(); err == nil {
-		fields := strings.Fields(string(output))
-		for index, field := range fields {
-			if field != "inet" || index+1 >= len(fields) {
-				continue
-			}
-			address := strings.SplitN(fields[index+1], "/", 2)[0]
-			if net.ParseIP(address) != nil {
-				addresses = appendUnique(addresses, address)
-			}
-		}
+	return append(preferred, others...)
+}
+
+func ensureIfconfig(ctx context.Context) error {
+	if _, err := exec.LookPath("ifconfig"); err == nil {
+		return nil
 	}
-	return addresses
+	fmt.Println("ifconfig não encontrado; instalando net-tools...")
+	return runCommand(ctx, "pkg", "install", "-y", "-o", "Dpkg::Options::=--force-confold", "net-tools")
 }
 
 func appendUnique(addresses []string, address string) []string {

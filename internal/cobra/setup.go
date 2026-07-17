@@ -29,7 +29,7 @@ func runSetup(ctx context.Context) error {
 
 	termuxPackages := []string{
 		// O MVP-1 precisa apenas do runtime Ubuntu, SSH e diagnóstico de rede.
-		"proot-distro", "openssh", "iproute2",
+		"proot-distro", "openssh", "net-tools",
 	}
 	if err := runCommand(ctx, "pkg", "update"); err != nil {
 		return err
