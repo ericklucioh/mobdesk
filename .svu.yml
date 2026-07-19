@@ -1,0 +1,6 @@
+# Stable release defaults. The stage workflow overrides these values.
+tag.prefix: v
+tag.pattern: "v*"
+tag.mode: current
+always: false
+v0: true
