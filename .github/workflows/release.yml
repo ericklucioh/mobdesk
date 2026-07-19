@@ -29,6 +29,19 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Validate release branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "${GITHUB_REF_NAME}" in
+            main|stage)
+              ;;
+            *)
+              echo "Unsupported release branch: ${GITHUB_REF_NAME}" >&2
+              exit 1
+              ;;
+          esac
+
       - name: Run tests
         run: go test ./...
 
@@ -47,25 +60,18 @@ jobs:
           set -euo pipefail
 
           if [[ "${GITHUB_REF_NAME}" == "stage" ]]; then
-            current_args=(
-              --tag.mode current
-              --tag.prefix test-v
-              --tag.pattern 'test-v*'
-            )
-            next_args=("${current_args[@]}" --always --v0)
-            current="$(svu current --config /dev/null "${current_args[@]}")"
-            next="$(svu next --config /dev/null "${next_args[@]}")"
+            svu_config=.svu-stage.yml
+            current="$(svu current --config "${svu_config}")"
+            next="$(svu next --config "${svu_config}")"
             prerelease=true
-          else
-            current_args=(
-              --tag.mode current
-              --tag.prefix v
-              --tag.pattern 'v*'
-            )
-            next_args=("${current_args[@]}" --v0)
-            current="$(svu current --config /dev/null "${current_args[@]}")"
-            next="$(svu next --config /dev/null "${next_args[@]}")"
+          elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
+            svu_config=.svu.yml
+            current="$(svu current --config "${svu_config}")"
+            next="$(svu next --config "${svu_config}")"
             prerelease=false
+          else
+            echo "Unsupported release branch: ${GITHUB_REF_NAME}" >&2
+            exit 1
           fi
 
           echo "Current version: ${current}"

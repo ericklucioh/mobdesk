@@ -1,0 +1,6 @@
+# Stage release configuration.
+tag.prefix: test-v
+tag.pattern: "test-v*"
+tag.mode: current
+always: true
+v0: true
