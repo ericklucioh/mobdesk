@@ -1,261 +1,129 @@
-# Mobdesk — MVP 1
+# Mobdesk - MVP atual
 
-## Objetivo
-
-Transformar um Termux praticamente virgem em um ambiente Ubuntu de desenvolvimento acessível pelo próprio celular e por SSH.
-
-O usuário instala o Mobdesk, executa `setup` uma vez e depois usa `start` para iniciar o ambiente.
-
-## Trajetória do usuário
+O MVP atual transforma um Termux com Go instalado em um ambiente Ubuntu persistente, acessível pelo próprio celular e por SSH.
 
 ```text
-Termux instalado
-    ↓
-instalar Go e Mobdesk
-    ↓
-mobdesk setup
-    ↓
-mobdesk start
-    ↓
-Ubuntu iniciado + SSH disponível
+Termux
+  -> mobdesk setup
+  -> Ubuntu via PRoot-Distro
+  -> mobdesk start
+  -> SSH :8022 ou shell local
 ```
 
-Bootstrap inicial:
+## Pré-requisitos
+
+- Termux instalado por uma fonte confiável;
+- arquitetura ARM64 compatível;
+- Go e Git instalados no Termux;
+- espaço livre suficiente para o Ubuntu base e os projetos.
+
+Bootstrap:
 
 ```bash
 pkg update
-pkg install -y golang
+pkg install -y golang git
 go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
-mobdesk setup
-mobdesk start
+~/go/bin/mobdesk setup
 ```
 
-O usuário executa somente o bootstrap e os comandos Mobdesk. Os comandos abaixo são a referência operacional que o Mobdesk deve executar internamente.
+O binário usado no primeiro setup instala um launcher em `$PREFIX/bin/mobdesk` quando o caminho ainda está livre.
 
 ## `mobdesk setup`
 
-O setup é responsável por preparar todo o ambiente necessário para que `mobdesk start` funcione.
+O setup é dividido em etapas persistentes e pode ser executado novamente. Ele:
 
-### Termux/host
+1. cria os diretórios de estado e logs;
+2. atualiza os índices de pacotes do Termux;
+3. instala `proot-distro`, `openssh` e `net-tools`;
+4. instala ou verifica o Ubuntu persistente;
+5. cria `/root/workspace` e diretórios do Mobdesk no Ubuntu;
+6. solicita a senha do usuário Termux para o acesso SSH;
+7. cria uma configuração SSH própria do Mobdesk;
+8. instala o launcher global `mobdesk`.
 
-Comandos de preparação:
-
-```bash
-pkg update
-pkg install -y proot-distro openssh net-tools
-```
-
-Pacotes essenciais a instalar ou verificar:
-
-- `proot-distro`;
-- `openssh`;
-- `net-tools`, para detectar o IP local com `ifconfig`;
-
-Comandos de SSH:
+O setup não executa `pkg upgrade` automaticamente. Para solicitar uma atualização completa do Termux:
 
 ```bash
-whoami
-passwd
-sshd
-ss -tln | grep 8022
-ip addr
+mobdesk setup --upgrade-system
 ```
 
-O servidor SSH do Termux deve escutar na porta `8022`. O Mobdesk deve detectar o usuário real e os endereços disponíveis, em vez de assumir um valor fixo.
-
-Comandos de persistência:
-
-```bash
-termux-wake-lock
-sv-enable sshd
-sv up sshd
-sv status sshd
-```
-
-Também deve verificar:
-
-- arquitetura `aarch64`;
-- espaço disponível;
-- versão do Termux;
-- diretórios privados do Termux;
-- existência do Ubuntu;
-- estado de instalações anteriores.
-
-### Ubuntu
-
-Baixar e instalar uma imagem Ubuntu ARM64 persistente via PRoot-Distro.
-
-Comandos de instalação e controle:
-
-```bash
-proot-distro list
-proot-distro install ubuntu
-proot-distro login ubuntu
-proot-distro login ubuntu -- /bin/uname -a
-proot-distro login ubuntu -- bash -lc 'echo ubuntu-ok'
-proot-distro remove ubuntu
-```
-
-O `remove` é destrutivo e não deve ser executado pelo fluxo normal do Mobdesk.
-
-No MVP-1, não instalar ferramentas de desenvolvimento dentro do Ubuntu. A imagem base do Ubuntu e o shell são suficientes para validar a inicialização, o SSH e a entrada no ambiente.
-
-Ferramentas como `git`, `neovim`, `golang`, `python3`, `nodejs`, `npm`, `ripgrep`, `fzf` e `btop` ficam para etapas posteriores.
-
-### Configuração
-
-O setup deve:
-
-- criar o estado do Mobdesk;
-- criar diretórios de projetos, logs e configurações;
-- configurar o usuário do Ubuntu;
-- preparar o `sshd` do Termux;
-- gerar ou verificar chaves do servidor;
-- registrar versões instaladas;
-- ser idempotente;
-- poder continuar após uma falha;
-- mostrar progresso e erros compreensíveis.
-
-Comandos de diretórios e estado:
-
-```bash
-mkdir -p "$HOME/.local/share/mobdesk" \
-  "$HOME/.local/share/mobdesk/logs" \
-  "$HOME/.local/share/mobdesk/config"
-
-proot-distro login ubuntu -- bash -lc \
-  'mkdir -p /root/workspace /root/.config/mobdesk /root/.local/share/mobdesk'
-```
-
-Ao finalizar:
+O estado do setup fica em:
 
 ```text
-Setup concluído.
-Ubuntu instalado.
-Ferramentas básicas configuradas.
-SSH preparado.
-
-Execute: mobdesk start
+$HOME/.local/share/mobdesk/
+├── logs/
+├── config/
+├── state/
+├── password.done
+└── setup.done
 ```
 
 ## `mobdesk start`
 
-O start não deve reinstalar ferramentas. Ele deve:
+O start:
 
-1. verificar se o setup foi concluído;
-2. iniciar o `sshd` no Termux;
-3. detectar usuário e IP do celular;
-4. verificar se o Ubuntu está disponível;
-5. iniciar uma sessão Ubuntu via PRoot;
-6. exibir o comando de acesso remoto;
-7. abrir o shell Ubuntu no celular.
+1. verifica o setup, a senha e o Ubuntu;
+2. garante a configuração SSH dedicada;
+3. ativa o wake-lock quando disponível;
+4. inicia o `sshd` do Mobdesk na porta `8022`;
+5. valida o PID, o processo, a configuração e o banner SSH;
+6. mostra os endereços disponíveis;
+7. abre o shell Ubuntu local.
 
-Comandos principais encapsulados pelo `start`:
-
-```bash
-termux-wake-lock
-sshd
-proot-distro login ubuntu -- bash -l
-```
-
-Para iniciar um projeto sem abrir um shell interativo:
-
-```bash
-proot-distro login ubuntu -- bash -lc \
-  'cd /root/workspace/projeto && npm run dev'
-```
-
-Mensagem esperada:
+O SSH do Mobdesk usa arquivos separados do SSH global do Termux:
 
 ```text
-Servidor iniciado!
-Ubuntu iniciado!
+$HOME/.config/mobdesk/ssh/sshd_config
+$HOME/.local/share/mobdesk/ssh/sshd.pid
+$HOME/.local/share/mobdesk/ssh/sshd.log
+```
 
-Acesse de outro computador:
+Uma conexão remota é direcionada diretamente para o Ubuntu via PRoot:
 
+```bash
 ssh -p 8022 usuario@IP_DO_CELULAR
 ```
 
-O SSH permanece no Termux e o ambiente de trabalho permanece no Ubuntu:
+Para sair apenas do shell Ubuntu, use `exit`. Isso não encerra o servidor SSH.
 
-```text
-Termux
-├── sshd :8022
-└── Mobdesk
-    └── Ubuntu via PRoot
-```
+## `mobdesk stop`
 
-## Comandos do MVP
+O stop lê somente o PID próprio do Mobdesk, confirma que o processo pertence à sua instância SSH e envia `SIGTERM`. Depois aguarda a porta fechar, remove o estado do PID e libera o wake-lock.
 
-```text
-mobdesk setup       prepara Termux, PRoot, Ubuntu e ferramentas
-mobdesk start       inicia SSH, Ubuntu e shell de trabalho
-mobdesk shell       abre o shell Ubuntu sem reiniciar toda a sessão
-mobdesk status      mostra o estado do host e do Ubuntu
-mobdesk doctor      diagnostica instalação, rede e permissões
-mobdesk install     instala uma ferramenta adicional
-```
+Se a porta estiver ocupada por outro processo, o Mobdesk não tenta encerrá-lo.
 
-Comandos que os subcomandos devem encapsular:
+## Estado atual
 
-```bash
-mobdesk shell
-# equivale a:
-proot-distro login ubuntu
+### Entregue
 
-mobdesk install git
-# equivale a:
-proot-distro login ubuntu -- apt install -y git
+- Ubuntu persistente via PRoot-Distro;
+- SSH dedicado do Mobdesk na porta `8022`;
+- acesso local e remoto diretamente ao Ubuntu;
+- detecção de endereços IPv4 via `ifconfig`;
+- autenticação por senha do Termux;
+- setup idempotente e retomável por etapas;
+- logs e PID próprios para o SSH;
+- comandos `setup`, `start` e `stop`;
+- testes unitários para estado e configuração SSH.
 
-mobdesk status
-# consulta:
-ss -tln
-proot-distro list
-proot-distro login ubuntu -- bash -lc 'ps aux'
+### Ainda não implementado
 
-mobdesk doctor
-# consulta:
-uname -a
-df -h
-free -h
-whoami
-ss -tln
-proot-distro list
-```
+- `mobdesk shell`;
+- `mobdesk status`;
+- `mobdesk doctor`;
+- `mobdesk install`;
+- TUI;
+- instalação de ferramentas dentro do Ubuntu;
+- projetos, serviços, sessões persistentes e encaminhamento de portas;
+- autenticação SSH por chave como fluxo assistido;
+- suporte real validado em todos os modelos Android.
 
-## Persistência
+## Limites
 
-Devem permanecer após reiniciar o Mobdesk:
+- PRoot não é VM nem container real;
+- o kernel, a rede, a memória e a bateria continuam sendo os do Android;
+- o Termux pode ser suspenso ou encerrado pelo Android/HyperOS;
+- o SSH não deve ser exposto diretamente na internet;
+- o MVP é destinado a estudo, desenvolvimento e servidores leves.
 
-- Ubuntu instalado;
-- pacotes do Ubuntu;
-- projetos;
-- configurações;
-- sessões e logs;
-- estado do setup.
-
-O Mobdesk não deve apagar dados durante uma execução normal. Reset e remoção do Ubuntu exigem confirmação explícita.
-
-## Fora do MVP
-
-- APK próprio;
-- interface web;
-- VS Code web;
-- Neko e navegador remoto;
-- Nix-on-Droid;
-- Docker real;
-- desktop Linux gráfico;
-- múltiplos usuários;
-- cargas de produção e testes pesados.
-
-## Critérios de sucesso
-
-- o Mobdesk instala o ambiente em um Termux novo;
-- `mobdesk setup` pode ser executado novamente sem quebrar a instalação;
-- `mobdesk start` inicia SSH e Ubuntu;
-- o usuário consegue entrar no Ubuntu pelo celular;
-- outro computador consegue acessar com SSH;
-- Git, Neovim, Go, Python, Node.js e Java ficam disponíveis;
-- o usuário consegue criar, compilar e executar projetos educacionais;
-- falhas exibem uma mensagem útil e podem ser diagnosticadas;
-- nenhum projeto ou configuração é perdido durante o fluxo normal.
+Remover o Ubuntu e apagar projetos não fazem parte do fluxo normal do MVP.

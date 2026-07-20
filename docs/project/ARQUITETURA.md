@@ -1,6 +1,6 @@
 # Arquitetura atual do Mobdesk
 
-Este documento registra a arquitetura escolhida para o Mobdesk. A missão e o valor para o usuário estão em [`MISSAO.md`](MISSAO.md); a evolução do produto está em [`estagios_mobdesk.md`](estagios_mobdesk.md).
+Este documento registra a arquitetura escolhida para o Mobdesk. A missão e o valor para o usuário estão em [`MISSAO.md`](MISSAO.md); a evolução do produto está em [`ROADMAP.md`](ROADMAP.md).
 
 ## Princípio central
 

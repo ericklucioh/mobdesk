@@ -10,7 +10,7 @@ Leia estes documentos:
 - [Missão](../docs/project/MISSAO.md) para entender o problema que estamos resolvendo;
 - [MVP-1](../docs/project/MVP.md) para respeitar o escopo atual;
 - [Arquitetura](../docs/project/ARQUITETURA.md) para entender a separação entre Termux e Ubuntu;
-- [Estágios](../docs/project/estagios_mobdesk.md) para saber o que pertence ao futuro.
+- [Roadmap](../docs/project/ROADMAP.md) para saber o que pertence ao futuro.
 
 ## Ambiente de desenvolvimento
 

@@ -131,17 +131,19 @@ O projeto não depende de root, VM ou Docker no celular. PRoot melhora a compati
 ## Próximos estágios
 
 1. Workstation TUI para setup, start, stop e diagnóstico;
-2. instalação de ferramentas de desenvolvimento sob demanda;
-3. sessões persistentes, projetos e serviços;
-4. central de gerenciamento acessível pelo navegador.
+2. instalação de ferramentas e organização do trabalho;
+3. sessões persistentes, projetos, serviços e acesso remoto confiável;
+4. central local de gerenciamento;
+5. interface de gerenciamento acessível pelo navegador;
+6. plataforma reproduzível e extensível.
 
-Veja o [roadmap em seis estágios](docs/project/estagios_mobdesk.md).
+Veja o [roadmap em seis estágios](docs/project/ROADMAP.md).
 
 ## Documentação
 
 - [MVP-1](docs/project/MVP.md) — escopo e funcionamento atual;
 - [Missão](docs/project/MISSAO.md) — problema, público e valor;
-- [Estágios](docs/project/estagios_mobdesk.md) — evolução do produto;
+- [Roadmap](docs/project/ROADMAP.md) — evolução do produto;
 - [Arquitetura](docs/project/ARQUITETURA.md) — camadas e limites técnicos;
 - [Decisões](docs/project/DECISOES.md) — decisões do projeto;
 - [Ferramentas](docs/project/FERRAMENTAS.md) — catálogo técnico;

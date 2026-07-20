@@ -1,173 +1,119 @@
 # Roadmap do Mobdesk
 
-O roadmap parte da missão em [`MISSAO.md`](MISSAO.md) e mantém Ubuntu via PRoot como ambiente principal, com Termux como host.
+O Mobdesk evolui em seis estágios. Termux continua sendo o host de controle, enquanto Ubuntu via PRoot permanece como o ambiente principal de desenvolvimento.
 
-## MVP 1 — Instalação e central TUI
+## Visão geral
 
-### Objetivo
+| Estágio | Categoria | Nome | Resultado |
+|---|---|---|---|
+| 1 | MVP | Bootstrap Ubuntu | Instalar e acessar Ubuntu persistente por SSH |
+| 2 | MVP | Workstation TUI | Trabalhar com ferramentas textuais organizadas |
+| 3 | MVP | Ambiente persistente | Recuperar sessões, serviços e acesso remoto |
+| 4 | Aplicação | Mobdesk Manager | Administrar projetos, sessões e serviços |
+| 5 | Aplicação | Mobdesk Web | Controlar a workstation pelo navegador |
+| 6 | Plataforma | Mobdesk Platform | Distribuir ambientes reproduzíveis e extensíveis |
 
-O usuário instala o Termux, instala Go, obtém o Mobdesk e executa um comando para configurar o ambiente.
+## Estágio 1 - Bootstrap Ubuntu
 
-```text
-pkg install golang
-go install github.com/usuario/mobdesk/cmd/mobdesk@latest
-mobdesk start
-```
-
-### Escopo
-
-- TUI bonita e simples;
-- verificar arquitetura, espaço e dependências;
-- instalar `proot-distro` no Termux;
-- instalar Ubuntu ARM64 persistente;
-- criar diretórios e estado do Mobdesk;
-- instalar ferramentas selecionadas dentro do Ubuntu;
-- mostrar progresso, logs e erros;
-- abrir shell Ubuntu;
-- repetir a configuração sem destruir o que já existe;
-- retomar uma instalação interrompida.
-
-### Ferramentas iniciais
-
-- Go no Termux para executar o Mobdesk;
-- Bubble Tea, Bubbles e Lip Gloss;
-- PRoot-Distro;
-- Ubuntu ARM64;
-- Git;
-- Neovim ou LazyVim;
-- Python;
-- Node.js;
-- Go;
-- tmux.
-
-### Critério de sucesso
-
-Uma pessoa consegue sair de um Termux recém-instalado para um Ubuntu funcional, com ferramentas básicas, sem precisar conhecer os comandos internos.
-
-## MVP 2 — Workstation TUI
+**Status:** implementação inicial concluída; validação completa em Termux real ainda pendente.
 
 ### Objetivo
 
-Usar o Ubuntu como uma workstation textual completa pelo celular ou SSH.
+Levar o usuário de um Termux com Go instalado a um Ubuntu persistente acessível pelo celular e por SSH.
 
 ### Escopo
 
-- sessão persistente;
-- editor;
-- explorador de arquivos;
+- instalar `proot-distro`, OpenSSH e ferramentas de diagnóstico;
+- instalar ou verificar Ubuntu ARM64 persistente;
+- criar workspace e estado local;
+- configurar SSH dedicado do Mobdesk;
+- iniciar e parar o servidor com segurança;
+- abrir o shell Ubuntu local;
+- detectar endereços locais e manter o wake-lock quando disponível;
+- repetir e retomar o setup sem apagar dados.
+
+### Fora deste estágio
+
+- TUI;
+- instalação de ferramentas de desenvolvimento no Ubuntu;
+- projetos, serviços e sessões persistentes;
+- `status`, `doctor` e `install`;
+- Tailscale e encaminhamento de portas.
+
+## Estágio 2 - Workstation TUI
+
+### Objetivo
+
+Oferecer uma interface textual organizada para trabalhar no Ubuntu pelo celular ou por SSH.
+
+### Escopo
+
+- TUI para setup, start, stop e diagnóstico;
+- múltiplos terminais;
+- editor e explorador de arquivos;
 - Git visual;
 - processos e logs;
-- múltiplos terminais;
-- início de servidores de projeto;
-- atalhos e layout configuráveis;
-- acesso a projetos pelo navegador do celular;
-- opção de iniciar a TUI por atalho do Termux.
+- perfis iniciais de ferramentas;
+- tmux como camada de recuperação.
 
-### Ferramentas
+### Critério
 
-- tmux como camada de recuperação;
-- VTM ou Zellij;
-- Neovim/LazyVim;
-- lf, Yazi, broot ou TUIFI Manager;
-- lazygit;
-- btop ou htop;
-- ripgrep, fd e fzf;
-- Tailscale opcional.
+O usuário consegue estudar e desenvolver no ambiente sem depender de uma sequência extensa de comandos internos.
 
-### Critério de sucesso
-
-O usuário consegue estudar e desenvolver em C, JavaScript, HTML, React, Java, Go e Python sem sair do ambiente pessoal do celular.
-
-## MVP 3 — Ambiente persistente e remoto
+## Estágio 3 - Ambiente persistente e remoto
 
 ### Objetivo
 
-Usar o Mobdesk durante o dia, trocar de rede ou sala e continuar o trabalho sem reconstruir o ambiente.
+Permitir reconectar e continuar o trabalho após troca de rede, desconexão ou tela desligada.
 
 ### Escopo
 
-- SSH;
-- persistência de sessões e projetos;
-- inicialização automática;
-- Termux:Boot ou termux-services;
-- wake-lock;
-- diagnóstico;
-- backups;
+- sessões persistentes com tmux;
+- inicialização automática e recuperação;
+- `status` e `doctor` completos;
+- logs e health checks;
+- Tailscale opcional;
 - encaminhamento de portas;
-- acesso remoto por Tailscale;
-- configuração recomendada do HyperOS;
-- comandos de recuperação.
+- backups;
+- orientações de bateria e execução em segundo plano no HyperOS.
 
-### Critério de sucesso
+### Critério
 
-O usuário consegue iniciar, parar, reconectar e continuar um projeto com seus dados sob controle, sem depender dos computadores da faculdade.
+O usuário consegue iniciar, parar, reconectar e continuar um projeto sem reconstruir o ambiente.
 
-## Aplicação 1 — Mobdesk Manager
+## Estágio 4 - Mobdesk Manager
 
 ### Objetivo
 
-Transformar scripts e comandos em uma central de gerenciamento do Ubuntu e dos projetos.
+Transformar os comandos do Termux, PRoot e Ubuntu em uma central local de gerenciamento.
 
 ### Escopo
 
-- projetos;
-- ambientes;
+- projetos e ambientes;
 - ferramentas instaladas;
-- sessões;
-- serviços;
-- portas;
-- logs;
-- processos;
+- sessões e serviços;
+- portas, túneis e logs;
+- diagnóstico e recuperação;
 - backups;
-- diagnóstico;
-- atualização e recuperação;
-- montagem de diretórios compartilhados;
-- comandos `setup`, `start`, `stop`, `shell`, `status`, `doctor` e `install`.
+- atualização e remoção controladas;
+- configuração persistida e observável.
 
-### Ferramentas
-
-- Go;
-- SQLite;
-- YAML, TOML ou JSON;
-- PRoot-Distro;
-- tmux;
-- Termux:API;
-- Termux:Widget;
-- testes automatizados.
-
-## Aplicação 2 — Mobdesk Web/Desktop
+## Estágio 5 - Mobdesk Web
 
 ### Objetivo
 
-Oferecer uma interface visual leve pelo navegador, sem tentar reproduzir um desktop gráfico completo.
+Oferecer uma interface visual leve pelo navegador, sem tentar reproduzir um desktop Linux completo.
 
 ### Escopo
 
 - dashboard;
-- iniciar e parar projetos;
 - terminal web;
-- logs;
-- arquivos;
-- sessões;
-- aplicações HTTP;
-- túneis;
-- autenticação;
-- permissões;
-- notificações;
-- abertura de editores e ferramentas individuais.
+- arquivos e logs;
+- projetos, sessões e serviços;
+- aplicações HTTP e túneis;
+- autenticação, permissões e notificações.
 
-### Ferramentas
-
-- API Go;
-- frontend TypeScript;
-- React, Vue ou Svelte;
-- WebSocket;
-- xterm.js;
-- SQLite;
-- Tailscale;
-- TLS quando necessário.
-
-## Aplicação 3 — Mobdesk Platform
+## Estágio 6 - Mobdesk Platform
 
 ### Objetivo
 
@@ -175,41 +121,29 @@ Distribuir uma workstation móvel reproduzível, extensível e fácil de manter.
 
 ### Escopo
 
-- instalação assistida;
-- perfis de usuário e dispositivo;
-- ambientes por projeto;
-- catálogo de ferramentas;
-- configurações declarativas;
-- atualizações versionadas;
-- rollback;
+- instalação assistida e configurações declarativas;
+- perfis de dispositivo e projeto;
+- catálogo de ferramentas e extensões;
+- atualizações versionadas e rollback;
 - backup e restauração;
-- plugins;
-- API para automação e agentes;
 - suporte a múltiplos dispositivos;
-- APK complementar;
-- navegador remoto opcional;
-- imagens ARM64 próprias;
-- CI/CD e releases.
+- API, plugins e automação;
+- imagens ARM64 próprias e releases;
+- Nix-on-Droid, Neko e outras integrações apenas como opções futuras.
 
-### Ferramentas possíveis
+## Princípios de evolução
 
-- Go;
-- frontend TypeScript;
-- WebSocket e WebRTC;
-- Nix-on-Droid e Home Manager como camada opcional;
-- GitHub Actions;
-- Neko para navegador remoto;
-- Tailscale;
-- observabilidade;
-- testes unitários, integração, E2E e benchmarks.
+1. Cada estágio deve preservar o funcionamento do anterior.
+2. A CLI e a TUI devem usar os mesmos serviços internos.
+3. Não antecipar interface web, plugins, Nix ou múltiplos usuários sem necessidade validada.
+4. O próximo estágio só começa depois de o fluxo atual ser validado no Termux real.
 
-## Fora do MVP
+## Fora do núcleo
 
 - Docker real;
-- desktop Linux gráfico completo;
-- VM;
+- VM Linux;
+- desktop gráfico completo;
 - Nix como requisito;
-- Neko;
+- Neko como requisito;
 - múltiplos usuários;
-- cargas de produção e testes pesados;
-- suporte a todas as ferramentas existentes.
+- cargas de produção pesada.
