@@ -1,13 +1,13 @@
 package cobra
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"net"
 	"os"
 	"os/exec"
 	"os/user"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -53,8 +53,7 @@ func runStart(ctx context.Context) error {
 	if err := runCommand(ctx, "proot-distro", "login", "ubuntu", "--", "true"); err != nil {
 		return fmt.Errorf("Ubuntu não está disponível; execute mobdesk setup: %w", err)
 	}
-	configChanged, err := ensureSSHUbuntuCommand()
-	if err != nil {
+	if err := ensureMobdeskSSH(); err != nil {
 		return err
 	}
 	if err := ensureIfconfig(ctx); err != nil {
@@ -62,20 +61,9 @@ func runStart(ctx context.Context) error {
 	}
 
 	startWakeLock()
-	if !portOpen(ctx, sshPort) {
-		if err := startSSH(ctx); err != nil {
-			return err
-		}
-		if !waitForPort(ctx, sshPort, 3*time.Second) {
-			return fmt.Errorf("sshd não ficou disponível na porta %d", sshPort)
-		}
-	} else if configChanged {
-		if err := reloadSSH(); err != nil {
-			return err
-		}
-		fmt.Printf("Servidor SSH recarregado na porta %d.\n", sshPort)
-	} else {
-		fmt.Printf("Servidor SSH já está ativo na porta %d.\n", sshPort)
+	if err := ensureSSHRunning(ctx); err != nil {
+		unlockWakeLock()
+		return err
 	}
 
 	printAccessInstructions()
@@ -84,11 +72,14 @@ func runStart(ctx context.Context) error {
 }
 
 func runStop(ctx context.Context) error {
-	prefix := os.Getenv("PREFIX")
-	if prefix == "" {
-		prefix = "/data/data/com.termux/files/usr"
+	lock, err := acquireSSHLock()
+	if err != nil {
+		return err
 	}
-	pidPath := filepath.Join(prefix, "var", "run", "sshd.pid")
+	defer lock.release()
+
+	paths := mobdeskSSHPaths()
+	pidPath := paths.pid
 
 	pidBytes, err := os.ReadFile(pidPath)
 	if os.IsNotExist(err) {
@@ -97,7 +88,7 @@ func runStop(ctx context.Context) error {
 			fmt.Println("Servidor SSH já está parado.")
 			return nil
 		}
-		return fmt.Errorf("a porta %d está ocupada, mas o PID do sshd não foi encontrado em %s", sshPort, pidPath)
+		return fmt.Errorf("a porta %d está ocupada, mas o PID do Mobdesk não foi encontrado em %s", sshPort, pidPath)
 	}
 	if err != nil {
 		return fmt.Errorf("ler PID do sshd: %w", err)
@@ -111,8 +102,18 @@ func runStop(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("localizar processo do sshd: %w", err)
 	}
+	if !processIsMobdeskSSH(pid, paths.config) {
+		if !portOpen(ctx, sshPort) {
+			_ = os.Remove(pidPath)
+			unlockWakeLock()
+			fmt.Println("Servidor SSH já estava parado; estado obsoleto removido.")
+			return nil
+		}
+		return fmt.Errorf("o PID %d não pertence ao servidor SSH do Mobdesk", pid)
+	}
 	if err := process.Signal(syscall.SIGTERM); err != nil {
 		if !portOpen(ctx, sshPort) {
+			_ = os.Remove(pidPath)
 			unlockWakeLock()
 			fmt.Println("Servidor SSH já estava parado.")
 			return nil
@@ -123,41 +124,10 @@ func runStop(ctx context.Context) error {
 	if !waitForPortClosed(ctx, sshPort, 3*time.Second) {
 		return fmt.Errorf("sshd recebeu o sinal de parada, mas a porta %d ainda está ativa", sshPort)
 	}
+	_ = os.Remove(pidPath)
 	unlockWakeLock()
 	fmt.Println("Servidor SSH parado.")
 	return nil
-}
-
-func ensureSSHUbuntuCommand() (bool, error) {
-	prefix := os.Getenv("PREFIX")
-	if prefix == "" {
-		prefix = "/data/data/com.termux/files/usr"
-	}
-	shellPath := filepath.Join(prefix, "bin", "sh")
-	prootPath := filepath.Join(prefix, "bin", "proot-distro")
-	wrapperPath := filepath.Join(prefix, "bin", "mobdesk-ssh-shell")
-	configPath := filepath.Join(prefix, "etc", "ssh", "sshd_config")
-
-	wrapper := fmt.Sprintf("#!%s\nexec %s login ubuntu -- bash -l\n", shellPath, prootPath)
-	if err := os.WriteFile(wrapperPath, []byte(wrapper), 0o755); err != nil {
-		return false, fmt.Errorf("criar shell SSH do Ubuntu: %w", err)
-	}
-
-	config, err := os.ReadFile(configPath)
-	if err != nil && !os.IsNotExist(err) {
-		return false, fmt.Errorf("ler configuração do sshd: %w", err)
-	}
-	configText := string(config)
-	directive := "ForceCommand " + wrapperPath
-	if strings.Contains(configText, directive) {
-		return false, validateSSHConfig(configPath)
-	}
-
-	configText = strings.TrimRight(configText, "\n") + "\n\n# Mobdesk: abrir sessões SSH diretamente no Ubuntu via PRoot.\n" + directive + "\n"
-	if err := os.WriteFile(configPath, []byte(configText), 0o600); err != nil {
-		return false, fmt.Errorf("configurar SSH para abrir o Ubuntu: %w", err)
-	}
-	return true, validateSSHConfig(configPath)
 }
 
 func validateSSHConfig(configPath string) error {
@@ -166,30 +136,6 @@ func validateSSHConfig(configPath string) error {
 	command.Stderr = os.Stderr
 	if err := command.Run(); err != nil {
 		return fmt.Errorf("configuração do sshd inválida: %w", err)
-	}
-	return nil
-}
-
-func reloadSSH() error {
-	prefix := os.Getenv("PREFIX")
-	if prefix == "" {
-		prefix = "/data/data/com.termux/files/usr"
-	}
-	pidPath := filepath.Join(prefix, "var", "run", "sshd.pid")
-	pidBytes, err := os.ReadFile(pidPath)
-	if err != nil {
-		return fmt.Errorf("recarregar sshd: ler PID em %s: %w", pidPath, err)
-	}
-	pid, err := strconv.Atoi(strings.TrimSpace(string(pidBytes)))
-	if err != nil {
-		return fmt.Errorf("recarregar sshd: PID inválido: %w", err)
-	}
-	process, err := os.FindProcess(pid)
-	if err != nil {
-		return fmt.Errorf("recarregar sshd: localizar processo: %w", err)
-	}
-	if err := process.Signal(syscall.SIGHUP); err != nil {
-		return fmt.Errorf("recarregar sshd: enviar SIGHUP: %w", err)
 	}
 	return nil
 }
@@ -215,7 +161,11 @@ func unlockWakeLock() {
 
 func startSSH(ctx context.Context) error {
 	fmt.Printf("Iniciando servidor SSH na porta %d...\n", sshPort)
-	command := exec.CommandContext(ctx, "sshd")
+	paths := mobdeskSSHPaths()
+	if !mobdeskSSHProcess() {
+		_ = os.Remove(paths.pid)
+	}
+	command := exec.CommandContext(ctx, "sshd", "-f", paths.config, "-E", paths.log)
 	command.Stdin = os.Stdin
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
@@ -223,6 +173,42 @@ func startSSH(ctx context.Context) error {
 		return fmt.Errorf("iniciar sshd: %w", err)
 	}
 	return nil
+}
+
+func ensureSSHRunning(ctx context.Context) error {
+	lock, err := acquireSSHLock()
+	if err != nil {
+		return err
+	}
+	defer lock.release()
+
+	if mobdeskSSHProcess() {
+		if !sshPortResponds(ctx, sshPort) {
+			return fmt.Errorf("o processo SSH do Mobdesk existe, mas a porta %d não responde como SSH", sshPort)
+		}
+		fmt.Printf("Servidor SSH já está ativo na porta %d.\n", sshPort)
+		return nil
+	}
+	if portOpen(ctx, sshPort) {
+		return fmt.Errorf("a porta %d está ocupada por outro processo", sshPort)
+	}
+	if err := startSSH(ctx); err != nil {
+		return err
+	}
+	if !waitForSSH(ctx, sshPort, 3*time.Second) {
+		return fmt.Errorf("sshd não ficou disponível na porta %d", sshPort)
+	}
+	return nil
+}
+
+func mobdeskSSHProcess() bool {
+	paths := mobdeskSSHPaths()
+	bytes, err := os.ReadFile(paths.pid)
+	if err != nil {
+		return false
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(string(bytes)))
+	return err == nil && processIsMobdeskSSH(pid, paths.config)
 }
 
 func portOpen(ctx context.Context, port int) bool {
@@ -235,10 +221,10 @@ func portOpen(ctx context.Context, port int) bool {
 	return true
 }
 
-func waitForPort(ctx context.Context, port int, timeout time.Duration) bool {
+func waitForSSH(ctx context.Context, port int, timeout time.Duration) bool {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
-		if portOpen(ctx, port) {
+		if sshPortResponds(ctx, port) {
 			return true
 		}
 		select {
@@ -247,7 +233,19 @@ func waitForPort(ctx context.Context, port int, timeout time.Duration) bool {
 		case <-time.After(100 * time.Millisecond):
 		}
 	}
-	return portOpen(ctx, port)
+	return sshPortResponds(ctx, port)
+}
+
+func sshPortResponds(ctx context.Context, port int) bool {
+	dialer := net.Dialer{Timeout: 250 * time.Millisecond}
+	connection, err := dialer.DialContext(ctx, "tcp", net.JoinHostPort("127.0.0.1", strconv.Itoa(port)))
+	if err != nil {
+		return false
+	}
+	defer connection.Close()
+	_ = connection.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+	banner, err := bufio.NewReader(connection).ReadString('\n')
+	return err == nil && strings.HasPrefix(banner, "SSH-")
 }
 
 func waitForPortClosed(ctx context.Context, port int, timeout time.Duration) bool {

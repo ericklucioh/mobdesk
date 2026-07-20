@@ -24,7 +24,6 @@ Bootstrap inicial:
 
 ```bash
 pkg update
-pkg upgrade -y
 pkg install -y golang
 go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
 mobdesk setup
@@ -43,7 +42,6 @@ Comandos de preparação:
 
 ```bash
 pkg update
-pkg upgrade -y
 pkg install -y proot-distro openssh net-tools
 ```
 

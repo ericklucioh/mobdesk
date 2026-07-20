@@ -10,7 +10,7 @@ O celular executa o ambiente de desenvolvimento. O usuário mantém seus projeto
 Android/HyperOS
 └── Termux — host e integração com Android
     ├── Go/Mobdesk
-    ├── OpenSSH
+    ├── OpenSSH gerenciado pelo Mobdesk
     ├── Tailscale
     ├── wake-lock e inicialização
     └── PRoot-Distro
@@ -34,6 +34,7 @@ O Termux é o host de controle. Ele fornece:
 - instalação de pacotes básicos com `pkg`;
 - instalação e controle do PRoot-Distro;
 - OpenSSH;
+- uma instância SSH própria do Mobdesk, com configuração, PID e logs separados do SSH global do Termux;
 - Tailscale e rede;
 - wake-lock e inicialização;
 - acesso às APIs do Android por Termux:API;

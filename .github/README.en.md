@@ -79,7 +79,6 @@ Open Termux and run:
 
 ```bash
 pkg update
-pkg upgrade -y
 pkg install -y golang git
 go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
 ```
@@ -162,7 +161,7 @@ Use SSH only on trusted networks. Do not expose port `8022` directly to the publ
 - [Current MVP](../docs/project/MVP.md)
 - [Roadmap](../docs/project/ROADMAP.md)
 - [Architecture and limitations](../docs/project/ARQUITETURA.md)
-- [Contributing](../docs/CONTRIBUINDO.md)
+- [Contributing](CONTRIBUTING.md)
 
 ## License
 

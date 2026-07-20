@@ -16,7 +16,7 @@ O Termux controla o aparelho. O Ubuntu persistente é o ambiente de trabalho. Ao
 
 - instalação automatizada a partir de um Termux praticamente virgem;
 - Ubuntu persistente via PRoot-Distro;
-- servidor SSH do Termux na porta `8022`;
+- servidor SSH próprio do Mobdesk na porta `8022`;
 - acesso remoto direto ao Ubuntu;
 - detecção do IP local via `ifconfig`;
 - autenticação por senha;
@@ -32,13 +32,14 @@ Instale o Termux por uma fonte confiável e abra o aplicativo. Depois:
 
 ```bash
 pkg update
-pkg upgrade -y
 pkg install -y golang git
 go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
 ./go/bin/mobdesk setup
 ```
 
 Na primeira execução, o binário é chamado diretamente pelo caminho criado pelo Go. Depois do setup, o launcher global permite usar `mobdesk` normalmente.
+
+O setup instala apenas as dependências necessárias. Para atualizar todo o ambiente Termux explicitamente, use `mobdesk setup --upgrade-system`.
 
 Durante o setup, o Mobdesk irá:
 
@@ -112,7 +113,7 @@ make reset-env
 
 Esse comando remove os volumes do Termux/Ubuntu. O código local não é apagado. A instalação do Ubuntu ocupa aproximadamente `1,5 GB` nos volumes persistentes.
 
-Consulte [CONTRIBUINDO.md](docs/CONTRIBUINDO.md) antes de enviar alterações.
+Consulte [CONTRIBUINDO.md](.github/CONTRIBUTING.md) antes de enviar alterações.
 
 ## Arquitetura
 
@@ -144,7 +145,7 @@ Veja o [roadmap em seis estágios](docs/project/estagios_mobdesk.md).
 - [Arquitetura](docs/project/ARQUITETURA.md) — camadas e limites técnicos;
 - [Decisões](docs/project/DECISOES.md) — decisões do projeto;
 - [Ferramentas](docs/project/FERRAMENTAS.md) — catálogo técnico;
-- [Como contribuir](docs/CONTRIBUINDO.md) — fluxo para colaboradores.
+- [Como contribuir](.github/CONTRIBUTING.md) — fluxo para colaboradores.
 
 ## Licença
 

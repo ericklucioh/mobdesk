@@ -24,11 +24,11 @@ Termux é o host de controle; Ubuntu persistente via PRoot é o runtime principa
 - Go declarado: `1.26.5`;
 - entrada: `cmd/mobdesk/main.go`;
 - TUI ainda está no início de implementação;
-- missão: `docs/MISSAO.md`;
-- arquitetura: `docs/ARQUITETURA.md`;
-- roadmap: `docs/ROADMAP.md`;
-- decisões: `docs/DECISOES.md`;
-- ferramentas: `docs/FERRAMENTAS.md`.
+- missão: `docs/project/MISSAO.md`;
+- arquitetura: `docs/project/ARQUITETURA.md`;
+- roadmap: `docs/project/ROADMAP.md`;
+- decisões: `docs/project/DECISOES.md`;
+- ferramentas: `docs/project/FERRAMENTAS.md`.
 
 ## Dependências e papéis
 
@@ -112,4 +112,4 @@ Enquanto ainda não existirem testes ou pacotes `internal`, executar apenas os c
 
 ## Documentação
 
-Antes de mudar arquitetura ou escopo, ler `docs/MISSAO.md`. Registrar decisões em `docs/DECISOES.md`, arquitetura em `docs/ARQUITETURA.md` e mudanças de escopo em `docs/ROADMAP.md`.
+Antes de mudar arquitetura ou escopo, ler `docs/project/MISSAO.md`. Registrar decisões em `docs/project/DECISOES.md`, arquitetura em `docs/project/ARQUITETURA.md` e mudanças de escopo em `docs/project/ROADMAP.md`.

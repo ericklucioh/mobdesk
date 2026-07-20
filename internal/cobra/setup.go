@@ -19,44 +19,99 @@ var setupCmd = &cobra.Command{
 	},
 }
 
-func runSetup(ctx context.Context) error {
-	if err := os.MkdirAll(os.ExpandEnv("$HOME/.local/share/mobdesk/logs"), 0o700); err != nil {
-		return fmt.Errorf("criar diretórios do Mobdesk: %w", err)
-	}
-	if err := os.MkdirAll(os.ExpandEnv("$HOME/.local/share/mobdesk/config"), 0o700); err != nil {
-		return fmt.Errorf("criar configuração do Mobdesk: %w", err)
-	}
+var setupUpgradeSystem bool
 
+func init() {
+	setupCmd.Flags().BoolVar(&setupUpgradeSystem, "upgrade-system", false, "atualizar todos os pacotes do Termux antes da instalação")
+}
+
+func runSetup(ctx context.Context) error {
 	termuxPackages := []string{
 		// O MVP-1 precisa apenas do runtime Ubuntu, SSH e diagnóstico de rede.
 		"proot-distro", "openssh", "net-tools",
 	}
-	if err := runCommand(ctx, "pkg", "update"); err != nil {
-		return err
-	}
-	if err := runCommand(ctx, "pkg", "upgrade", "-y", "-o", "Dpkg::Options::=--force-confold"); err != nil {
-		return err
-	}
-	args := append([]string{"install", "-y", "-o", "Dpkg::Options::=--force-confold"}, termuxPackages...)
-	if err := runCommand(ctx, "pkg", args...); err != nil {
-		return err
+
+	if !setupPhaseDone("directories") {
+		if err := os.MkdirAll(os.ExpandEnv("$HOME/.local/share/mobdesk/logs"), 0o700); err != nil {
+			return fmt.Errorf("criar diretórios do Mobdesk: %w", err)
+		}
+		if err := os.MkdirAll(os.ExpandEnv("$HOME/.local/share/mobdesk/config"), 0o700); err != nil {
+			return fmt.Errorf("criar configuração do Mobdesk: %w", err)
+		}
+		if err := markSetupPhase("directories"); err != nil {
+			return err
+		}
 	}
 
-	if err := ensureUbuntu(ctx); err != nil {
-		return err
+	if !setupPhaseDone("packages-updated") {
+		if err := runCommand(ctx, "pkg", "update"); err != nil {
+			return err
+		}
+		if err := markSetupPhase("packages-updated"); err != nil {
+			return err
+		}
+	}
+	if setupUpgradeSystem && !setupPhaseDone("system-upgraded") {
+		if err := runCommand(ctx, "pkg", "upgrade", "-y", "-o", "Dpkg::Options::=--force-confold"); err != nil {
+			return err
+		}
+		if err := markSetupPhase("system-upgraded"); err != nil {
+			return err
+		}
+	}
+	if !setupPhaseDone("packages-installed") {
+		args := append([]string{"install", "-y", "-o", "Dpkg::Options::=--force-confold"}, termuxPackages...)
+		if err := runCommand(ctx, "pkg", args...); err != nil {
+			return err
+		}
+		if err := markSetupPhase("packages-installed"); err != nil {
+			return err
+		}
 	}
 
-	if err := runUbuntu(ctx, "mkdir", "-p", "/root/workspace", "/root/.config/mobdesk", "/root/.local/share/mobdesk"); err != nil {
-		return err
+	if !setupPhaseDone("ubuntu-installed") {
+		if err := ensureUbuntu(ctx); err != nil {
+			return err
+		}
+		if err := markSetupPhase("ubuntu-installed"); err != nil {
+			return err
+		}
 	}
-	if err := ensurePassword(ctx); err != nil {
-		return err
+
+	if !setupPhaseDone("workspace-created") {
+		if err := runUbuntu(ctx, "mkdir", "-p", "/root/workspace", "/root/.config/mobdesk", "/root/.local/share/mobdesk"); err != nil {
+			return err
+		}
+		if err := markSetupPhase("workspace-created"); err != nil {
+			return err
+		}
+	}
+	if !setupPhaseDone("password-configured") {
+		if err := ensurePassword(ctx); err != nil {
+			return err
+		}
+		if err := markSetupPhase("password-configured"); err != nil {
+			return err
+		}
+	}
+	if !setupPhaseDone("ssh-configured") {
+		if err := ensureMobdeskSSH(); err != nil {
+			return err
+		}
+		if err := markSetupPhase("ssh-configured"); err != nil {
+			return err
+		}
+	}
+	if !setupPhaseDone("launcher-installed") {
+		if err := installLauncher(); err != nil {
+			return err
+		}
+		if err := markSetupPhase("launcher-installed"); err != nil {
+			return err
+		}
 	}
 	if err := os.WriteFile(os.ExpandEnv("$HOME/.local/share/mobdesk/setup.done"), []byte("setup concluido\n"), 0o600); err != nil {
 		return fmt.Errorf("registrar setup concluído: %w", err)
-	}
-	if err := installLauncher(); err != nil {
-		return err
 	}
 
 	fmt.Println("\nSetup concluído.")
@@ -110,9 +165,15 @@ func installLauncher() error {
 		if info.Mode()&os.ModeSymlink == 0 {
 			return fmt.Errorf("não foi possível criar o comando mobdesk: %s já existe e não é um link", launcher)
 		}
-		if err := os.Remove(launcher); err != nil {
-			return fmt.Errorf("atualizar comando mobdesk: %w", err)
+		linkTarget, err := os.Readlink(launcher)
+		if err != nil {
+			return fmt.Errorf("ler comando mobdesk existente: %w", err)
 		}
+		if linkTarget == executable {
+			fmt.Printf("Comando global já aponta para: %s\n", executable)
+			return nil
+		}
+		return fmt.Errorf("não foi possível substituir o comando mobdesk: %s aponta para %s", launcher, linkTarget)
 	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("verificar comando mobdesk: %w", err)
 	}

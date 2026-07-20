@@ -7,10 +7,10 @@ Obrigado por considerar contribuir com o Mobdesk. O projeto está construindo um
 Leia estes documentos:
 
 - [README](../README.md) para instalar e executar o projeto;
-- [Missão](project/MISSAO.md) para entender o problema que estamos resolvendo;
-- [MVP-1](project/MVP.md) para respeitar o escopo atual;
-- [Arquitetura](project/ARQUITETURA.md) para entender a separação entre Termux e Ubuntu;
-- [Estágios](project/estagios_mobdesk.md) para saber o que pertence ao futuro.
+- [Missão](../docs/project/MISSAO.md) para entender o problema que estamos resolvendo;
+- [MVP-1](../docs/project/MVP.md) para respeitar o escopo atual;
+- [Arquitetura](../docs/project/ARQUITETURA.md) para entender a separação entre Termux e Ubuntu;
+- [Estágios](../docs/project/estagios_mobdesk.md) para saber o que pertence ao futuro.
 
 ## Ambiente de desenvolvimento
 
@@ -69,7 +69,7 @@ Quando a alteração envolver Termux, SSH ou PRoot, valide também no Termux rea
 - `internal/tui/`: interface Bubble Tea quando implementada;
 - `internal/runtime/`: execução Termux/Ubuntu;
 - `internal/install/`: instalação e atualização;
-- `docs/`: missão, decisões, arquitetura e roadmap.
+- `docs/project/`: missão, decisões, arquitetura e roadmap.
 
 Introduza novos pacotes apenas quando houver comportamento real para organizar. Prefira a biblioteca padrão antes de adicionar dependências.
 
