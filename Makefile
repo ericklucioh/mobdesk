@@ -4,7 +4,7 @@ COMPOSE ?= docker compose
 SERVICE ?= termux
 TERMUX_ARCH ?= latest
 
-.PHONY: help termux build-image shell test vet build run dev clean-env reset-env clean-image arm64-image
+.PHONY: help termux build-image shell test integration-test vet build run dev clean-env reset-env clean-image arm64-image
 
 help:
 	@printf '%s\n' \
@@ -12,6 +12,7 @@ help:
 		'make termux       - abre um shell interativo no ambiente' \
 		'make shell        - abre um shell no container existente' \
 		'make test         - executa go test ./...' \
+		'make integration-test - testa o fluxo Termux/SSH no Docker' \
 		'make vet          - executa go vet ./...' \
 		'make build        - compila o Mobdesk dentro do container' \
 		'make run          - executa o binário do Mobdesk' \
@@ -32,6 +33,9 @@ shell:
 
 test:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm $(SERVICE) bash -lc 'go test ./...'
+
+integration-test:
+	TERMUX_ARCH=$(TERMUX_ARCH) COMPOSE="$(COMPOSE)" ./scripts/test-termux.sh
 
 vet:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm $(SERVICE) bash -lc 'go vet ./...'

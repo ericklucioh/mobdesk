@@ -62,6 +62,14 @@ make build-image
 
 Quando a alteração envolver Termux, SSH ou PRoot, valide também no Termux real. O Docker não reproduz completamente Android, permissões, rede, bateria ou restrições do kernel.
 
+Para validar automaticamente o fluxo principal em um userland Termux descartável:
+
+```bash
+make integration-test
+```
+
+Esse smoke test não substitui a validação em um aparelho Android.
+
 ## Organização do código
 
 - `cmd/mobdesk/`: entrada do executável;

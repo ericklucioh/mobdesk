@@ -103,7 +103,10 @@ Verificações:
 make test
 make vet
 make build
+make integration-test  # smoke test do Termux/SSH no Docker
 ```
+
+O teste de integração cria volumes descartáveis, instala o Ubuntu, testa `setup`, `start`, acesso SSH e `stop`, e os remove ao terminar. Ele não reproduz bateria, permissões, wake-lock ou o kernel do Android.
 
 Para apagar o ambiente persistente e começar do zero:
 

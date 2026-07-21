@@ -21,6 +21,6 @@ services:
 
 volumes:
   termux-home:
-    name: mobdesk_termux_home
+    name: ${MOBDESK_TERMUX_HOME_VOLUME:-mobdesk_termux_home}
   termux-prefix:
-    name: mobdesk_termux_prefix
+    name: ${MOBDESK_TERMUX_PREFIX_VOLUME:-mobdesk_termux_prefix}
