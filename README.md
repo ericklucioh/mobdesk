@@ -23,6 +23,7 @@ O Termux controla o aparelho. O Ubuntu persistente é o ambiente de trabalho. Ao
 - comandos `setup`, `start`, `stop`, `shell`, `status` e `install`;
 - instalação idempotente de Go, Python, Node.js, C, C++ e Lua no Ubuntu;
 - status humano e JSON para automação e futura TUI;
+- versão local e atualização segura do binário por release;
 - execução no celular ou remotamente pelo computador;
 - ambiente reproduzível para desenvolvimento e testes.
 
@@ -49,6 +50,17 @@ mobdesk install c
 mobdesk install cpp
 mobdesk install lua
 ```
+
+Consulte a versão compilada e verifique atualizações:
+
+```bash
+mobdesk version --json
+mobdesk update --check
+mobdesk update
+```
+
+Builds locais aparecem como `dev` e podem ser atualizados para a última release
+estável. Builds do canal `stage` procuram releases `test-v*`.
 
 ## Instalação no Termux
 

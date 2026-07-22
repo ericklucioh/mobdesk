@@ -16,4 +16,6 @@ func init() {
 	RootCmd.AddCommand(statusCmd)
 	RootCmd.AddCommand(installCmd)
 	RootCmd.AddCommand(shellCmd)
+	RootCmd.AddCommand(versionCmd)
+	RootCmd.AddCommand(updateCmd)
 }
