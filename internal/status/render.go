@@ -49,6 +49,23 @@ func RenderText(w io.Writer, value SystemStatus) {
 	fmt.Fprintf(w, "  Bateria:     %s\n", batteryText(value.Battery))
 	fmt.Fprintf(w, "  Wi-Fi:       %s\n", wifiText(value.WiFi))
 
+	if len(value.Installations) > 0 {
+		fmt.Fprintln(w, "\nInstalações")
+		for _, installation := range value.Installations {
+			version := installation.Version
+			if version == "" {
+				version = installation.State
+			}
+			fmt.Fprintf(w, "  %s: %s (%s)\n", installation.Name, installation.State, version)
+			if installation.LastError != "" {
+				fmt.Fprintf(w, "    Erro: %s\n", installation.LastError)
+			}
+			if installation.LogPath != "" {
+				fmt.Fprintf(w, "    Log:  %s\n", installation.LogPath)
+			}
+		}
+	}
+
 	fmt.Fprintln(w, "\nAlertas")
 	fmt.Fprintf(w, "  OK: %d | avisos: %d | erros: %d | ausentes: %d | desconhecidos: %d\n",
 		value.Alerts.OK, value.Alerts.Warnings, value.Alerts.Errors, value.Alerts.Missing, value.Alerts.Unknown)

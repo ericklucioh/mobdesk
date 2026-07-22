@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -74,6 +75,7 @@ func Collect(ctx context.Context, options Options) SystemStatus {
 		Network:       collectNetwork(ctx, o),
 	}
 	result.Battery, result.WiFi = collectTermuxAPIs(ctx, o)
+	result.Installations = collectInstallations(o)
 	result.Alerts = summarize(result)
 	result.Overall = overallState(result)
 	return result
@@ -329,6 +331,33 @@ func collectWiFi(ctx context.Context, o Options) WiFiStatus {
 	return result
 }
 
+func collectInstallations(o Options) []InstallationStatus {
+	directory := filepath.Join(o.Home, ".local", "share", "mobdesk", "state", "installations")
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		return []InstallationStatus{}
+	}
+	result := make([]InstallationStatus, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+		payload, err := os.ReadFile(filepath.Join(directory, entry.Name()))
+		if err != nil {
+			continue
+		}
+		var installation InstallationStatus
+		if err := json.Unmarshal(payload, &installation); err != nil || installation.Name == "" {
+			continue
+		}
+		result = append(result, installation)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Name < result[j].Name
+	})
+	return result
+}
+
 func collectTermuxAPIs(ctx context.Context, o Options) (BatteryStatus, WiFiStatus) {
 	var (
 		battery BatteryStatus
@@ -420,6 +449,16 @@ func summarize(status SystemStatus) AlertSummary {
 		case CheckMissing:
 			result.Missing++
 		case CheckUnknown:
+			result.Unknown++
+		}
+	}
+	for _, installation := range status.Installations {
+		switch installation.State {
+		case "installed":
+			result.OK++
+		case "failed", "partial":
+			result.Warnings++
+		default:
 			result.Unknown++
 		}
 	}

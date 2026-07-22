@@ -73,6 +73,66 @@ mobdesk setup > "$TEST_DIR/mobdesk-setup-second.log" 2>&1
 ! grep -q '\$ pkg update' "$TEST_DIR/mobdesk-setup-second.log"
 ! grep -q '\$ pkg upgrade' "$TEST_DIR/mobdesk-setup-second.log"
 
+# As três primeiras linguagens devem ser instaláveis no Ubuntu e utilizáveis.
+mobdesk install go > "$TEST_DIR/install-go.log"
+mobdesk install python > "$TEST_DIR/install-python.log"
+mobdesk install node > "$TEST_DIR/install-node.log"
+mobdesk install c > "$TEST_DIR/install-c.log"
+mobdesk install cpp > "$TEST_DIR/install-cpp.log"
+mobdesk install lua > "$TEST_DIR/install-lua.log"
+grep -q 'Lua' "$TEST_DIR/install-lua.log"
+
+proot-distro login ubuntu -- tee /root/workspace/hello.go < scripts/fixtures/hello/go/main.go >/dev/null
+proot-distro login ubuntu -- tee /root/workspace/hello.py < scripts/fixtures/hello/python/main.py >/dev/null
+proot-distro login ubuntu -- tee /root/workspace/hello.js < scripts/fixtures/hello/node/main.js >/dev/null
+proot-distro login ubuntu -- tee /root/workspace/hello.c < scripts/fixtures/hello/c/main.c >/dev/null
+proot-distro login ubuntu -- tee /root/workspace/hello.cpp < scripts/fixtures/hello/cpp/main.cpp >/dev/null
+proot-distro login ubuntu -- tee /root/workspace/hello.lua < scripts/fixtures/hello/lua/main.lua >/dev/null
+
+proot-distro login ubuntu -- go build -o /tmp/mobdesk-hello-go /root/workspace/hello.go
+proot-distro login ubuntu -- clang /root/workspace/hello.c -o /tmp/mobdesk-hello-c
+proot-distro login ubuntu -- clang++ /root/workspace/hello.cpp -o /tmp/mobdesk-hello-cpp
+test "$(proot-distro login ubuntu -- /tmp/mobdesk-hello-go)" = "hello-go"
+test "$(proot-distro login ubuntu -- python3 /root/workspace/hello.py)" = "hello-python"
+test "$(proot-distro login ubuntu -- node /root/workspace/hello.js)" = "hello-node"
+test "$(proot-distro login ubuntu -- /tmp/mobdesk-hello-c)" = "hello-c"
+test "$(proot-distro login ubuntu -- /tmp/mobdesk-hello-cpp)" = "hello-cpp"
+test "$(proot-distro login ubuntu -- lua5.4 /root/workspace/hello.lua)" = "hello-lua"
+
+# Repetir a instalação não deve atualizar índices nem reinstalar pacotes.
+mobdesk install go > "$TEST_DIR/install-go-second.log"
+mobdesk install python > "$TEST_DIR/install-python-second.log"
+mobdesk install node > "$TEST_DIR/install-node-second.log"
+mobdesk install c > "$TEST_DIR/install-c-second.log"
+mobdesk install cpp > "$TEST_DIR/install-cpp-second.log"
+mobdesk install lua > "$TEST_DIR/install-lua-second.log"
+grep -q 'já estava instalada' "$TEST_DIR/install-go-second.log"
+grep -q 'já estava instalada' "$TEST_DIR/install-python-second.log"
+grep -q 'já estava instalada' "$TEST_DIR/install-node-second.log"
+grep -q 'já estava instalada' "$TEST_DIR/install-c-second.log"
+grep -q 'já estava instalada' "$TEST_DIR/install-cpp-second.log"
+grep -q 'já estava instalada' "$TEST_DIR/install-lua-second.log"
+test -f "$HOME/.local/share/mobdesk/state/installations/go.json"
+test -f "$HOME/.local/share/mobdesk/state/installations/python.json"
+test -f "$HOME/.local/share/mobdesk/state/installations/node.json"
+test -f "$HOME/.local/share/mobdesk/state/installations/c.json"
+test -f "$HOME/.local/share/mobdesk/state/installations/cpp.json"
+test -f "$HOME/.local/share/mobdesk/state/installations/lua.json"
+test -f "$HOME/.local/share/mobdesk/logs/install/go.log"
+test -f "$HOME/.local/share/mobdesk/logs/install/python.log"
+test -f "$HOME/.local/share/mobdesk/logs/install/node.log"
+test -f "$HOME/.local/share/mobdesk/logs/install/c.log"
+test -f "$HOME/.local/share/mobdesk/logs/install/cpp.log"
+test -f "$HOME/.local/share/mobdesk/logs/install/lua.log"
+mobdesk status --json > "$TEST_DIR/mobdesk-status.json"
+grep -q '"installations"' "$TEST_DIR/mobdesk-status.json"
+grep -q '"name": "go"' "$TEST_DIR/mobdesk-status.json"
+grep -q '"name": "python"' "$TEST_DIR/mobdesk-status.json"
+grep -q '"name": "node"' "$TEST_DIR/mobdesk-status.json"
+grep -q '"name": "c"' "$TEST_DIR/mobdesk-status.json"
+grep -q '"name": "cpp"' "$TEST_DIR/mobdesk-status.json"
+grep -q '"name": "lua"' "$TEST_DIR/mobdesk-status.json"
+
 mkdir -p "$HOME/.ssh"
 chmod 700 "$HOME/.ssh"
 ssh-keygen -q -t ed25519 -N '' -f "$TEST_DIR/mobdesk-integration-key"

@@ -187,3 +187,45 @@ func TestRenderTextAndJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestCollectReadsGenericInstallationRecords(t *testing.T) {
+	home := t.TempDir()
+	directory := filepath.Join(home, ".local", "share", "mobdesk", "state", "installations")
+	if err := os.MkdirAll(directory, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	records := []InstallationStatus{
+		{Name: "zeta-tool", Kind: "tool", State: "installed", Version: "1.0", LogPath: "/tmp/zeta.log"},
+		{Name: "alpha-language", Kind: "language", State: "failed", LastError: "apt failed", LogPath: "/tmp/alpha.log"},
+	}
+	for _, record := range records {
+		payload, err := json.Marshal(record)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(directory, record.Name+".json"), payload, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	value := Collect(context.Background(), Options{
+		CommandRunner: &fakeRunner{outputs: map[string]CommandResult{}},
+		LookPath:      availableCommands(),
+		Home:          home,
+		Prefix:        t.TempDir(),
+	})
+	if len(value.Installations) != 2 || value.Installations[0].Name != "alpha-language" {
+		t.Fatalf("unexpected installations: %+v", value.Installations)
+	}
+	if value.Installations[0].LastError != "apt failed" || value.Installations[1].Kind != "tool" {
+		t.Fatalf("installation metadata was not preserved: %+v", value.Installations)
+	}
+	if value.Overall != StateDegraded {
+		t.Fatalf("overall = %s, want degraded", value.Overall)
+	}
+	var text bytes.Buffer
+	RenderText(&text, value)
+	if !strings.Contains(text.String(), "alpha-language") || !strings.Contains(text.String(), "/tmp/alpha.log") {
+		t.Fatalf("human output omitted installation diagnostics: %s", text.String())
+	}
+}

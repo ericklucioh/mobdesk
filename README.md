@@ -20,11 +20,35 @@ O Termux controla o aparelho. O Ubuntu persistente é o ambiente de trabalho. Ao
 - acesso remoto direto ao Ubuntu;
 - detecção do IP local via `ifconfig`;
 - autenticação por senha;
-- comandos `setup`, `start` e `stop`;
+- comandos `setup`, `start`, `stop`, `status` e `install`;
+- instalação idempotente de Go, Python, Node.js, C, C++ e Lua no Ubuntu;
+- status humano e JSON para automação e futura TUI;
 - execução no celular ou remotamente pelo computador;
 - ambiente reproduzível para desenvolvimento e testes.
 
-O MVP-1 é deliberadamente pequeno. Ele ainda não instala ferramentas de desenvolvimento no Ubuntu, não oferece TUI e não gerencia projetos. Essas capacidades fazem parte dos próximos estágios.
+O MVP-1 é deliberadamente pequeno. Ele ainda não oferece TUI nem gerencia
+projetos. Essas capacidades fazem parte dos próximos estágios.
+
+Consulte rapidamente o ambiente com:
+
+```bash
+mobdesk status
+mobdesk status --json
+```
+
+O status é somente leitura e verifica setup, Ubuntu, SSH, rede, espaço livre
+do dispositivo, bateria e Wi-Fi quando o Termux:API estiver disponível.
+
+Instale uma linguagem no Ubuntu com:
+
+```bash
+mobdesk install go
+mobdesk install python
+mobdesk install node
+mobdesk install c
+mobdesk install cpp
+mobdesk install lua
+```
 
 ## Instalação no Termux
 

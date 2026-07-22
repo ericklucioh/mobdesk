@@ -22,18 +22,19 @@ const (
 )
 
 type SystemStatus struct {
-	SchemaVersion int           `json:"schema_version"`
-	GeneratedAt   time.Time     `json:"generated_at"`
-	Overall       OverallState  `json:"overall"`
-	Host          HostStatus    `json:"host"`
-	Setup         SetupStatus   `json:"setup"`
-	Storage       StorageStatus `json:"storage"`
-	Ubuntu        UbuntuStatus  `json:"ubuntu"`
-	SSH           SSHStatus     `json:"ssh"`
-	Network       NetworkStatus `json:"network"`
-	Battery       BatteryStatus `json:"battery"`
-	WiFi          WiFiStatus    `json:"wifi"`
-	Alerts        AlertSummary  `json:"alerts"`
+	SchemaVersion int                  `json:"schema_version"`
+	GeneratedAt   time.Time            `json:"generated_at"`
+	Overall       OverallState         `json:"overall"`
+	Host          HostStatus           `json:"host"`
+	Setup         SetupStatus          `json:"setup"`
+	Storage       StorageStatus        `json:"storage"`
+	Ubuntu        UbuntuStatus         `json:"ubuntu"`
+	SSH           SSHStatus            `json:"ssh"`
+	Network       NetworkStatus        `json:"network"`
+	Battery       BatteryStatus        `json:"battery"`
+	WiFi          WiFiStatus           `json:"wifi"`
+	Installations []InstallationStatus `json:"installations"`
+	Alerts        AlertSummary         `json:"alerts"`
 }
 
 type HostStatus struct {
@@ -114,6 +115,19 @@ type WiFiStatus struct {
 	LinkSpeedMbps *int       `json:"link_speed_mbps,omitempty"`
 	FrequencyMHz  *int       `json:"frequency_mhz,omitempty"`
 	Error         string     `json:"error,omitempty"`
+}
+
+type InstallationStatus struct {
+	Name          string    `json:"name"`
+	Kind          string    `json:"kind"`
+	Package       string    `json:"package"`
+	Executable    string    `json:"executable"`
+	State         string    `json:"state"`
+	Version       string    `json:"version,omitempty"`
+	InstalledAt   time.Time `json:"installed_at,omitempty"`
+	LastAttemptAt time.Time `json:"last_attempt_at"`
+	LastError     string    `json:"last_error,omitempty"`
+	LogPath       string    `json:"log_path"`
 }
 
 type AlertSummary struct {

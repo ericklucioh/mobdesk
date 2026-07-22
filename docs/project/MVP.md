@@ -103,17 +103,18 @@ Se a porta estiver ocupada por outro processo, o Mobdesk não tenta encerrá-lo.
 - autenticação por senha do Termux;
 - setup idempotente e retomável por etapas;
 - logs e PID próprios para o SSH;
-- comandos `setup`, `start` e `stop`;
-- testes unitários para estado e configuração SSH.
+- comandos `setup`, `start`, `stop` e `status`;
+- comando `install` para Go, Python, Node.js, C, C++ e Lua no Ubuntu;
+- saída humana e JSON versionado do `status`;
+- coleta rápida de host, setup, Ubuntu, SSH, rede, armazenamento, bateria e Wi-Fi;
+- testes unitários para estado, configuração SSH e instalação de linguagens;
+- teste de integração Docker para instalação e Hello World das seis linguagens.
 
 ### Ainda não implementado
 
 - `mobdesk shell`;
-- `mobdesk status`;
 - `mobdesk doctor`;
-- `mobdesk install`;
 - TUI;
-- instalação de ferramentas dentro do Ubuntu;
 - projetos, serviços, sessões persistentes e encaminhamento de portas;
 - autenticação SSH por chave como fluxo assistido;
 - suporte real validado em todos os modelos Android.
