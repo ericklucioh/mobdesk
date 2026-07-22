@@ -27,5 +27,4 @@ var versionCmd = &cobra.Command{
 
 func init() {
 	versionCmd.Flags().BoolVar(&versionJSON, "json", false, "emitir apenas JSON válido")
-	RootCmd.AddCommand(versionCmd)
 }

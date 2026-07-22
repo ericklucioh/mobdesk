@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"context"
 	"crypto/sha256"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -129,7 +131,8 @@ func (o Options) withDefaults() Options {
 
 func defaultHTTPClient() HTTPClient {
 	nameservers := termuxNameservers()
-	if len(nameservers) == 0 {
+	rootCAs := termuxRootCAs()
+	if len(nameservers) == 0 && rootCAs == nil {
 		return http.DefaultClient
 	}
 	transport, ok := http.DefaultTransport.(*http.Transport)
@@ -137,6 +140,14 @@ func defaultHTTPClient() HTTPClient {
 		return http.DefaultClient
 	}
 	transport = transport.Clone()
+	if rootCAs != nil {
+		tlsConfig := &tls.Config{MinVersion: tls.VersionTLS12}
+		if transport.TLSClientConfig != nil {
+			tlsConfig = transport.TLSClientConfig.Clone()
+		}
+		tlsConfig.RootCAs = rootCAs
+		transport.TLSClientConfig = tlsConfig
+	}
 	resolver := &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, _, _ string) (net.Conn, error) {
@@ -151,7 +162,9 @@ func defaultHTTPClient() HTTPClient {
 			return nil, lastErr
 		},
 	}
-	transport.DialContext = (&net.Dialer{Timeout: 30 * time.Second, Resolver: resolver}).DialContext
+	if len(nameservers) > 0 {
+		transport.DialContext = (&net.Dialer{Timeout: 30 * time.Second, Resolver: resolver}).DialContext
+	}
 	return &http.Client{Transport: transport}
 }
 
@@ -175,6 +188,25 @@ func termuxNameservers() []string {
 		}
 	}
 	return result
+}
+
+func termuxRootCAs() *x509.CertPool {
+	prefix := os.Getenv("PREFIX")
+	if prefix == "" {
+		return nil
+	}
+	data, err := os.ReadFile(filepath.Join(prefix, "etc", "tls", "cert.pem"))
+	if err != nil {
+		return nil
+	}
+	pool, err := x509.SystemCertPool()
+	if err != nil || pool == nil {
+		pool = x509.NewCertPool()
+	}
+	if !pool.AppendCertsFromPEM(data) {
+		return nil
+	}
+	return pool
 }
 
 func latestRelease(ctx context.Context, options Options) (Release, error) {

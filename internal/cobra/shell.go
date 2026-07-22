@@ -16,10 +16,6 @@ var shellCmd = &cobra.Command{
 	},
 }
 
-func init() {
-	RootCmd.AddCommand(shellCmd)
-}
-
 func runShell(ctx context.Context) error {
 	if err := ensureSetupCompleted(); err != nil {
 		return err

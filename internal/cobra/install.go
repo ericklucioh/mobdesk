@@ -24,7 +24,6 @@ var installCmd = &cobra.Command{
 
 func init() {
 	installCmd.Flags().BoolVar(&installJSON, "json", false, "emitir apenas JSON válido")
-	RootCmd.AddCommand(installCmd)
 }
 
 func runInstall(ctx context.Context, name string) error {
