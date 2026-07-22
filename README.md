@@ -20,7 +20,7 @@ O Termux controla o aparelho. O Ubuntu persistente é o ambiente de trabalho. Ao
 - acesso remoto direto ao Ubuntu;
 - detecção do IP local via `ifconfig`;
 - autenticação por senha;
-- comandos `setup`, `start`, `stop`, `status` e `install`;
+- comandos `setup`, `start`, `stop`, `shell`, `status` e `install`;
 - instalação idempotente de Go, Python, Node.js, C, C++ e Lua no Ubuntu;
 - status humano e JSON para automação e futura TUI;
 - execução no celular ou remotamente pelo computador;
@@ -79,6 +79,12 @@ Inicie a workstation:
 
 ```bash
 mobdesk start
+```
+
+Para abrir o Ubuntu localmente sem iniciar o servidor SSH:
+
+```bash
+mobdesk shell
 ```
 
 O Mobdesk exibirá um comando parecido com:

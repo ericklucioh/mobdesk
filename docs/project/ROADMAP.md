@@ -6,7 +6,7 @@ O Mobdesk evolui em seis estágios. Termux continua sendo o host de controle, en
 
 | Estágio | Categoria | Nome | Resultado |
 |---|---|---|---|
-| 1 | MVP | Bootstrap Ubuntu | Instalar e acessar Ubuntu persistente por SSH |
+| 1 | MVP | Bootstrap Ubuntu | Instalar e acessar Ubuntu persistente por shell e SSH |
 | 2 | MVP | Workstation TUI | Trabalhar com ferramentas textuais organizadas |
 | 3 | MVP | Ambiente persistente | Recuperar sessões, serviços e acesso remoto |
 | 4 | Aplicação | Mobdesk Manager | Administrar projetos, sessões e serviços |
@@ -28,16 +28,17 @@ Levar o usuário de um Termux com Go instalado a um Ubuntu persistente acessíve
 - criar workspace e estado local;
 - configurar SSH dedicado do Mobdesk;
 - iniciar e parar o servidor com segurança;
-- abrir o shell Ubuntu local;
+- abrir o shell Ubuntu local com `mobdesk shell`;
+- consultar o estado do ambiente com `mobdesk status`;
+- instalar os perfis iniciais de desenvolvimento com `mobdesk install`;
 - detectar endereços locais e manter o wake-lock quando disponível;
 - repetir e retomar o setup sem apagar dados.
 
 ### Fora deste estágio
 
 - TUI;
-- instalação de ferramentas de desenvolvimento no Ubuntu;
 - projetos, serviços e sessões persistentes;
-- `status`, `doctor` e `install`;
+- `doctor`;
 - Tailscale e encaminhamento de portas.
 
 ## Estágio 2 - Workstation TUI
