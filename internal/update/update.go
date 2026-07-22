@@ -1,17 +1,20 @@
 package update
 
 import (
+	"bufio"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 )
 
 const DefaultRepository = "ericklucioh/mobdesk"
@@ -95,7 +98,7 @@ func Apply(ctx context.Context, options Options) (Result, error) {
 
 func (o Options) withDefaults() Options {
 	if o.HTTPClient == nil {
-		o.HTTPClient = http.DefaultClient
+		o.HTTPClient = defaultHTTPClient()
 	}
 	if o.Repository == "" {
 		o.Repository = DefaultRepository
@@ -122,6 +125,56 @@ func (o Options) withDefaults() Options {
 		o.InstallPath = executablePath()
 	}
 	return o
+}
+
+func defaultHTTPClient() HTTPClient {
+	nameservers := termuxNameservers()
+	if len(nameservers) == 0 {
+		return http.DefaultClient
+	}
+	transport, ok := http.DefaultTransport.(*http.Transport)
+	if !ok {
+		return http.DefaultClient
+	}
+	transport = transport.Clone()
+	resolver := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, _, _ string) (net.Conn, error) {
+			var lastErr error
+			for _, nameserver := range nameservers {
+				connection, err := (&net.Dialer{Timeout: 2 * time.Second}).DialContext(ctx, "udp", net.JoinHostPort(nameserver, "53"))
+				if err == nil {
+					return connection, nil
+				}
+				lastErr = err
+			}
+			return nil, lastErr
+		},
+	}
+	transport.DialContext = (&net.Dialer{Timeout: 30 * time.Second, Resolver: resolver}).DialContext
+	return &http.Client{Transport: transport}
+}
+
+func termuxNameservers() []string {
+	prefix := os.Getenv("PREFIX")
+	if prefix == "" {
+		return nil
+	}
+	file, err := os.Open(filepath.Join(prefix, "etc", "resolv.conf"))
+	if err != nil {
+		return nil
+	}
+	defer file.Close()
+
+	var result []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		if len(fields) == 2 && fields[0] == "nameserver" && net.ParseIP(fields[1]) != nil {
+			result = append(result, fields[1])
+		}
+	}
+	return result
 }
 
 func latestRelease(ctx context.Context, options Options) (Release, error) {

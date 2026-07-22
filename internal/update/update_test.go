@@ -39,6 +39,22 @@ func TestCheckSelectsStableAndStageChannels(t *testing.T) {
 	}
 }
 
+func TestTermuxNameserversReadsPrefixResolverConfig(t *testing.T) {
+	prefix := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(prefix, "etc"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(prefix, "etc", "resolv.conf"), []byte("nameserver 8.8.8.8\nnameserver 8.8.4.4\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PREFIX", prefix)
+
+	nameservers := termuxNameservers()
+	if len(nameservers) != 2 || nameservers[0] != "8.8.8.8" || nameservers[1] != "8.8.4.4" {
+		t.Fatalf("nameservers = %v", nameservers)
+	}
+}
+
 func TestApplyVerifiesChecksumAndReplacesBinary(t *testing.T) {
 	content := []byte("new mobdesk binary")
 	digest := sha256.Sum256(content)
