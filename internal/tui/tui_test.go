@@ -49,8 +49,8 @@ func TestToolsFitVerticalPhoneWidth(t *testing.T) {
 
 func TestToolsUseBorderedTwoLineItemsAndInstallationState(t *testing.T) {
 	model := New()
-	model.width = 44
-	model.height = 30
+	model.width = 80
+	model.height = 40
 	view := ansi.Strip(model.renderTools())
 	if !strings.Contains(view, "┌") || !strings.Contains(view, "instalar") {
 		t.Fatalf("tools view does not render bordered install items: %s", view)
@@ -403,6 +403,34 @@ func TestMouseClickOnStatusBackButtonOnWideScreen(t *testing.T) {
 	updated, _ := model.Update(tea.MouseReleaseMsg{X: targetX - 2, Y: targetLine + 3, Button: tea.MouseLeft})
 	if updated.(Model).screen != homeScreen {
 		t.Fatal("mouse click on wide status back button did not return home")
+	}
+}
+
+func TestMouseReleaseWithNoneCompletesTouchClick(t *testing.T) {
+	model := New()
+	model.screen = statusScreen
+	model.statusLoaded = true
+	model.width = 80
+	model.height = 40
+	model.statusTable.SetRows(statusRows(status.SystemStatus{}, model.width))
+	model.resize(model.width, model.height)
+	lines := strings.Split(model.renderScreen(), "\n")
+	targetLine, targetX := -1, -1
+	for index, line := range lines {
+		plain := ansi.Strip(line)
+		if position := strings.Index(plain, "Voltar"); position >= 0 {
+			targetLine, targetX = index, position+2
+			break
+		}
+	}
+	if targetLine < 0 {
+		t.Fatal("status back button was not rendered")
+	}
+	updatedClick, _ := model.Update(tea.MouseClickMsg{X: targetX - 2, Y: targetLine + 3, Button: tea.MouseLeft})
+	model = updatedClick.(Model)
+	updated, _ := model.Update(tea.MouseReleaseMsg{X: targetX - 2, Y: targetLine + 3, Button: tea.MouseNone})
+	if updated.(Model).screen != homeScreen {
+		t.Fatal("MouseNone release did not complete the touch click")
 	}
 }
 

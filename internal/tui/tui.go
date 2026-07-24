@@ -40,7 +40,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m.updateMouseDrag(mouse)
 	case tea.MouseReleaseMsg:
-		if msg.Button != tea.MouseLeft || !m.pointerDown {
+		// No fallback X10, usado por alguns terminais móveis, o release do
+		// botão esquerdo é codificado como MouseNone. O clique inicial ainda
+		// precisa ser MouseLeft; aqui basta confirmar que havia um toque ativo.
+		if msg.Button != tea.MouseLeft && msg.Button != tea.MouseNone || !m.pointerDown {
 			return m, nil
 		}
 		click := m.pressMouse
