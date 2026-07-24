@@ -343,8 +343,12 @@ func downloadBinary(ctx context.Context, client HTTPClient, url string, destinat
 	}
 	defer body.Close()
 	hash := sha256.New()
-	if _, err := io.Copy(io.MultiWriter(destination, hash), body); err != nil {
+	bytesWritten, err := io.Copy(io.MultiWriter(destination, hash), body)
+	if err != nil {
 		return fmt.Errorf("gravar binário: %w", err)
+	}
+	if bytesWritten == 0 {
+		return fmt.Errorf("download do binário vazio")
 	}
 	actual := hex.EncodeToString(hash.Sum(nil))
 	if actual != expected {

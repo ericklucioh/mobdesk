@@ -169,6 +169,50 @@ func TestApplyRejectsInvalidChecksumWithoutReplacingBinary(t *testing.T) {
 	}
 }
 
+func TestApplyRejectsEmptyBinary(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/repos/example/mobdesk/releases":
+			json.NewEncoder(response).Encode([]Release{{
+				TagName: "v1.1.0",
+				Assets: []Asset{
+					{Name: "mobdesk-linux-arm64", DownloadURL: serverURL(request, "/download/mobdesk")},
+					{Name: "SHA256SUMS", DownloadURL: serverURL(request, "/download/checksums")},
+				},
+			}})
+		case "/download/mobdesk":
+			// O checksum corresponde ao conteúdo vazio; mesmo assim o updater
+			// deve recusar substituir um executável válido por zero bytes.
+		case "/download/checksums":
+			fmt.Fprintf(response, "%s  mobdesk-linux-arm64\n", strings.Repeat("0", sha256.Size*2))
+		}
+	}))
+	defer server.Close()
+
+	path := filepath.Join(t.TempDir(), "mobdesk")
+	if err := os.WriteFile(path, []byte("old"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Apply(context.Background(), Options{
+		APIBaseURL:     server.URL,
+		Repository:     "example/mobdesk",
+		CurrentVersion: "v1.0.0",
+		InstallPath:    path,
+		GOOS:           "linux",
+		GOARCH:         "arm64",
+	})
+	if err == nil || !strings.Contains(err.Error(), "download do binário vazio") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	unchanged, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if string(unchanged) != "old" {
+		t.Fatalf("binary changed after empty download: %q", unchanged)
+	}
+}
+
 func serverURL(request *http.Request, path string) string {
 	return "http://" + request.Host + path
 }
