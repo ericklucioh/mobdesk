@@ -360,7 +360,10 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 func (m Model) View() tea.View {
 	view := tea.NewView(m.render())
 	view.AltScreen = true
-	view.MouseMode = tea.MouseModeAllMotion
+	// CellMotion habilita clique, release, roda e movimento durante o arraste.
+	// É o modo mais compatível com terminais móveis como o Termux: não envia
+	// eventos de movimento contínuos quando o dedo está apenas parado na tela.
+	view.MouseMode = tea.MouseModeCellMotion
 	return view
 }
 

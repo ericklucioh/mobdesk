@@ -143,6 +143,16 @@ func TestToolsMouseWheelMovesBubbleList(t *testing.T) {
 	}
 }
 
+func TestViewEnablesTermuxMouseTracking(t *testing.T) {
+	view := New().View()
+	if !view.AltScreen {
+		t.Fatal("TUI must use the alternate screen")
+	}
+	if view.MouseMode != tea.MouseModeCellMotion {
+		t.Fatalf("TUI mouse mode = %v, want CellMotion", view.MouseMode)
+	}
+}
+
 func TestSetupRendersResponsiveSections(t *testing.T) {
 	model := New()
 	model.width = 40
