@@ -7,19 +7,18 @@ indica o quanto o aplicativo foi preparado ou validado para o ambiente.
 
 | nome | tipo | descrição | is_approved | configuração% |
 |---|---|---|---:|---:|
-| Neovim | editor | Editor de texto modal para o terminal | true | 100% |
-| LazyVim | editor | Configuração pronta para usar Neovim | true | 75% |
-| Git | git | Controle de versão para projetos | true | 100% |
-| tmux | multiplexador | Mantém sessões e painéis persistentes | true | 100% |
+| Neovim | editor | Editor de texto modal para o terminal | false | 100% |
+| LazyVim | editor | Configuração pronta para usar Neovim | false | 75% |
+| Git | git | Controle de versão para projetos | true | 0% |
+| tmux | multiplexador | Mantém sessões e painéis persistentes | - | 100% |
 | VTM | multiplexador | Desktop textual com janelas e painéis | false | 25% |
 | Zellij | multiplexador | Multiplexador com abas, painéis e layouts | false | 25% |
-| lf | arquivos | Gerenciador de arquivos leve para terminal | true | 75% |
+| lf | arquivos | Gerenciador de arquivos leve para terminal | false | 75% |
 | Yazi | arquivos | Gerenciador de arquivos com previews | false | 25% |
 | broot | arquivos | Navegação interativa por árvores de diretórios | false | 25% |
 | TUIFI Manager | arquivos | Explorador visual de arquivos no terminal | false | 0% |
 | ranger | arquivos | Gerenciador de arquivos tradicional em colunas | false | 25% |
 | Superfile | arquivos | Explorador de arquivos com foco visual | false | 0% |
-| openmux | multiplexador | Multiplexador experimental de terminais | false | 0% |
 | Twin | desktop-tui | Desktop textual experimental | false | 0% |
 | Desktop-TUI | desktop-tui | Conceito de desktop baseado em terminal | false | 0% |
 | TermOS | desktop-tui | Ambiente experimental organizado no terminal | false | 0% |
@@ -154,6 +153,54 @@ indica o quanto o aplicativo foi preparado ou validado para o ambiente.
 | stu | armazenamento | Interface para Amazon S3 | false | 0% |
 | termscp | armazenamento | Cliente de transferência por SCP e SFTP | false | 0% |
 
+
+fresh
+ttt
+clin
+glint
+duf
+bmon
+btop
+ncdu
+micro
+
+[12:27, 7/24/2026] Érick Lúcio: Speed test cli
+[12:27, 7/24/2026] Érick Lúcio: Cal calendar
+[12:29, 7/24/2026] Érick Lúcio: Elinks
+[12:31, 7/24/2026] Érick Lúcio: Calcurse
+[12:33, 7/24/2026] Érick Lúcio: Logo ls
+
+
+alsamixer
+aptitude-curses 
+fzf
+gdbtui ?
+gdisk ?
+nmtui 
+nvlc ?
+pico? nano
+
+yazi
+bluetoothctl ?
+dialog ?
+fsel *
+glow
+less ?
+lazygit etc.
+leetgo
+Rede: curl, wget, ftp, ping, ip, nmcli, netstat, openssl
+- Áudio/vídeo: ffmpeg, ffplay, ffprobe, vlc, cvlc, qvlc
+
+top
+gh - procurar tui
+neofetch
+duf
+inxi
+openvpn ?
+webquiz?
+joguinhos
+pw-top
+glow
 ## Critérios
 
 - `is_approved` não significa que o aplicativo está instalado.

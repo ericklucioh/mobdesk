@@ -19,10 +19,20 @@ func (m Model) renderStatus() string {
 		generated = " · " + m.status.GeneratedAt.Format("15:04")
 	}
 
+	hostTitle := "TERMUX"
+	hostDetail := fmt.Sprintf("%s · %s", valueOr(m.status.Host.OS, "host Android"), valueOr(m.status.Host.Architecture, "arquitetura desconhecida"))
+	ubuntuDetail := fmt.Sprintf("PRoot · workspace %s", yesNo(m.status.Ubuntu.Workspace))
+	sshTitle := "SSH"
+	if !m.status.Host.Termux {
+		hostTitle = "RUNTIME"
+		hostDetail = fmt.Sprintf("%s · fora do Termux", valueOr(m.status.Host.OS, "Linux"))
+		ubuntuDetail = fmt.Sprintf("workspace %s · sessão remota", yesNo(m.status.Ubuntu.Workspace))
+		sshTitle = "SSH HOST"
+	}
 	cards := []string{
-		statusCard(m.width, "TERMUX", m.status.Host.State, fmt.Sprintf("%s · %s", valueOr(m.status.Host.OS, "host Android"), valueOr(m.status.Host.Architecture, "arquitetura desconhecida"))),
-		statusCard(m.width, "UBUNTU", m.status.Ubuntu.State, fmt.Sprintf("PRoot · workspace %s", yesNo(m.status.Ubuntu.Workspace))),
-		statusCard(m.width, "SSH", sshState(m.status.SSH), sshDetail(m.status.SSH)),
+		statusCard(m.width, hostTitle, m.status.Host.State, hostDetail),
+		statusCard(m.width, "UBUNTU", m.status.Ubuntu.State, ubuntuDetail),
+		statusCard(m.width, sshTitle, sshState(m.status.SSH), sshDetail(m.status.SSH)),
 		statusCard(m.width, "RECURSOS", m.status.Storage.State, fmt.Sprintf("%s livres · bateria %s", formatBytes(m.status.Storage.DeviceFree), batterySummary(m.status.Battery))),
 	}
 
@@ -155,7 +165,11 @@ func statusRows(value status.SystemStatus, width int) []table.Row {
 	right := func(text string) string {
 		return lipgloss.NewStyle().Width(stateWidth).Align(lipgloss.Right).Render(text)
 	}
-	return []table.Row{{"Termux", right(checkStateLabel(value.Host.State))}, {"Arquitetura", right(valueOr(value.Host.Architecture, "desconhecida"))}, {"Ubuntu", right(checkStateLabel(value.Ubuntu.State))}, {"Workspace", right(yesNo(value.Ubuntu.Workspace))}, {"SSH", right(checkStateLabel(value.SSH.State))}, {"Porta SSH", right(fmt.Sprintf("%d", value.SSH.Port))}, {"Wake-lock", right(available(value.Host.WakeLockAvailable))}, {"Bateria", right(batterySummary(value.Battery))}, {"Wi-Fi", right(wifiSummary(value.WiFi))}}
+	runtimeLabel := "Termux"
+	if !value.Host.Termux {
+		runtimeLabel = "Runtime"
+	}
+	return []table.Row{{runtimeLabel, right(checkStateLabel(value.Host.State))}, {"Arquitetura", right(valueOr(value.Host.Architecture, "desconhecida"))}, {"Ubuntu", right(checkStateLabel(value.Ubuntu.State))}, {"Workspace", right(yesNo(value.Ubuntu.Workspace))}, {"SSH", right(checkStateLabel(value.SSH.State))}, {"Porta SSH", right(fmt.Sprintf("%d", value.SSH.Port))}, {"Wake-lock", right(available(value.Host.WakeLockAvailable))}, {"Bateria", right(batterySummary(value.Battery))}, {"Wi-Fi", right(wifiSummary(value.WiFi))}}
 }
 
 func statusTableColumns(width int) []table.Column {

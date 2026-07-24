@@ -80,6 +80,12 @@ A TUI não deve duplicar instalação, coleta, atualização ou regras de segura
 No backend real, ela se comunica com o contrato JSON da própria CLI. O backend
 mock implementa a mesma interface apenas para cenários de teste visual.
 
+Quando aberta dentro da sessão SSH do Mobdesk, a TUI roda no Ubuntu/PRoot, não
+no Termux. Nesse modo ela pode mostrar o workspace atual, mas não consegue
+inspecionar ou controlar diretamente o host Termux, o `sshd` e o
+`proot-distro`. O status deve identificar esse modo remoto em vez de tratar a
+ausência desses comandos como falha do workspace.
+
 ### Serviços internos
 
 - `internal/status`: coleta uma fotografia do ambiente e produz o modelo de

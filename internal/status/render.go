@@ -18,8 +18,12 @@ func RenderText(w io.Writer, value SystemStatus) {
 	fmt.Fprintf(w, "\nResumo:        %s\n", value.Overall)
 	fmt.Fprintf(w, "Atualizado:    %s\n", value.GeneratedAt.Format(time.RFC3339))
 
+	hostLabel := "Termux"
+	if !value.Host.Termux {
+		hostLabel = "Runtime"
+	}
 	fmt.Fprintln(w, "\nHost")
-	fmt.Fprintf(w, "  Termux:      %s\n", value.Host.State)
+	fmt.Fprintf(w, "  %-12s%s\n", hostLabel+":", value.Host.State)
 	fmt.Fprintf(w, "  Arquitetura: %s\n", value.Host.Architecture)
 	fmt.Fprintf(w, "  Wake-lock:   %s\n", availability(value.Host.WakeLockAvailable))
 	fmt.Fprintf(w, "  Termux:API:  %s\n", availability(value.Host.TermuxAPIAvailable))

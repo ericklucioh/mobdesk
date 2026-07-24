@@ -39,6 +39,7 @@ type SystemStatus struct {
 
 type HostStatus struct {
 	State              CheckState `json:"state"`
+	Termux             bool       `json:"termux"`
 	OS                 string     `json:"os"`
 	Architecture       string     `json:"architecture"`
 	Home               string     `json:"home"`

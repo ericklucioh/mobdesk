@@ -33,9 +33,12 @@ type Options struct {
 	Home          string
 	Prefix        string
 	SSHPort       int
+	termux        bool
 }
 
 func (o Options) withDefaults() Options {
+	termuxPrefix := os.Getenv("PREFIX")
+	o.termux = detectTermuxRuntime(termuxPrefix)
 	if o.CommandRunner == nil {
 		o.CommandRunner = ExecRunner{}
 	}
@@ -52,10 +55,13 @@ func (o Options) withDefaults() Options {
 		o.Home = "."
 	}
 	if o.Prefix == "" {
-		o.Prefix = os.Getenv("PREFIX")
+		o.Prefix = termuxPrefix
 	}
 	if o.Prefix == "" {
 		o.Prefix = "/data/data/com.termux/files/usr"
+	}
+	if strings.HasPrefix(filepath.Clean(o.Prefix), "/data/data/com.termux/files/usr") {
+		o.termux = detectTermuxRuntime(o.Prefix)
 	}
 	if o.SSHPort == 0 {
 		o.SSHPort = SSHPort
@@ -92,6 +98,7 @@ func ReadInstallations(home string) []InstallationStatus {
 func collectHost(o Options) HostStatus {
 	result := HostStatus{
 		State:        CheckOK,
+		Termux:       o.termux,
 		OS:           runtime.GOOS,
 		Architecture: runtime.GOARCH,
 		Home:         o.Home,
@@ -102,6 +109,13 @@ func collectHost(o Options) HostStatus {
 	result.Ifconfig = commandAvailable(o, "ifconfig")
 	result.WakeLockAvailable = commandAvailable(o, "termux-wake-lock")
 	result.TermuxAPIAvailable = commandAvailable(o, "termux-battery-status") || commandAvailable(o, "termux-wifi-connectioninfo")
+	if !result.Termux {
+		// Through Mobdesk SSH, this process runs inside Ubuntu/PRoot. It cannot
+		// inspect the Termux control plane that launched it.
+		result.State = CheckMissing
+		result.Error = "termux_runtime_unavailable"
+		return result
+	}
 	if _, err := os.Stat(o.Home); err != nil {
 		result.State = CheckWarning
 		result.Error = "home_unavailable"
@@ -166,6 +180,20 @@ func collectStorage(ctx context.Context, o Options) StorageStatus {
 
 func collectUbuntu(ctx context.Context, o Options) UbuntuStatus {
 	result := UbuntuStatus{State: CheckUnknown, WorkspacePath: "/root/workspace"}
+	if !o.termux {
+		// The SSH session is already inside the Ubuntu workspace; proot-distro
+		// exists only on the Termux side.
+		result.Installed = true
+		result.Accessible = true
+		result.Workspace = directoryExists(result.WorkspacePath)
+		if result.Workspace {
+			result.State = CheckOK
+		} else {
+			result.State = CheckWarning
+			result.Error = "workspace_missing"
+		}
+		return result
+	}
 	if !commandAvailable(o, "proot-distro") {
 		result.State = CheckMissing
 		result.Error = "proot_distro_missing"
@@ -198,6 +226,11 @@ func collectSSH(ctx context.Context, o Options) SSHStatus {
 		ConfigPath:   configPath,
 		LogPath:      filepath.Join(runtimeDir, "sshd.log"),
 		ConfigExists: fileExists(configPath),
+	}
+	if !o.termux {
+		result.State = CheckMissing
+		result.Error = "termux_runtime_unavailable"
+		return result
 	}
 	result.Enabled = result.ConfigExists
 	if !result.Enabled {
@@ -429,6 +462,27 @@ func sshPortResponds(ctx context.Context, port int) bool {
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
+}
+
+func directoryExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.IsDir()
+}
+
+func detectTermuxRuntime(prefix string) bool {
+	if os.Getenv("TERMUX_VERSION") != "" {
+		return true
+	}
+	if !strings.HasPrefix(filepath.Clean(prefix), "/data/data/com.termux/files/usr") {
+		return false
+	}
+	// proot-distro can preserve PREFIX while changing the visible root. The
+	// distro's os-release is then a stronger signal than the inherited env.
+	osRelease, err := os.ReadFile("/etc/os-release")
+	if err == nil && strings.Contains(string(osRelease), "ID=ubuntu") {
+		return false
+	}
+	return true
 }
 
 func contains(values []string, value string) bool {
