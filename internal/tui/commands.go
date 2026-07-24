@@ -1,10 +1,12 @@
 package tui
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/ericklucioh/mobdesk/internal/status"
@@ -38,7 +40,12 @@ func runStatusCommand() tea.Cmd {
 		if err != nil {
 			return statusMessage{err: err}
 		}
-		output, err := exec.Command(binary, "status", "--json").Output()
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+		output, err := exec.CommandContext(ctx, binary, "status", "--json").Output()
+		if ctx.Err() != nil {
+			return statusMessage{err: fmt.Errorf("coleta de status excedeu 15 segundos: %w", ctx.Err())}
+		}
 		value := status.SystemStatus{}
 		if parseErr := json.Unmarshal(output, &value); parseErr != nil {
 			if err != nil {

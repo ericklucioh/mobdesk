@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ericklucioh/mobdesk/internal/install"
+	"github.com/ericklucioh/mobdesk/internal/status"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -75,11 +76,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.busy = false
 		m.operation = ""
 		m.message = operationMessageText(msg)
+		m.applyOperationState(msg)
 		return m, m.backend.StatusCmd()
 	case tea.KeyPressMsg:
 		return m.updateKey(msg)
 	}
 	return m, nil
+}
+
+func (m *Model) applyOperationState(msg operationMessage) {
+	if msg.err != nil || !msg.result.Success {
+		return
+	}
+	switch msg.command {
+	case "start":
+		m.status.SSH.Enabled = true
+		m.status.SSH.Running = true
+		m.status.SSH.State = status.CheckOK
+		if msg.result.Port > 0 {
+			m.status.SSH.Port = msg.result.Port
+		}
+		if len(msg.result.Addresses) > 0 {
+			m.status.Network.Addresses = append([]string(nil), msg.result.Addresses...)
+			m.status.Network.Preferred = msg.result.Addresses[0]
+		}
+	case "stop":
+		m.status.SSH.Running = false
+		m.status.SSH.State = status.CheckWarning
+	}
 }
 
 func (m Model) updateMouseWheel(msg tea.MouseWheelMsg) (tea.Model, tea.Cmd) {

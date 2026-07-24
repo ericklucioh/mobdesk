@@ -14,14 +14,16 @@ type operationMessage struct {
 }
 
 type operationResult struct {
-	Success        bool   `json:"success"`
-	State          string `json:"state"`
-	Message        string `json:"message"`
-	CurrentVersion string `json:"current_version"`
-	LatestVersion  string `json:"latest_version"`
-	Updated        bool   `json:"updated"`
-	Language       string `json:"language"`
-	Version        string `json:"version"`
+	Success        bool     `json:"success"`
+	State          string   `json:"state"`
+	Message        string   `json:"message"`
+	CurrentVersion string   `json:"current_version"`
+	LatestVersion  string   `json:"latest_version"`
+	Updated        bool     `json:"updated"`
+	Language       string   `json:"language"`
+	Version        string   `json:"version"`
+	Port           int      `json:"port"`
+	Addresses      []string `json:"addresses"`
 }
 
 type statusMessage struct {
