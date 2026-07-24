@@ -82,6 +82,13 @@ func Collect(ctx context.Context, options Options) SystemStatus {
 	return result
 }
 
+// ReadInstallations returns the persisted installation records without
+// running external commands. The TUI uses it as an immediate snapshot while
+// the more expensive runtime status collection is still in progress.
+func ReadInstallations(home string) []InstallationStatus {
+	return collectInstallations(Options{Home: home}.withDefaults())
+}
+
 func collectHost(o Options) HostStatus {
 	result := HostStatus{
 		State:        CheckOK,

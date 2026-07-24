@@ -79,9 +79,11 @@ func newModel(backend Backend) Model {
 	tableStyles.Selected = bodyStyle.Copy().Padding(0, 1).Foreground(lipgloss.Color(colorLilac)).Bold(true)
 	statusTable.SetStyles(tableStyles)
 
+	initialStatus := status.SystemStatus{Installations: status.ReadInstallations("")}
 	return Model{
 		backend:      backend,
 		screen:       homeScreen,
+		status:       initialStatus,
 		toolsList:    toolsList,
 		setupActions: setupActions,
 		statusTable:  statusTable,

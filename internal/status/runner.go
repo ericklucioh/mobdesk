@@ -3,6 +3,7 @@ package status
 import (
 	"context"
 	"os/exec"
+	"time"
 
 	"github.com/ericklucioh/mobdesk/internal/executil"
 )
@@ -24,6 +25,7 @@ func (ExecRunner) Run(ctx context.Context, name string, args ...string) CommandR
 	if err != nil {
 		return CommandResult{Err: err}
 	}
+	command.WaitDelay = 500 * time.Millisecond
 	stdout, err := command.Output()
 	if err == nil {
 		return CommandResult{Stdout: stdout}
