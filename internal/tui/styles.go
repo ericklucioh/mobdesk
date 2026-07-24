@@ -13,7 +13,6 @@ const (
 	colorLine   = "#8e63c7"
 	colorPurple = "#b58cff"
 	colorLilac  = "#c3a9ff"
-	colorBlue   = "#6fc7ff"
 	colorGreen  = "#56d6a0"
 	colorYellow = "#f2c14e"
 	colorRed    = "#ef6f91"
@@ -91,13 +90,6 @@ var (
 	stepDoneStyle    = stepStyle.Copy().Foreground(lipgloss.Color(colorGreen))
 	stepActiveStyle  = stepStyle.Copy().Foreground(lipgloss.Color(colorLilac)).Bold(true)
 	stepPendingStyle = stepStyle.Copy().Foreground(lipgloss.Color(colorMuted))
-
-	logStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color(colorBlue)).
-			Background(lipgloss.Color(colorPanel)).
-			Border(lipgloss.NormalBorder()).
-			BorderForeground(lipgloss.Color(colorLine)).
-			Padding(1, 2)
 
 	modalStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#f5f0ff")).

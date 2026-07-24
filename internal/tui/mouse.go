@@ -51,8 +51,6 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			m.navigate(toolsScreen)
 		} else if blockContainsAt(lines, bodyIndex, mouse.X, "Shell Ubuntu") {
 			m.navigate(shellScreen)
-		} else if blockContainsAt(lines, bodyIndex, mouse.X, "Logs recentes") {
-			m.navigate(logsScreen)
 		} else if blockContainsAt(lines, bodyIndex, mouse.X, "Sistema") {
 			m.navigate(systemScreen)
 		}
@@ -96,16 +94,6 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			return m, m.backend.OperationCmd("update", "--json")
 		}
 		if blockContainsAt(lines, bodyIndex, mouse.X, "Voltar") {
-			m.navigate(homeScreen)
-		}
-		if blockContainsAt(lines, bodyIndex, mouse.X, "Logs") {
-			m.navigate(logsScreen)
-		}
-	case logsScreen:
-		if nearLine(lines, bodyIndex, "atualizar logs") {
-			return m, m.backend.StatusCmd()
-		}
-		if nearLine(lines, bodyIndex, "voltar") {
 			m.navigate(homeScreen)
 		}
 	}

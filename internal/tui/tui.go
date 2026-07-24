@@ -188,8 +188,6 @@ func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.navigate(shellScreen)
 	case "6", "u":
 		m.navigate(systemScreen)
-	case "7", "l":
-		m.navigate(logsScreen)
 	case "v":
 		if m.screen == systemScreen {
 			m.busy, m.operation = true, "update-check"
@@ -274,12 +272,12 @@ func (m Model) controlCount() int {
 	switch m.screen {
 	case homeScreen:
 		return 7
-	case statusScreen, shellScreen, logsScreen:
+	case statusScreen, shellScreen:
 		return 2
 	case systemScreen:
-		return 4
-	case setupScreen:
 		return 3
+	case setupScreen:
+		return 2
 	case toolsScreen:
 		return len(install.Languages())
 	default:
@@ -303,8 +301,6 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 		case 4:
 			m.navigate(shellScreen)
 		case 5:
-			m.navigate(logsScreen)
-		case 6:
 			m.navigate(systemScreen)
 		}
 		return nil, true
@@ -323,7 +319,6 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 			m.busy, m.operation = true, "setup-upgrade"
 			return m.backend.OperationCmd("setup", "--upgrade-system", "--json"), true
 		}
-		m.navigate(logsScreen)
 		return nil, true
 	case toolsScreen:
 		_, cmd := m.installSelectedTool()
@@ -344,15 +339,7 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 			return m.backend.OperationCmd("update", "--json"), true
 		case 2:
 			m.navigate(homeScreen)
-		case 3:
-			m.navigate(logsScreen)
 		}
-		return nil, true
-	case logsScreen:
-		if m.focus == 0 {
-			return m.backend.StatusCmd(), true
-		}
-		m.navigate(homeScreen)
 		return nil, true
 	}
 	return nil, false
@@ -457,8 +444,6 @@ func (m Model) renderScreen() string {
 		return m.renderShell()
 	case systemScreen:
 		return m.renderSystem()
-	case logsScreen:
-		return m.renderLogs()
 	default:
 		return m.renderHome()
 	}
@@ -488,8 +473,6 @@ func screenLabel(value screen) string {
 		return "Shell"
 	case systemScreen:
 		return "Sistema"
-	case logsScreen:
-		return "Logs"
 	default:
 		return "Mobdesk"
 	}

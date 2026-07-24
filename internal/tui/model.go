@@ -23,7 +23,6 @@ const (
 	toolsScreen
 	shellScreen
 	systemScreen
-	logsScreen
 )
 
 // Model coordena navegação e estado compartilhado. Cada tela mantém sua
@@ -82,7 +81,6 @@ func newModel(backend Backend) Model {
 	setupItems := []list.Item{
 		setupActionItem{title: "[Enter]  Continuar configuração"},
 		setupActionItem{title: "[E]      Executar upgrade completo"},
-		setupActionItem{title: "[L]      Ver logs"},
 	}
 	setupActions := list.New(setupItems, setupDelegate, 40, 5)
 	setupActions.SetShowTitle(false)

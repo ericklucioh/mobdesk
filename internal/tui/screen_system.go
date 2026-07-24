@@ -31,11 +31,6 @@ func (m Model) renderSystem() string {
 			mutedStyle.Render(wrapText("Ações destrutivas não fazem parte do MVP. O reset do Ubuntu exigirá confirmação explícita.", width-6)),
 	)
 	back := m.systemAction(2, "Voltar", "[Esc]")
-	logs := m.systemAction(3, "Logs", "[L]")
-	footer := lipgloss.JoinHorizontal(lipgloss.Top, back, "  ", logs)
-	if width < 44 {
-		footer = lipgloss.JoinVertical(lipgloss.Left, back, logs)
-	}
 
 	return strings.Join([]string{
 		tagStyle.Render("SISTEMA"),
@@ -50,7 +45,7 @@ func (m Model) renderSystem() string {
 		tagStyle.Render("DETALHES DA VERSÃO"),
 		joinCards(details, width),
 		advanced,
-		footer,
+		back,
 	}, "\n\n")
 }
 

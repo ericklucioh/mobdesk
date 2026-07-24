@@ -147,10 +147,13 @@ func TestSystemRendersFigmaSections(t *testing.T) {
 	model.version.OS = "linux"
 	model.version.Architecture = "arm64"
 	view := ansi.Strip(model.renderSystem())
-	for _, expected := range []string{"SISTEMA", "Mobdesk", "ATUALIZAÇÃO", "Verificar", "Atualizar", "DETALHES DA VERSÃO", "VERSÃO", "CANAL", "PLATAFORMA", "ÁREA AVANÇADA", "Voltar", "Logs"} {
+	for _, expected := range []string{"SISTEMA", "Mobdesk", "ATUALIZAÇÃO", "Verificar", "Atualizar", "DETALHES DA VERSÃO", "VERSÃO", "CANAL", "PLATAFORMA", "ÁREA AVANÇADA", "Voltar"} {
 		if !strings.Contains(view, expected) {
 			t.Fatalf("system view does not contain %q: %s", expected, view)
 		}
+	}
+	if strings.Contains(view, "Logs") {
+		t.Fatalf("system view still exposes the removed Logs action: %s", view)
 	}
 	for _, line := range strings.Split(view, "\n") {
 		if lipgloss.Width(line) > contentWidth(model.width) {

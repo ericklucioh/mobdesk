@@ -34,8 +34,7 @@ func (m Model) renderHome() string {
 		card(2, "◉", "Status", "Ambiente e dispositivo"),
 		card(3, "＋", "Apps e linguagens", "Go · Python · Node.js"),
 		card(4, "⌁", "Shell Ubuntu", "Abrir terminal"),
-		card(5, "≡", "Logs recentes", "Histórico das operações"),
-		card(6, "◆", "Sistema", "Versão e atualização"),
+		card(5, "◆", "Sistema", "Versão e atualização"),
 	}
 	return tagStyle.Render("INÍCIO") + "\n" + primary.Render(primaryText) + message + "\n\n" + joinCards(cards, m.width)
 }
