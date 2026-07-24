@@ -34,6 +34,7 @@ type Model struct {
 	width          int
 	height         int
 	confirmExit    bool
+	closing        bool
 	busy           bool
 	message        string
 	operation      string

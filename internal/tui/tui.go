@@ -2,6 +2,7 @@ package tui
 
 import (
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -10,6 +11,8 @@ import (
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case quitAfterMouseResetMsg:
+		return m, tea.Quit
 	case tea.WindowSizeMsg:
 		m.resize(msg.Width, msg.Height)
 	case tea.MouseWheelMsg:
@@ -239,7 +242,10 @@ func (m Model) updateConfirmation(key string) (tea.Model, tea.Cmd) {
 			return m, m.backend.OperationCmd("stop", "--json")
 		}
 		m.confirmExit = false
-		return m, tea.Quit
+		m.closing = true
+		return m, tea.Tick(time.Millisecond, func(time.Time) tea.Msg {
+			return quitAfterMouseResetMsg{}
+		})
 	case "n", "N", "esc", "q":
 		m.confirmExit, m.confirmStop = false, false
 	}
@@ -363,9 +369,15 @@ func (m Model) View() tea.View {
 	// CellMotion habilita clique, release, roda e movimento durante o arraste.
 	// É o modo mais compatível com terminais móveis como o Termux: não envia
 	// eventos de movimento contínuos quando o dedo está apenas parado na tela.
-	view.MouseMode = tea.MouseModeCellMotion
+	if m.closing {
+		view.MouseMode = tea.MouseModeNone
+	} else {
+		view.MouseMode = tea.MouseModeCellMotion
+	}
 	return view
 }
+
+type quitAfterMouseResetMsg struct{}
 
 func (m Model) render() string {
 	header := m.renderHeader()
