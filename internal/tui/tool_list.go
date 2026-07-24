@@ -12,8 +12,9 @@ import (
 )
 
 type toolListItem struct {
-	entry     toolEntry
-	installed bool
+	entry      toolEntry
+	installed  bool
+	installing bool
 }
 
 func (i toolListItem) FilterValue() string {
@@ -47,10 +48,12 @@ func (toolListDelegate) Render(writer io.Writer, model list.Model, index int, it
 	}
 	app := ansi.Truncate(toolAppLabel(value.entry), leftWidth, "…")
 	phrase := ansi.Truncate(value.entry.phrase, leftWidth, "…")
-	state := ansi.Truncate(toolDisplayState(value.installed), stateWidth, "…")
+	state := ansi.Truncate(toolDisplayState(value.installed, value.installing), stateWidth, "…")
 	stateStyle := bodyStyle.Copy().Bold(true)
 	if value.installed {
 		stateStyle = stateStyle.Foreground(lipgloss.Color(colorGreen))
+	} else if value.installing {
+		stateStyle = stateStyle.Foreground(lipgloss.Color(colorYellow))
 	}
 	appView := appStyle.Render(app)
 	stateView := stateStyle.Render(state)
@@ -64,9 +67,12 @@ func (toolListDelegate) Render(writer io.Writer, model list.Model, index int, it
 	_, _ = fmt.Fprint(writer, itemStyle.Render(row))
 }
 
-func toolDisplayState(installed bool) string {
+func toolDisplayState(installed, installing bool) string {
 	if installed {
 		return "instalado"
+	}
+	if installing {
+		return "Instalando"
 	}
 	return "instalar"
 }

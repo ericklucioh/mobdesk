@@ -86,10 +86,11 @@ var (
 				Foreground(lipgloss.Color(colorRed)).
 				BorderForeground(lipgloss.Color(colorRed))
 
-	stepStyle        = cardStyle.Copy().Padding(0, 1)
-	stepDoneStyle    = stepStyle.Copy().Foreground(lipgloss.Color(colorGreen))
-	stepActiveStyle  = stepStyle.Copy().Foreground(lipgloss.Color(colorLilac)).Bold(true)
-	stepPendingStyle = stepStyle.Copy().Foreground(lipgloss.Color(colorMuted))
+	stepStyle          = cardStyle.Copy().Padding(0, 1)
+	stepDoneStyle      = stepStyle.Copy().Foreground(lipgloss.Color(colorGreen))
+	stepActiveStyle    = stepStyle.Copy().Foreground(lipgloss.Color(colorLilac)).Bold(true)
+	stepPendingStyle   = stepStyle.Copy().Foreground(lipgloss.Color(colorMuted))
+	operationWaitStyle = bodyStyle.Copy().Bold(true).Foreground(lipgloss.Color(colorYellow))
 
 	modalStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#f5f0ff")).

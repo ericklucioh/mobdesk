@@ -3,8 +3,6 @@ package tui
 import (
 	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/list"
-	"charm.land/bubbles/v2/progress"
-	"charm.land/bubbles/v2/spinner"
 	"charm.land/bubbles/v2/table"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
@@ -29,32 +27,31 @@ const (
 // renderização em um arquivo próprio; componentes Bubbles ficam reutilizados
 // no estado central para que Update e View continuem leves.
 type Model struct {
-	backend      Backend
-	screen       screen
-	status       status.SystemStatus
-	version      version.Info
-	statusLoaded bool
-	width        int
-	height       int
-	confirmExit  bool
-	busy         bool
-	message      string
-	operation    string
-	confirmStop  bool
-	dragging     bool
-	dragY        int
-	pointerDown  bool
-	pressMouse   tea.Mouse
-	selectedTool int
-	focus        int
-	history      []screen
-	toolsList    list.Model
-	setupActions list.Model
-	statusTable  table.Model
-	viewport     viewport.Model
-	progress     progress.Model
-	spinner      spinner.Model
-	help         help.Model
+	backend        Backend
+	screen         screen
+	status         status.SystemStatus
+	version        version.Info
+	statusLoaded   bool
+	width          int
+	height         int
+	confirmExit    bool
+	busy           bool
+	message        string
+	operation      string
+	installingTool string
+	confirmStop    bool
+	dragging       bool
+	dragY          int
+	pointerDown    bool
+	pressMouse     tea.Mouse
+	selectedTool   int
+	focus          int
+	history        []screen
+	toolsList      list.Model
+	setupActions   list.Model
+	statusTable    table.Model
+	viewport       viewport.Model
+	help           help.Model
 }
 
 func New() Model {
@@ -90,7 +87,7 @@ func newModel(backend Backend) Model {
 	setupActions.SetShowHelp(false)
 	setupActions.DisableQuitKeybindings()
 
-	toolsList := list.New(toolListItems(status.SystemStatus{}), toolListDelegate{}, 40, 12)
+	toolsList := list.New(toolListItems(status.SystemStatus{}, ""), toolListDelegate{}, 40, 12)
 	toolsList.SetShowTitle(false)
 	toolsList.SetShowFilter(false)
 	toolsList.SetShowStatusBar(false)
@@ -113,8 +110,6 @@ func newModel(backend Backend) Model {
 		setupActions: setupActions,
 		statusTable:  statusTable,
 		viewport:     viewport.New(viewport.WithWidth(40), viewport.WithHeight(18)),
-		progress:     progress.New(progress.WithColors(lipgloss.Color(colorPurple), lipgloss.Color(colorLilac)), progress.WithoutPercentage()),
-		spinner:      spinner.New(spinner.WithSpinner(spinner.MiniDot), spinner.WithStyle(statusColor("starting"))),
 		help:         help.New(),
 	}
 }
@@ -167,11 +162,15 @@ func toolEntries(kind string) []toolEntry {
 	return entries
 }
 
-func toolListItems(value status.SystemStatus) []list.Item {
+func toolListItems(value status.SystemStatus, installing string) []list.Item {
 	entries := toolEntries("language")
 	items := make([]list.Item, 0, len(entries))
 	for _, entry := range entries {
-		items = append(items, toolListItem{entry: entry, installed: toolInstalled(value, entry)})
+		items = append(items, toolListItem{
+			entry:      entry,
+			installed:  toolInstalled(value, entry),
+			installing: entry.language.Name == installing,
+		})
 	}
 	return items
 }
@@ -192,5 +191,5 @@ func toolInstalled(value status.SystemStatus, entry toolEntry) bool {
 func (m Model) Run() (tea.Model, error) { return tea.NewProgram(m).Run() }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(m.backend.StatusCmd(), func() tea.Msg { return m.spinner.Tick() })
+	return m.backend.StatusCmd()
 }

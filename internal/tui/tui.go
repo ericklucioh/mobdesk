@@ -3,7 +3,6 @@ package tui
 import (
 	"strings"
 
-	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ericklucioh/mobdesk/internal/install"
@@ -56,6 +55,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case statusMessage:
 		if msg.err != nil {
 			m.busy = false
+			m.installingTool = ""
 			m.message = msg.err.Error()
 			return m, nil
 		}
@@ -63,11 +63,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.version = msg.info
 		m.statusLoaded = true
 		m.busy = false
+		m.installingTool = ""
 		m.statusTable.SetRows(statusRows(msg.value, m.width))
-	case spinner.TickMsg:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
 	case operationMessage:
 		m.busy = false
 		m.operation = ""
@@ -107,7 +104,6 @@ func (m *Model) resize(width, height int) {
 	m.statusTable.SetHeight(min(height, 10))
 	m.viewport.SetWidth(contentWidth(width))
 	m.viewport.SetHeight(max(1, m.height-3))
-	m.progress.SetWidth(max(10, contentWidth(width)-4))
 }
 
 func operationMessageText(msg operationMessage) string {
@@ -241,13 +237,14 @@ func isListKey(value string) bool {
 func isViewportKey(value string) bool { return isListKey(value) || value == "home" || value == "end" }
 
 func (m Model) installSelectedTool() (tea.Model, tea.Cmd) {
-	m.busy, m.operation = true, "install"
 	entries := toolEntries("language")
 	index := m.toolsList.Index()
 	if index < 0 || index >= len(entries) {
 		return m, nil
 	}
 	m.selectedTool = index
+	m.busy, m.operation = true, "install"
+	m.installingTool = entries[index].language.Name
 	return m, m.backend.OperationCmd("install", entries[index].language.Name, "--json")
 }
 

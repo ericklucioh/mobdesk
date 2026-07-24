@@ -80,6 +80,56 @@ func TestToolsUseBorderedTwoLineItemsAndInstallationState(t *testing.T) {
 	}
 }
 
+func TestToolsShowInstallingUntilFinalStatus(t *testing.T) {
+	model := New()
+	model.screen = toolsScreen
+	model.width = 44
+	model.height = 30
+	model.resize(model.width, model.height)
+
+	started, _ := model.installSelectedTool()
+	model = started.(Model)
+	if model.installingTool != "go" || !model.busy {
+		t.Fatalf("install did not enter transient state: installing=%q busy=%v", model.installingTool, model.busy)
+	}
+	if view := ansi.Strip(model.renderTools()); !strings.Contains(view, "Instalando") {
+		t.Fatalf("tools view does not show transient installation state: %s", view)
+	}
+
+	updated, _ := model.Update(operationMessage{command: "install", result: operationResult{Language: "go"}})
+	model = updated.(Model)
+	if model.busy || model.installingTool != "go" {
+		t.Fatalf("operation result cleared state before status snapshot: busy=%v installing=%q", model.busy, model.installingTool)
+	}
+
+	value := status.SystemStatus{Installations: []status.InstallationStatus{{Name: "go", Kind: "language", State: "installed"}}}
+	updated, _ = model.Update(statusMessage{value: value})
+	model = updated.(Model)
+	if model.installingTool != "" || !strings.Contains(ansi.Strip(model.renderTools()), "instalado") {
+		t.Fatalf("final status did not settle installation state: installing=%q view=%s", model.installingTool, model.renderTools())
+	}
+}
+
+func TestOperationViewHasNoFakeProgress(t *testing.T) {
+	model := New()
+	model.width = 44
+	model.height = 30
+	model.busy = true
+	model.operation = "start"
+
+	view := ansi.Strip(model.renderOperation())
+	for _, unexpected := range []string{"Verificando setup", "●", "○", "%", "━"} {
+		if strings.Contains(view, unexpected) {
+			t.Fatalf("operation view still contains fake progress %q: %s", unexpected, view)
+		}
+	}
+	for _, expected := range []string{"Iniciando workstation", "Operação em andamento", "Aguarde a conclusão"} {
+		if !strings.Contains(view, expected) {
+			t.Fatalf("operation view does not contain %q: %s", expected, view)
+		}
+	}
+}
+
 func TestToolsMouseWheelMovesBubbleList(t *testing.T) {
 	model := New()
 	model.screen = toolsScreen
