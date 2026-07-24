@@ -132,16 +132,14 @@ func operationMessageText(msg operationMessage) string {
 func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	key := msg.String()
 	if m.screen == toolsScreen && isListKey(key) {
-		var cmd tea.Cmd
-		m.toolsList, cmd = m.toolsList.Update(msg)
+		m.moveSelector(&m.toolsList, key)
 		m.selectedTool = m.toolsList.Index()
-		return m, cmd
+		return m, nil
 	}
 	if m.screen == setupScreen && isListKey(key) {
-		var cmd tea.Cmd
-		m.setupActions, cmd = m.setupActions.Update(msg)
+		m.moveSelector(&m.setupActions, key)
 		m.focus = m.setupActions.Index()
-		return m, cmd
+		return m, nil
 	}
 	if m.screen != toolsScreen && isViewportKey(key) {
 		m.viewport.SetContent(m.renderScreen())
@@ -213,6 +211,23 @@ func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+}
+
+func (m *Model) moveSelector(selector *selector, key string) {
+	switch key {
+	case "up", "k":
+		selector.CursorUp()
+	case "down", "j":
+		selector.CursorDown()
+	case "pgup":
+		for i := 0; i < max(1, selector.height/4); i++ {
+			selector.CursorUp()
+		}
+	case "pgdown":
+		for i := 0; i < max(1, selector.height/4); i++ {
+			selector.CursorDown()
+		}
+	}
 }
 
 func (m Model) updateConfirmation(key string) (tea.Model, tea.Cmd) {

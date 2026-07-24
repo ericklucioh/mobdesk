@@ -291,6 +291,83 @@ func TestMouseClickOnHomeRightColumnOpensShell(t *testing.T) {
 	}
 }
 
+func TestMouseClickOnHomeStartButtonStartsWorkstation(t *testing.T) {
+	model := New()
+	model.width = 44
+	model.height = 30
+	lines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
+	targetLine, targetX := -1, -1
+	for index, line := range lines {
+		if position := strings.Index(line, "Iniciar"); position >= 0 {
+			targetLine, targetX = index, position+1
+			break
+		}
+	}
+	if targetLine < 0 {
+		t.Fatal("home start button was not rendered")
+	}
+
+	updatedClick, _ := model.Update(tea.MouseClickMsg{X: targetX, Y: targetLine + 4, Button: tea.MouseLeft})
+	model = updatedClick.(Model)
+	updated, cmd := model.Update(tea.MouseReleaseMsg{X: targetX, Y: targetLine + 4, Button: tea.MouseLeft})
+	model = updated.(Model)
+	if cmd == nil || !model.busy || model.operation != "start" {
+		t.Fatalf("clicking home start did not dispatch start: cmd=%v busy=%v operation=%q", cmd != nil, model.busy, model.operation)
+	}
+}
+
+func TestMouseClickOnHomeStopButtonOpensConfirmation(t *testing.T) {
+	model := New()
+	model.status.SSH.Running = true
+	model.width = 44
+	model.height = 30
+	lines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
+	targetLine, targetX := -1, -1
+	for index, line := range lines {
+		if position := strings.Index(line, "Parar"); position >= 0 {
+			targetLine, targetX = index, position+1
+			break
+		}
+	}
+	if targetLine < 0 {
+		t.Fatal("home stop button was not rendered")
+	}
+
+	updatedClick, _ := model.Update(tea.MouseClickMsg{X: targetX, Y: targetLine + 4, Button: tea.MouseLeft})
+	model = updatedClick.(Model)
+	updated, cmd := model.Update(tea.MouseReleaseMsg{X: targetX, Y: targetLine + 4, Button: tea.MouseLeft})
+	model = updated.(Model)
+	if cmd != nil || !model.confirmStop {
+		t.Fatalf("clicking home stop did not open confirmation: cmd=%v confirm=%v", cmd != nil, model.confirmStop)
+	}
+}
+
+func TestMouseClickOnSetupContinueDispatchesSetup(t *testing.T) {
+	model := New()
+	model.screen = setupScreen
+	model.width = 44
+	model.height = 30
+	lines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
+	targetLine, targetX := -1, -1
+	for index, line := range lines {
+		if position := strings.Index(line, "Continuar configuração"); position >= 0 {
+			targetLine, targetX = index, position+1
+			break
+		}
+	}
+	if targetLine < 0 {
+		t.Fatal("setup continue button was not rendered")
+	}
+
+	updatedClick, _ := model.Update(tea.MouseClickMsg{X: targetX, Y: targetLine + 4, Button: tea.MouseLeft})
+	model = updatedClick.(Model)
+	updated, cmd := model.Update(tea.MouseReleaseMsg{X: targetX, Y: targetLine + 4, Button: tea.MouseLeft})
+	model = updated.(Model)
+	if cmd == nil || !model.busy || model.operation != "setup" {
+		t.Fatalf("clicking setup continue did not dispatch setup: cmd=%v busy=%v operation=%q", cmd != nil, model.busy, model.operation)
+	}
+}
+
 func TestMouseClickOnStatusBackButtonOnWideScreen(t *testing.T) {
 	model := New()
 	model.screen = statusScreen

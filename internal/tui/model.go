@@ -2,7 +2,6 @@ package tui
 
 import (
 	"charm.land/bubbles/v2/help"
-	"charm.land/bubbles/v2/list"
 	"charm.land/bubbles/v2/table"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
@@ -47,8 +46,8 @@ type Model struct {
 	selectedTool   int
 	focus          int
 	history        []screen
-	toolsList      list.Model
-	setupActions   list.Model
+	toolsList      selector
+	setupActions   selector
 	statusTable    table.Model
 	viewport       viewport.Model
 	help           help.Model
@@ -68,32 +67,8 @@ func NewWithBackend(backend Backend) Model {
 }
 
 func newModel(backend Backend) Model {
-	setupDelegate := list.NewDefaultDelegate()
-	setupDelegate.ShowDescription = false
-	setupDelegate.SetHeight(1)
-	setupDelegate.SetSpacing(0)
-	setupDelegate.Styles = list.NewDefaultItemStyles(true)
-	setupDelegate.Styles.NormalTitle = buttonStyle.Copy().Padding(0, 1)
-	setupDelegate.Styles.SelectedTitle = primaryButtonStyle.Copy().Padding(0, 1)
-	setupItems := []list.Item{
-		setupActionItem{title: "[Enter]  Continuar configuração"},
-		setupActionItem{title: "[E]      Executar upgrade completo"},
-	}
-	setupActions := list.New(setupItems, setupDelegate, 40, 5)
-	setupActions.SetShowTitle(false)
-	setupActions.SetShowFilter(false)
-	setupActions.SetShowStatusBar(false)
-	setupActions.SetShowPagination(false)
-	setupActions.SetShowHelp(false)
-	setupActions.DisableQuitKeybindings()
-
-	toolsList := list.New(toolListItems(status.SystemStatus{}, ""), toolListDelegate{}, 40, 12)
-	toolsList.SetShowTitle(false)
-	toolsList.SetShowFilter(false)
-	toolsList.SetShowStatusBar(false)
-	toolsList.SetShowPagination(false)
-	toolsList.SetShowHelp(false)
-	toolsList.DisableQuitKeybindings()
+	setupActions := selector{count: 2}
+	toolsList := selector{count: len(toolEntries("language"))}
 	columns := statusTableColumns(40)
 	statusTable := table.New(table.WithColumns(columns), table.WithRows(nil))
 	tableStyles := table.DefaultStyles()
@@ -113,12 +88,6 @@ func newModel(backend Backend) Model {
 		help:         help.New(),
 	}
 }
-
-type setupActionItem struct{ title string }
-
-func (i setupActionItem) FilterValue() string { return i.title }
-func (i setupActionItem) Title() string       { return i.title }
-func (i setupActionItem) Description() string { return "" }
 
 type toolEntry struct {
 	language install.Language
@@ -162,9 +131,9 @@ func toolEntries(kind string) []toolEntry {
 	return entries
 }
 
-func toolListItems(value status.SystemStatus, installing string) []list.Item {
+func toolListItems(value status.SystemStatus, installing string) []toolListItem {
 	entries := toolEntries("language")
-	items := make([]list.Item, 0, len(entries))
+	items := make([]toolListItem, 0, len(entries))
 	for _, entry := range entries {
 		items = append(items, toolListItem{
 			entry:      entry,

@@ -40,6 +40,9 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 	}
 	switch m.screen {
 	case homeScreen:
+		if blockContainsAtAny(lines, bodyIndex, mouse.X, "Iniciar") || blockContainsAtAny(lines, bodyIndex, mouse.X, "Parar") {
+			return m.toggleWorkstation()
+		}
 		if blockContainsAt(lines, bodyIndex, mouse.X, "Workstation SSH") {
 			return m.toggleWorkstation()
 		}
@@ -65,6 +68,14 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			}
 		}
 	case setupScreen:
+		if blockContainsAt(lines, bodyIndex, mouse.X, "Continuar configuração") {
+			m.busy, m.operation = true, "setup"
+			return m, m.backend.OperationCmd("setup", "--json")
+		}
+		if blockContainsAt(lines, bodyIndex, mouse.X, "upgrade completo") {
+			m.busy, m.operation = true, "setup-upgrade"
+			return m, m.backend.OperationCmd("setup", "--upgrade-system", "--json")
+		}
 		if nearLine(lines, bodyIndex, "upgrade") || nearLine(lines, bodyIndex, "upgrade completo") {
 			m.busy, m.operation = true, "setup-upgrade"
 			return m, m.backend.OperationCmd("setup", "--upgrade-system", "--json")

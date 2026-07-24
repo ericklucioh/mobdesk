@@ -10,7 +10,8 @@ func (m Model) renderSetup() string {
 	view += wrapText("A configuração é idempotente e pode ser retomada sem apagar seus dados.", width) + "\n\n"
 	m.setupActions.SetSize(max(1, width-4), max(3, min(5, m.height-10)))
 	m.setupActions.Select(m.focus)
-	view += m.setupActions.View() + "\n"
+	view += setupAction(m.setupActions.width, m.setupActions.Index() == 0, "[Enter]  Continuar configuração", true) + "\n"
+	view += setupAction(m.setupActions.width, m.setupActions.Index() == 1, "[E]      Executar upgrade completo", false) + "\n"
 	view += setupStep(width, "✓", "Diretórios do Mobdesk", "config e logs privados criados", stepDoneStyle)
 	view += setupStep(width, "✓", "Pacotes Termux", "proot-distro · openssh · net-tools", stepDoneStyle)
 	view += setupStep(width, "✓", "Ubuntu persistente", "PRoot ARM64 instalado", stepDoneStyle)
