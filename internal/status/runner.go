@@ -3,6 +3,8 @@ package status
 import (
 	"context"
 	"os/exec"
+
+	"github.com/ericklucioh/mobdesk/internal/executil"
 )
 
 type CommandResult struct {
@@ -18,7 +20,10 @@ type CommandRunner interface {
 type ExecRunner struct{}
 
 func (ExecRunner) Run(ctx context.Context, name string, args ...string) CommandResult {
-	command := exec.CommandContext(ctx, name, args...)
+	command, err := executil.CommandContext(ctx, name, args...)
+	if err != nil {
+		return CommandResult{Err: err}
+	}
 	stdout, err := command.Output()
 	if err == nil {
 		return CommandResult{Stdout: stdout}

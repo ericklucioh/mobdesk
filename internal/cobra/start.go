@@ -18,6 +18,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/creack/pty/v2"
+	"github.com/ericklucioh/mobdesk/internal/executil"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -187,7 +188,10 @@ func runStopJSON(ctx context.Context) error {
 }
 
 func validateSSHConfig(configPath string) error {
-	command := exec.Command("sshd", "-t", "-f", configPath)
+	command, err := executil.Command("sshd", "-t", "-f", configPath)
+	if err != nil {
+		return fmt.Errorf("resolver sshd: %w", err)
+	}
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
 	if err := command.Run(); err != nil {
@@ -197,20 +201,22 @@ func validateSSHConfig(configPath string) error {
 }
 
 func startWakeLock() {
-	if _, err := exec.LookPath("termux-wake-lock"); err != nil {
+	command, err := executil.Command("termux-wake-lock")
+	if err != nil {
 		fmt.Println("Aviso: termux-wake-lock não está disponível neste ambiente.")
 		return
 	}
-	if err := exec.Command("termux-wake-lock").Run(); err != nil {
+	if err := command.Run(); err != nil {
 		fmt.Printf("Aviso: não foi possível ativar o wake-lock: %v\n", err)
 	}
 }
 
 func unlockWakeLock() {
-	if _, err := exec.LookPath("termux-wake-unlock"); err != nil {
+	command, err := executil.Command("termux-wake-unlock")
+	if err != nil {
 		return
 	}
-	if err := exec.Command("termux-wake-unlock").Run(); err != nil {
+	if err := command.Run(); err != nil {
 		fmt.Printf("Aviso: não foi possível liberar o wake-lock: %v\n", err)
 	}
 }
@@ -221,7 +227,10 @@ func startSSH(ctx context.Context) error {
 	if !mobdeskSSHProcess() {
 		_ = os.Remove(paths.pid)
 	}
-	command := exec.CommandContext(ctx, "sshd", "-f", paths.config, "-E", paths.log)
+	command, err := executil.CommandContext(ctx, "sshd", "-f", paths.config, "-E", paths.log)
+	if err != nil {
+		return fmt.Errorf("resolver sshd: %w", err)
+	}
 	command.Stdin = os.Stdin
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr
@@ -349,7 +358,7 @@ func printAccessInstructions() {
 }
 
 func localIPv4Addresses() []string {
-	ifconfig, err := exec.LookPath("ifconfig")
+	ifconfig, err := executil.Resolve("ifconfig")
 	if err != nil {
 		return nil
 	}
@@ -390,7 +399,7 @@ func extractIPv4Addresses(output string) []string {
 }
 
 func ensureIfconfig(ctx context.Context) error {
-	if _, err := exec.LookPath("ifconfig"); err == nil {
+	if _, err := executil.Resolve("ifconfig"); err == nil {
 		return nil
 	}
 	fmt.Println("ifconfig não encontrado; instalando net-tools...")
@@ -408,7 +417,10 @@ func appendUnique(addresses []string, address string) []string {
 
 func runInteractive(ctx context.Context, name string, args ...string) error {
 	fmt.Printf("\n$ %s %s\n", name, strings.Join(args, " "))
-	command := exec.CommandContext(ctx, name, args...)
+	command, err := executil.CommandContext(ctx, name, args...)
+	if err != nil {
+		return err
+	}
 	ptmx, err := pty.Start(command)
 	if err != nil {
 		return fmt.Errorf("iniciar PTY para %q: %w", name, err)

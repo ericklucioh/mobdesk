@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/ericklucioh/mobdesk/internal/executil"
 	"github.com/spf13/cobra"
 )
 
@@ -232,7 +232,10 @@ func runUbuntu(ctx context.Context, args ...string) error {
 
 func runCommand(ctx context.Context, name string, args ...string) error {
 	fmt.Printf("\n$ %s %s\n", name, strings.Join(args, " "))
-	command := exec.CommandContext(ctx, name, args...)
+	command, err := executil.CommandContext(ctx, name, args...)
+	if err != nil {
+		return err
+	}
 	command.Stdin = os.Stdin
 	command.Stdout = os.Stdout
 	command.Stderr = os.Stderr

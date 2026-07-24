@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -16,6 +15,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/executil"
 )
 
 const (
@@ -39,7 +40,7 @@ func (o Options) withDefaults() Options {
 		o.CommandRunner = ExecRunner{}
 	}
 	if o.LookPath == nil {
-		o.LookPath = exec.LookPath
+		o.LookPath = executil.Resolve
 	}
 	if o.Now == nil {
 		o.Now = time.Now
