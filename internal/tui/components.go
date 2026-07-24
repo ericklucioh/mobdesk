@@ -3,7 +3,7 @@ package tui
 import (
 	"fmt"
 	"strings"
-	"unicode"
+	"unicode/utf8"
 
 	"github.com/charmbracelet/x/ansi"
 )
@@ -49,30 +49,49 @@ func blockContains(lines []string, index int, text string) bool {
 
 func blockContainsAt(lines []string, index, x int, text string) bool {
 	for position, line := range lines {
-		if !strings.Contains(strings.ToLower(line), strings.ToLower(text)) {
+		plain := ansi.Strip(line)
+		start := strings.Index(strings.ToLower(plain), strings.ToLower(text))
+		// Botões Lipgloss têm três linhas: borda superior, conteúdo e borda
+		// inferior. Todas pertencem ao mesmo alvo.
+		if start < 0 || index < position-1 || index > position+1 {
 			continue
 		}
-		start := max(0, position-2)
-		end := min(len(lines), position+3)
-		if index < start || index >= end {
-			return false
+		first := utf8.RuneCountInString(plain[:start])
+		last := first + utf8.RuneCountInString(text) - 1
+		// O alvo inclui o padding e a borda do botão, não apenas as letras.
+		return x >= first-2 && x <= last+2
+	}
+	return false
+}
+
+// blockContainsAtAny é usado quando uma tela repete um rótulo, como "Status"
+// no cartão da Home e no resumo da workstation. Ele testa todas as ocorrências
+// antes de desistir, mantendo a validação horizontal do alvo.
+func blockContainsAtAny(lines []string, index, x int, text string) bool {
+	for position, line := range lines {
+		plain := ansi.Strip(line)
+		start := strings.Index(strings.ToLower(plain), strings.ToLower(text))
+		if start < 0 || index < position-1 || index > position+1 {
+			continue
 		}
-		for row := start; row < end; row++ {
-			plain := []rune(ansi.Strip(lines[row]))
-			first, last := -1, -1
-			for column, value := range plain {
-				if !unicode.IsSpace(value) {
-					if first == -1 {
-						first = column
-					}
-					last = column
-				}
-			}
-			if row == index && first >= 0 {
-				return x >= first && x <= last
-			}
+		first := utf8.RuneCountInString(plain[:start])
+		last := first + utf8.RuneCountInString(text) - 1
+		if x >= first-2 && x <= last+2 {
+			return true
 		}
-		return false
+	}
+	return false
+}
+
+func toolRowContainsAt(lines []string, index, x int, label string, width int) bool {
+	for position, line := range lines {
+		plain := ansi.Strip(line)
+		if !strings.Contains(strings.ToLower(plain), strings.ToLower(label)) {
+			continue
+		}
+		if index >= position && index <= position+1 && x >= 0 && x < width {
+			return true
+		}
 	}
 	return false
 }

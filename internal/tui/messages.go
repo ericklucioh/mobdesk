@@ -27,6 +27,7 @@ type operationResult struct {
 type statusMessage struct {
 	value status.SystemStatus
 	info  version.Info
+	err   error
 }
 
 func decodeOperation(output []byte) (operationResult, error) {

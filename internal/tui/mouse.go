@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/ericklucioh/mobdesk/internal/install"
 )
 
 func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
@@ -46,7 +45,7 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 		}
 		if blockContainsAt(lines, bodyIndex, mouse.X, "Configurar") {
 			m.navigate(setupScreen)
-		} else if blockContainsAt(lines, bodyIndex, mouse.X, "Status") {
+		} else if blockContainsAtAny(lines, bodyIndex, mouse.X, "Status") {
 			m.navigate(statusScreen)
 		} else if blockContainsAt(lines, bodyIndex, mouse.X, "Apps e linguagens") {
 			m.navigate(toolsScreen)
@@ -58,10 +57,10 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			m.navigate(systemScreen)
 		}
 	case toolsScreen:
-		for index, item := range install.Languages() {
-			if blockContainsAt(lines, bodyIndex, mouse.X, item.Name) {
+		for index, entry := range toolEntries("language") {
+			if toolRowContainsAt(lines, bodyIndex, mouse.X, toolAppLabel(entry), contentWidth(m.width)) {
 				m.selectedTool = index
-				m.toolsTable.SetCursor(index)
+				m.toolsList.Select(index)
 				// Toda a linha funciona como alvo no celular. O teclado ainda
 				// permite selecionar e confirmar sem depender do mouse.
 				return m.installSelectedTool()
@@ -70,35 +69,41 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 	case setupScreen:
 		if nearLine(lines, bodyIndex, "upgrade") || nearLine(lines, bodyIndex, "upgrade completo") {
 			m.busy, m.operation = true, "setup-upgrade"
-			return m, runCommand("setup", "--upgrade-system", "--json")
+			return m, m.backend.OperationCmd("setup", "--upgrade-system", "--json")
 		}
 		if nearLine(lines, bodyIndex, "Setup retomável") {
 			m.busy, m.operation = true, "setup"
-			return m, runCommand("setup", "--json")
+			return m, m.backend.OperationCmd("setup", "--json")
 		}
 	case statusScreen:
-		if nearLine(lines, bodyIndex, "atualizar status") {
-			return m, loadStatus
+		if blockContainsAt(lines, bodyIndex, mouse.X, "atualizar") {
+			return m, m.backend.StatusCmd()
 		}
-		if nearLine(lines, bodyIndex, "voltar") {
+		if blockContainsAt(lines, bodyIndex, mouse.X, "voltar") {
 			m.navigate(homeScreen)
 		}
 	case shellScreen:
 		if nearLine(lines, bodyIndex, "Abrir shell") || nearLine(lines, bodyIndex, "Enter abrir shell") {
-			return m.openShell()
+			return m, m.backend.ShellCmd()
 		}
 	case systemScreen:
-		if nearLine(lines, bodyIndex, "verificar") {
+		if blockContainsAt(lines, bodyIndex, mouse.X, "Verificar") {
 			m.busy, m.operation = true, "update-check"
-			return m, runCommand("update", "--check", "--json")
+			return m, m.backend.OperationCmd("update", "--check", "--json")
 		}
-		if nearLine(lines, bodyIndex, "aplicar") {
+		if blockContainsAt(lines, bodyIndex, mouse.X, "Atualizar") {
 			m.busy, m.operation = true, "update"
-			return m, runCommand("update", "--json")
+			return m, m.backend.OperationCmd("update", "--json")
+		}
+		if blockContainsAt(lines, bodyIndex, mouse.X, "Voltar") {
+			m.navigate(homeScreen)
+		}
+		if blockContainsAt(lines, bodyIndex, mouse.X, "Logs") {
+			m.navigate(logsScreen)
 		}
 	case logsScreen:
 		if nearLine(lines, bodyIndex, "atualizar logs") {
-			return m, loadStatus
+			return m, m.backend.StatusCmd()
 		}
 		if nearLine(lines, bodyIndex, "voltar") {
 			m.navigate(homeScreen)

@@ -6,6 +6,10 @@ func (m Model) renderHome() string {
 	if m.status.SSH.Running {
 		state, action = "ativado", "Parar"
 	}
+	stateStyle := homeInactiveStyle
+	if m.status.SSH.Running {
+		stateStyle = homeActiveStyle
+	}
 	width := contentWidth(m.width)
 	primary := primaryCardStyle.Copy().Width(width)
 	cardWidth := width
@@ -23,10 +27,8 @@ func (m Model) renderHome() string {
 	if m.message != "" {
 		message = "\n\n" + statusColor("warning").Render(m.message)
 	}
-	primaryText := "Workstation SSH\nStatus: " + state + "\n\n" + action
-	if m.focus == 0 {
-		primaryText = "> Workstation SSH\n  Status: " + state + "\n\n> " + action
-	}
+	primaryAction := buttonStyle.Render(action)
+	primaryText := titleStyle.Render("Workstation SSH") + "\n" + homeStatusLabelStyle.Render("Status: ") + stateStyle.Render(state) + "\n\n" + primaryAction
 	cards := []string{
 		card(1, "◆", "Configurar", "Termux + Ubuntu + SSH"),
 		card(2, "◉", "Status", "Ambiente e dispositivo"),

@@ -20,16 +20,13 @@ func (m Model) updateMouseDrag(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) dragTable(delta int) (tea.Model, tea.Cmd) {
-	button := tea.MouseWheelUp
-	if delta > 0 {
-		button = tea.MouseWheelDown
-	}
 	for step := 0; step < abs(delta); step++ {
-		var cmd tea.Cmd
-		m.toolsTable, cmd = m.toolsTable.Update(tea.MouseWheelMsg{Button: button})
-		if cmd != nil {
-			return m, cmd
+		if delta > 0 {
+			m.toolsList.CursorDown()
+		} else {
+			m.toolsList.CursorUp()
 		}
+		m.selectedTool = m.toolsList.Index()
 	}
 	return m, nil
 }

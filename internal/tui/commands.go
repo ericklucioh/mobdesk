@@ -7,6 +7,8 @@ import (
 	"os/exec"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/ericklucioh/mobdesk/internal/status"
+	"github.com/ericklucioh/mobdesk/internal/version"
 )
 
 func runCommand(args ...string) tea.Cmd {
@@ -30,12 +32,30 @@ func runCommand(args ...string) tea.Cmd {
 	}
 }
 
-func (m Model) openShell() (tea.Model, tea.Cmd) {
+func runStatusCommand() tea.Cmd {
+	return func() tea.Msg {
+		binary, err := os.Executable()
+		if err != nil {
+			return statusMessage{err: err}
+		}
+		output, err := exec.Command(binary, "status", "--json").Output()
+		value := status.SystemStatus{}
+		if parseErr := json.Unmarshal(output, &value); parseErr != nil {
+			if err != nil {
+				return statusMessage{err: fmt.Errorf("executar mobdesk status: %w", err)}
+			}
+			return statusMessage{err: fmt.Errorf("resposta JSON inválida do status: %w", parseErr)}
+		}
+		return statusMessage{value: value, info: version.Current()}
+	}
+}
+
+func realShellCommand() tea.Cmd {
 	binary, err := os.Executable()
 	if err != nil {
-		return m, func() tea.Msg { return operationMessage{command: "shell", err: err} }
+		return func() tea.Msg { return operationMessage{command: "shell", err: err} }
 	}
-	return m, tea.ExecProcess(exec.Command(binary, "shell"), func(err error) tea.Msg {
+	return tea.ExecProcess(exec.Command(binary, "shell"), func(err error) tea.Msg {
 		return operationMessage{command: "shell", err: err}
 	})
 }

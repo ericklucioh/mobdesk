@@ -52,6 +52,10 @@ var (
 	bodyStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#f5f0ff"))
 	mutedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(colorMuted))
 
+	homeStatusLabelStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#c0b8d2"))
+	homeActiveStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color(colorGreen)).Bold(true)
+	homeInactiveStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color(colorRed)).Bold(true)
+
 	cardStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#f5f0ff")).
 			Background(lipgloss.Color(colorBlack)).

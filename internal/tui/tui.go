@@ -54,11 +54,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dragging = false
 		return m, nil
 	case statusMessage:
+		if msg.err != nil {
+			m.busy = false
+			m.message = msg.err.Error()
+			return m, nil
+		}
 		m.status = msg.value
 		m.version = msg.info
 		m.statusLoaded = true
 		m.busy = false
-		m.statusTable.SetRows(statusRows(msg.value))
+		m.statusTable.SetRows(statusRows(msg.value, m.width))
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
@@ -67,7 +72,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.busy = false
 		m.operation = ""
 		m.message = operationMessageText(msg)
-		return m, loadStatus
+		return m, m.backend.StatusCmd()
 	case tea.KeyPressMsg:
 		return m.updateKey(msg)
 	}
@@ -76,10 +81,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) updateMouseWheel(msg tea.MouseWheelMsg) (tea.Model, tea.Cmd) {
 	if m.screen == toolsScreen {
-		var cmd tea.Cmd
-		m.toolsTable, cmd = m.toolsTable.Update(msg)
-		m.selectedTool = m.toolsTable.Cursor()
-		return m, cmd
+		if msg.Button == tea.MouseWheelDown {
+			m.toolsList.CursorDown()
+		} else if msg.Button == tea.MouseWheelUp {
+			m.toolsList.CursorUp()
+		}
+		m.selectedTool = m.toolsList.Index()
+		return m, nil
 	}
 	m.viewport.SetContent(m.renderScreen())
 	var cmd tea.Cmd
@@ -90,11 +98,13 @@ func (m Model) updateMouseWheel(msg tea.MouseWheelMsg) (tea.Model, tea.Cmd) {
 func (m *Model) resize(width, height int) {
 	m.width, m.height = width, height
 	height = max(6, height-8)
-	m.toolsTable.SetWidth(contentWidth(width))
-	m.toolsTable.SetHeight(height)
+	m.toolsList.SetSize(contentWidth(width), height)
 	m.setupActions.SetSize(max(1, contentWidth(width)-4), max(3, min(5, height)))
+	m.statusTable.SetColumns(statusTableColumns(width))
 	m.statusTable.SetWidth(contentWidth(width))
-	m.statusTable.SetHeight(height)
+	// As linhas seguintes pertencem ao resumo da tela, não à tabela. Limitar a
+	// altura evita que o componente reserve um painel vazio até o rodapé.
+	m.statusTable.SetHeight(min(height, 10))
 	m.viewport.SetWidth(contentWidth(width))
 	m.viewport.SetHeight(max(1, m.height-3))
 	m.progress.SetWidth(max(10, contentWidth(width)-4))
@@ -127,8 +137,8 @@ func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	key := msg.String()
 	if m.screen == toolsScreen && isListKey(key) {
 		var cmd tea.Cmd
-		m.toolsTable, cmd = m.toolsTable.Update(msg)
-		m.selectedTool = m.toolsTable.Cursor()
+		m.toolsList, cmd = m.toolsList.Update(msg)
+		m.selectedTool = m.toolsList.Index()
 		return m, cmd
 	}
 	if m.screen == setupScreen && isListKey(key) {
@@ -165,7 +175,7 @@ func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "q", "ctrl+c", "x":
 		m.confirmExit = true
 	case "r":
-		return m, loadStatus
+		return m, m.backend.StatusCmd()
 	case "1", "h":
 		m.navigate(homeScreen)
 	case "2", "d":
@@ -183,17 +193,17 @@ func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "v":
 		if m.screen == systemScreen {
 			m.busy, m.operation = true, "update-check"
-			return m, runCommand("update", "--check", "--json")
+			return m, m.backend.OperationCmd("update", "--check", "--json")
 		}
 	case "a":
 		if m.screen == systemScreen {
 			m.busy, m.operation = true, "update"
-			return m, runCommand("update", "--json")
+			return m, m.backend.OperationCmd("update", "--json")
 		}
 	case "e":
 		if m.screen == setupScreen {
 			m.busy, m.operation = true, "setup-upgrade"
-			return m, runCommand("setup", "--upgrade-system", "--json")
+			return m, m.backend.OperationCmd("setup", "--upgrade-system", "--json")
 		}
 	case "i":
 		if m.screen == toolsScreen {
@@ -217,7 +227,7 @@ func (m Model) updateConfirmation(key string) (tea.Model, tea.Cmd) {
 		if m.confirmStop {
 			m.confirmStop = false
 			m.busy, m.operation = true, "stop"
-			return m, runCommand("stop", "--json")
+			return m, m.backend.OperationCmd("stop", "--json")
 		}
 		m.confirmExit = false
 		return m, tea.Quit
@@ -234,7 +244,13 @@ func isViewportKey(value string) bool { return isListKey(value) || value == "hom
 
 func (m Model) installSelectedTool() (tea.Model, tea.Cmd) {
 	m.busy, m.operation = true, "install"
-	return m, runCommand("install", install.Languages()[m.selectedTool].Name, "--json")
+	entries := toolEntries("language")
+	index := m.toolsList.Index()
+	if index < 0 || index >= len(entries) {
+		return m, nil
+	}
+	m.selectedTool = index
+	return m, m.backend.OperationCmd("install", entries[index].language.Name, "--json")
 }
 
 func (m Model) toggleWorkstation() (tea.Model, tea.Cmd) {
@@ -243,7 +259,7 @@ func (m Model) toggleWorkstation() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	m.busy, m.operation = true, "start"
-	return m, runCommand("start", "--json")
+	return m, m.backend.OperationCmd("start", "--json")
 }
 
 func (m *Model) navigate(next screen) {
@@ -251,14 +267,17 @@ func (m *Model) navigate(next screen) {
 		m.history = append(m.history, m.screen)
 	}
 	m.screen, m.focus = next, 0
+	m.viewport.SetYOffset(0)
 }
 
 func (m Model) controlCount() int {
 	switch m.screen {
 	case homeScreen:
 		return 7
-	case statusScreen, shellScreen, systemScreen, logsScreen:
+	case statusScreen, shellScreen, logsScreen:
 		return 2
+	case systemScreen:
+		return 4
 	case setupScreen:
 		return 3
 	case toolsScreen:
@@ -291,18 +310,18 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 		return nil, true
 	case statusScreen:
 		if m.focus == 0 {
-			return loadStatus, true
+			return m.backend.StatusCmd(), true
 		}
 		m.navigate(homeScreen)
 		return nil, true
 	case setupScreen:
 		if m.focus == 0 {
 			m.busy, m.operation = true, "setup"
-			return runCommand("setup", "--json"), true
+			return m.backend.OperationCmd("setup", "--json"), true
 		}
 		if m.focus == 1 {
 			m.busy, m.operation = true, "setup-upgrade"
-			return runCommand("setup", "--upgrade-system", "--json"), true
+			return m.backend.OperationCmd("setup", "--upgrade-system", "--json"), true
 		}
 		m.navigate(logsScreen)
 		return nil, true
@@ -311,21 +330,27 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 		return cmd, true
 	case shellScreen:
 		if m.focus == 0 {
-			_, cmd := m.openShell()
-			return cmd, true
+			return m.backend.ShellCmd(), true
 		}
 		m.navigate(homeScreen)
 		return nil, true
 	case systemScreen:
-		if m.focus == 0 {
+		switch m.focus {
+		case 0:
 			m.busy, m.operation = true, "update-check"
-			return runCommand("update", "--check", "--json"), true
+			return m.backend.OperationCmd("update", "--check", "--json"), true
+		case 1:
+			m.busy, m.operation = true, "update"
+			return m.backend.OperationCmd("update", "--json"), true
+		case 2:
+			m.navigate(homeScreen)
+		case 3:
+			m.navigate(logsScreen)
 		}
-		m.busy, m.operation = true, "update"
-		return runCommand("update", "--json"), true
+		return nil, true
 	case logsScreen:
 		if m.focus == 0 {
-			return loadStatus, true
+			return m.backend.StatusCmd(), true
 		}
 		m.navigate(homeScreen)
 		return nil, true
@@ -347,6 +372,10 @@ func (m Model) render() string {
 	bodyModel.viewport.Style = lipgloss.NewStyle().Align(lipgloss.Left)
 	bodyModel.viewport.SetWidth(bodyWidth)
 	bodyModel.viewport.SetHeight(max(1, m.height-3))
+	// A TUI mobile não deve manter deslocamento horizontal entre telas. Linhas
+	// longas são tratadas pela própria tela, enquanto o viewport fica ancorado
+	// na borda esquerda.
+	bodyModel.viewport.SetXOffset(0)
 	bodyModel.viewport.SetContent(bodyModel.renderScreen())
 	body := bodyModel.viewport.View()
 	if m.message != "" && !m.busy && m.screen != homeScreen && !m.confirmExit && !m.confirmStop {
