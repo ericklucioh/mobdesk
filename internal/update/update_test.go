@@ -39,6 +39,22 @@ func TestCheckSelectsStableAndStageChannels(t *testing.T) {
 	}
 }
 
+func TestTermuxUsesLinuxARM64ReleaseAsset(t *testing.T) {
+	options := (Options{GOOS: "android", GOARCH: "arm64"}).withDefaults()
+	if !supportsReleaseTarget(options.GOOS, options.GOARCH) {
+		t.Fatal("android/arm64 Termux target should use the Linux ARM64 release")
+	}
+	if options.BinaryName != "mobdesk-linux-arm64" {
+		t.Fatalf("binary asset = %q, want mobdesk-linux-arm64", options.BinaryName)
+	}
+}
+
+func TestUnsupportedReleaseTarget(t *testing.T) {
+	if supportsReleaseTarget("android", "amd64") || supportsReleaseTarget("darwin", "arm64") {
+		t.Fatal("unsupported release target was accepted")
+	}
+}
+
 func TestTermuxNameserversReadsPrefixResolverConfig(t *testing.T) {
 	prefix := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(prefix, "etc"), 0o700); err != nil {

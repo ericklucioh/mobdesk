@@ -62,7 +62,7 @@ type Result struct {
 
 func Check(ctx context.Context, options Options) (Result, error) {
 	options = options.withDefaults()
-	if options.GOOS != "linux" || options.GOARCH != "arm64" {
+	if !supportsReleaseTarget(options.GOOS, options.GOARCH) {
 		return Result{}, fmt.Errorf("release não disponível para %s/%s", options.GOOS, options.GOARCH)
 	}
 	release, err := latestRelease(ctx, options)
@@ -117,7 +117,13 @@ func (o Options) withDefaults() Options {
 		o.GOARCH = runtime.GOARCH
 	}
 	if o.BinaryName == "" {
-		o.BinaryName = fmt.Sprintf("mobdesk-%s-%s", o.GOOS, o.GOARCH)
+		assetGOOS := o.GOOS
+		// O Termux reporta android, mas as releases são binários Linux ARM64
+		// estáticos e o workflow de release usa esse alvo explicitamente.
+		if assetGOOS == "android" {
+			assetGOOS = "linux"
+		}
+		o.BinaryName = fmt.Sprintf("mobdesk-%s-%s", assetGOOS, o.GOARCH)
 	}
 	if o.ChecksumName == "" {
 		o.ChecksumName = "SHA256SUMS"
@@ -248,7 +254,7 @@ func matchesChannel(release Release, channel string) bool {
 }
 
 func replaceBinary(ctx context.Context, options Options, result Result) error {
-	if options.GOOS != "linux" || options.GOARCH != "arm64" {
+	if !supportsReleaseTarget(options.GOOS, options.GOARCH) {
 		return fmt.Errorf("release não disponível para %s/%s", options.GOOS, options.GOARCH)
 	}
 	if _, err := os.Stat(options.InstallPath); err != nil {
@@ -302,6 +308,10 @@ func replaceBinary(ctx context.Context, options Options, result Result) error {
 		return fmt.Errorf("remover backup do executável: %w", err)
 	}
 	return nil
+}
+
+func supportsReleaseTarget(goos, goarch string) bool {
+	return goarch == "arm64" && (goos == "linux" || goos == "android")
 }
 
 func downloadChecksum(ctx context.Context, client HTTPClient, url, binaryName string) (string, error) {
