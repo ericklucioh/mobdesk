@@ -108,10 +108,13 @@ func runSetup(ctx context.Context) error {
 			return err
 		}
 	}
+	// O launcher é um link externo ao estado do setup e pode ser removido ou
+	// quebrado sem que as demais etapas precisem ser executadas novamente.
+	// Verifique-o sempre para permitir a recuperação com `mobdesk setup`.
+	if err := installLauncher(); err != nil {
+		return err
+	}
 	if !setupPhaseDone("launcher-installed") {
-		if err := installLauncher(); err != nil {
-			return err
-		}
 		if err := markSetupPhase("launcher-installed"); err != nil {
 			return err
 		}
