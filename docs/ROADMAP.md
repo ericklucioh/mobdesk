@@ -49,13 +49,9 @@ Oferecer uma interface textual organizada para trabalhar no Ubuntu pelo celular 
 
 ### Escopo
 
-- TUI para setup, start, stop e diagnóstico;
-- múltiplos terminais;
-- editor e explorador de arquivos;
-- Git visual;
-- processos e logs;
+- TUI para setup, start, stop;
+- pagina de sugestao de apps e setup automatico de linguangens
 - perfis iniciais de ferramentas;
-- tmux como camada de recuperação.
 
 ### Critério
 

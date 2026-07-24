@@ -24,6 +24,14 @@ O primeiro produto deve funcionar por terminal. Uma interface web ou APK só dev
 
 O usuário não deve precisar dominar `pkg`, `proot-distro`, `apt`, mounts ou scripts. O fluxo desejado é instalar o Mobdesk, executar `mobdesk start` e selecionar ferramentas numa TUI.
 
+### A TUI permanece aberta após iniciar
+
+`mobdesk start` inicia a workstation e retorna sem abrir automaticamente um shell. A TUI mantém o controle da interface e suspende o terminal somente quando o usuário escolhe abrir o shell explicitamente.
+
+### Operações possuem resultado JSON único
+
+`setup`, `start` e `stop` oferecem `--json` com um único resultado estruturado em stdout. A TUI usa esse contrato para ações não interativas e o stderr permanece reservado para mensagens auxiliares.
+
 ### O ambiente deve ser persistente
 
 Ubuntu, ferramentas, projetos e configurações não devem ser recriados em cada execução. O instalador deve ser idempotente, ter estado e preservar dados.
