@@ -51,6 +51,7 @@ type Options struct {
 }
 
 type Result struct {
+	SchemaVersion  int    `json:"schema_version"`
 	CurrentVersion string `json:"current_version"`
 	LatestVersion  string `json:"latest_version"`
 	Channel        string `json:"channel"`
@@ -70,6 +71,7 @@ func Check(ctx context.Context, options Options) (Result, error) {
 	}
 	assetName := options.BinaryName
 	return Result{
+		SchemaVersion:  1,
 		CurrentVersion: options.CurrentVersion,
 		LatestVersion:  release.TagName,
 		Channel:        options.Channel,

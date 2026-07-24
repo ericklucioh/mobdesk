@@ -82,11 +82,12 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 	now := options.Now().UTC()
 	logPath := filepath.Join(options.LogsDir, language.Name+".log")
 	result := Result{
-		Language:   language.Name,
-		Package:    language.Package,
-		Executable: language.Executable,
-		State:      "installing",
-		LogPath:    logPath,
+		SchemaVersion: 1,
+		Language:      language.Name,
+		Package:       language.Package,
+		Executable:    language.Executable,
+		State:         "installing",
+		LogPath:       logPath,
 	}
 	record := InstallationRecord{
 		Name:          language.Name,

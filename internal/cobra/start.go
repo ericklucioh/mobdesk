@@ -3,7 +3,9 @@ package cobra
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"os/exec"
@@ -15,7 +17,9 @@ import (
 	"time"
 
 	"charm.land/lipgloss/v2"
+	"github.com/creack/pty/v2"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 const sshPort = 8022
@@ -24,6 +28,9 @@ var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "iniciar o ambiente e o servidor SSH",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if startJSON {
+			return runStartJSON(cmd.Context())
+		}
 		return runStart(cmd.Context())
 	},
 }
@@ -32,8 +39,19 @@ var stopCmd = &cobra.Command{
 	Use:   "stop",
 	Short: "parar o servidor SSH",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if stopJSON {
+			return runStopJSON(cmd.Context())
+		}
 		return runStop(cmd.Context())
 	},
+}
+
+var startJSON bool
+var stopJSON bool
+
+func init() {
+	startCmd.Flags().BoolVar(&startJSON, "json", false, "emitir apenas JSON válido")
+	stopCmd.Flags().BoolVar(&stopJSON, "json", false, "emitir apenas JSON válido")
 }
 
 func runStart(ctx context.Context) error {
@@ -67,8 +85,27 @@ func runStart(ctx context.Context) error {
 	}
 
 	printAccessInstructions()
-	fmt.Println("\nAbrindo Ubuntu...")
-	return runInteractive(ctx, "proot-distro", "login", "ubuntu", "--", "bash", "-l")
+	fmt.Println("\nWorkstation pronta. Use mobdesk shell para abrir o Ubuntu.")
+	return nil
+}
+
+func runStartJSON(ctx context.Context) error {
+	var err error
+	if quietErr := withQuietStdout(func() error {
+		err = runStart(ctx)
+		return err
+	}); quietErr != nil {
+		err = quietErr
+	}
+	result := operationResult{SchemaVersion: 1, Command: "start", Success: err == nil, State: "running", Message: "Workstation iniciada", Port: sshPort, Addresses: localIPv4Addresses()}
+	if err != nil {
+		result.State = "failed"
+		result.Message = err.Error()
+	}
+	if encodeErr := json.NewEncoder(os.Stdout).Encode(result); encodeErr != nil {
+		return encodeErr
+	}
+	return err
 }
 
 func runStop(ctx context.Context) error {
@@ -128,6 +165,25 @@ func runStop(ctx context.Context) error {
 	unlockWakeLock()
 	fmt.Println("Servidor SSH parado.")
 	return nil
+}
+
+func runStopJSON(ctx context.Context) error {
+	var err error
+	if quietErr := withQuietStdout(func() error {
+		err = runStop(ctx)
+		return err
+	}); quietErr != nil {
+		err = quietErr
+	}
+	result := operationResult{SchemaVersion: 1, Command: "stop", Success: err == nil, State: "stopped", Message: "Workstation parada", Port: sshPort}
+	if err != nil {
+		result.State = "failed"
+		result.Message = err.Error()
+	}
+	if encodeErr := json.NewEncoder(os.Stdout).Encode(result); encodeErr != nil {
+		return encodeErr
+	}
+	return err
 }
 
 func validateSSHConfig(configPath string) error {
@@ -353,11 +409,41 @@ func appendUnique(addresses []string, address string) []string {
 func runInteractive(ctx context.Context, name string, args ...string) error {
 	fmt.Printf("\n$ %s %s\n", name, strings.Join(args, " "))
 	command := exec.CommandContext(ctx, name, args...)
-	command.Stdin = os.Stdin
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
-	if err := command.Run(); err != nil {
-		return fmt.Errorf("comando interativo %q falhou: %w", name, err)
+	ptmx, err := pty.Start(command)
+	if err != nil {
+		return fmt.Errorf("iniciar PTY para %q: %w", name, err)
+	}
+	defer ptmx.Close()
+	_ = pty.InheritSize(os.Stdin, ptmx)
+
+	fd := int(os.Stdin.Fd())
+	var restore func()
+	if term.IsTerminal(fd) {
+		state, rawErr := term.MakeRaw(fd)
+		if rawErr == nil {
+			restore = func() { _ = term.Restore(fd, state) }
+			defer restore()
+		}
+	}
+
+	inputDone := make(chan struct{})
+	go func() {
+		_, _ = io.Copy(ptmx, os.Stdin)
+		close(inputDone)
+	}()
+	_, copyErr := io.Copy(os.Stdout, ptmx)
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if waitErr := command.Wait(); waitErr != nil {
+		return fmt.Errorf("comando interativo %q falhou: %w", name, waitErr)
+	}
+	if copyErr != nil {
+		return fmt.Errorf("ler saída interativa %q: %w", name, copyErr)
+	}
+	select {
+	case <-inputDone:
+	default:
 	}
 	return nil
 }

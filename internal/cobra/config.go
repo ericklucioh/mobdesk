@@ -18,4 +18,5 @@ func init() {
 	RootCmd.AddCommand(shellCmd)
 	RootCmd.AddCommand(versionCmd)
 	RootCmd.AddCommand(updateCmd)
+	RootCmd.AddCommand(tuiCmd)
 }

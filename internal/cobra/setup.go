@@ -2,6 +2,7 @@ package cobra
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,14 +16,19 @@ var setupCmd = &cobra.Command{
 	Use:   "setup",
 	Short: "configurar o Termux e o Ubuntu",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if setupJSON {
+			return runSetupJSON(cmd.Context())
+		}
 		return runSetup(cmd.Context())
 	},
 }
 
 var setupUpgradeSystem bool
+var setupJSON bool
 
 func init() {
 	setupCmd.Flags().BoolVar(&setupUpgradeSystem, "upgrade-system", false, "atualizar todos os pacotes do Termux antes da instalação")
+	setupCmd.Flags().BoolVar(&setupJSON, "json", false, "emitir apenas JSON válido")
 }
 
 func runSetup(ctx context.Context) error {
@@ -120,6 +126,25 @@ func runSetup(ctx context.Context) error {
 	return nil
 }
 
+func runSetupJSON(ctx context.Context) error {
+	var err error
+	if quietErr := withQuietStdout(func() error {
+		err = runSetup(ctx)
+		return err
+	}); quietErr != nil {
+		err = quietErr
+	}
+	result := operationResult{SchemaVersion: 1, Command: "setup", Success: err == nil, State: "completed", Message: "Setup concluído"}
+	if err != nil {
+		result.State = "failed"
+		result.Message = err.Error()
+	}
+	if encodeErr := json.NewEncoder(os.Stdout).Encode(result); encodeErr != nil {
+		return encodeErr
+	}
+	return err
+}
+
 func ensurePassword(ctx context.Context) error {
 	marker := os.ExpandEnv("$HOME/.local/share/mobdesk/password.done")
 	if _, err := os.Stat(marker); err == nil {
@@ -127,6 +152,9 @@ func ensurePassword(ctx context.Context) error {
 		return nil
 	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("verificar senha SSH: %w", err)
+	}
+	if setupJSON {
+		return fmt.Errorf("senha SSH ainda não configurada; execute mobdesk setup sem --json para configurar a senha")
 	}
 
 	fmt.Println("Configure a senha do usuário Termux para acesso via SSH.")

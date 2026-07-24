@@ -11,14 +11,15 @@ type Language struct {
 }
 
 type Result struct {
-	Language   string `json:"language"`
-	Package    string `json:"package"`
-	Executable string `json:"executable"`
-	Version    string `json:"version"`
-	Installed  bool   `json:"installed"`
-	Changed    bool   `json:"changed"`
-	State      string `json:"state"`
-	LogPath    string `json:"log_path"`
+	SchemaVersion int    `json:"schema_version"`
+	Language      string `json:"language"`
+	Package       string `json:"package"`
+	Executable    string `json:"executable"`
+	Version       string `json:"version"`
+	Installed     bool   `json:"installed"`
+	Changed       bool   `json:"changed"`
+	State         string `json:"state"`
+	LogPath       string `json:"log_path"`
 }
 
 type InstallationRecord struct {
