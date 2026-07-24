@@ -14,14 +14,17 @@ import (
 // resolving a bare command name, but Termux's seccomp policy can reject that
 // syscall even when the executable itself is available.
 func Resolve(name string) (string, error) {
-	if strings.ContainsRune(name, filepath.Separator) || runtime.GOOS != "android" {
-		if strings.ContainsRune(name, filepath.Separator) {
-			return name, nil
-		}
-		return exec.LookPath(name)
+	if strings.ContainsRune(name, filepath.Separator) {
+		return name, nil
 	}
 
 	prefix := os.Getenv("PREFIX")
+	// Release binaries are built with GOOS=linux for the Termux ARM64
+	// userspace, so runtime.GOOS is linux even while running on Android.
+	// PREFIX is the reliable Termux marker in that situation.
+	if prefix == "" && runtime.GOOS != "android" {
+		return exec.LookPath(name)
+	}
 	if prefix == "" {
 		prefix = "/data/data/com.termux/files/usr"
 	}
