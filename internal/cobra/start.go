@@ -47,18 +47,30 @@ func runStart(ctx context.Context) error {
 		return err
 	}
 	for _, warning := range info.Warnings {
-		fmt.Fprintf(os.Stdout, "Aviso: %s\n", warning)
-	}
-	fmt.Fprintln(os.Stdout, "\nSERVIDOR INICIADO!")
-	if len(info.Addresses) == 0 {
-		fmt.Fprintf(os.Stdout, "ACESSO LOCAL VIA SSH\nssh -p %d %s@localhost\n", workstation.SSHPort, info.Username)
-	} else {
-		fmt.Fprintln(os.Stdout, "ACESSO REMOTO VIA SSH")
-		for _, address := range info.Addresses {
-			fmt.Fprintf(os.Stdout, "ssh -p %d %s@%s\n", workstation.SSHPort, info.Username, address)
+		if _, err := fmt.Fprintf(os.Stdout, "Aviso: %s\n", warning); err != nil {
+			return err
 		}
 	}
-	fmt.Fprintln(os.Stdout, "\nWorkstation pronta. Use mobdesk shell para abrir o Ubuntu.")
+	if _, err := fmt.Fprintln(os.Stdout, "\nSERVIDOR INICIADO!"); err != nil {
+		return err
+	}
+	if len(info.Addresses) == 0 {
+		if _, err := fmt.Fprintf(os.Stdout, "ACESSO LOCAL VIA SSH\nssh -p %d %s@localhost\n", workstation.SSHPort, info.Username); err != nil {
+			return err
+		}
+	} else {
+		if _, err := fmt.Fprintln(os.Stdout, "ACESSO REMOTO VIA SSH"); err != nil {
+			return err
+		}
+		for _, address := range info.Addresses {
+			if _, err := fmt.Fprintf(os.Stdout, "ssh -p %d %s@%s\n", workstation.SSHPort, info.Username, address); err != nil {
+				return err
+			}
+		}
+	}
+	if _, err := fmt.Fprintln(os.Stdout, "\nWorkstation pronta. Use mobdesk shell para abrir o Ubuntu."); err != nil {
+		return err
+	}
 	return nil
 }
 func runStop(ctx context.Context) error {
@@ -67,13 +79,13 @@ func runStop(ctx context.Context) error {
 		return err
 	}
 	if info.StaleState {
-		fmt.Fprintln(os.Stdout, "Servidor SSH já estava parado; estado obsoleto removido.")
+		_, err = fmt.Fprintln(os.Stdout, "Servidor SSH já estava parado; estado obsoleto removido.")
 	} else if info.AlreadyStopped {
-		fmt.Fprintln(os.Stdout, "Servidor SSH já está parado.")
+		_, err = fmt.Fprintln(os.Stdout, "Servidor SSH já está parado.")
 	} else {
-		fmt.Fprintln(os.Stdout, "Servidor SSH parado.")
+		_, err = fmt.Fprintln(os.Stdout, "Servidor SSH parado.")
 	}
-	return nil
+	return err
 }
 
 func runStartJSON(ctx context.Context) error {

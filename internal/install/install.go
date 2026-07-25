@@ -126,11 +126,6 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 	return result, nil
 }
 
-func runUbuntu(ctx context.Context, runner CommandRunner, name string, args ...string) CommandResult {
-	loginArgs := append([]string{"login", "ubuntu", "--", name}, args...)
-	return runner.Run(ctx, "proot-distro", loginArgs...)
-}
-
 func runUbuntuLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, name string, args ...string) CommandResult {
 	commandContext, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -145,7 +140,7 @@ func appendLog(path string, args []string, result CommandResult) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	if _, err := fmt.Fprintf(file, "\n$ proot-distro %s\n", strings.Join(args, " ")); err != nil {
 		return err
 	}
@@ -176,13 +171,13 @@ func saveRecord(directory string, record InstallationRecord) error {
 		return err
 	}
 	temporaryName := temporary.Name()
-	defer os.Remove(temporaryName)
+	defer func() { _ = os.Remove(temporaryName) }()
 	if err := temporary.Chmod(0o600); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return err
 	}
 	if _, err := temporary.Write(append(payload, '\n')); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return err
 	}
 	if err := temporary.Close(); err != nil {

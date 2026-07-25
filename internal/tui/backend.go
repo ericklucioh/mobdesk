@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -21,18 +22,30 @@ type Backend interface {
 	ShellCmd() tea.Cmd
 }
 
-type realBackend struct{}
-
-func (realBackend) StatusCmd() tea.Cmd {
-	return runStatusCommand()
+type realBackend struct {
+	ctx    context.Context
+	cancel context.CancelFunc
 }
 
-func (realBackend) OperationCmd(args ...string) tea.Cmd {
-	return runCommand(args...)
+func newRealBackend() *realBackend {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &realBackend{ctx: ctx, cancel: cancel}
 }
 
-func (realBackend) ShellCmd() tea.Cmd {
-	return realShellCommand()
+func (b *realBackend) StatusCmd() tea.Cmd {
+	return runStatusCommand(b.ctx)
+}
+
+func (b *realBackend) OperationCmd(args ...string) tea.Cmd {
+	return runCommand(b.ctx, args...)
+}
+
+func (b *realBackend) ShellCmd() tea.Cmd {
+	return realShellCommand(b.ctx)
+}
+
+func (b *realBackend) Cancel() {
+	b.cancel()
 }
 
 // NewMockBackend creates a production-build mock for manual visual testing.

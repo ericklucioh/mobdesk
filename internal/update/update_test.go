@@ -16,7 +16,7 @@ import (
 
 func TestCheckSelectsStableAndStageChannels(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
-		json.NewEncoder(response).Encode([]Release{
+		_ = json.NewEncoder(response).Encode([]Release{
 			{TagName: "v1.2.0"},
 			{TagName: "test-v1.3.0", Prerelease: true},
 		})
@@ -78,7 +78,7 @@ func TestApplyVerifiesChecksumAndReplacesBinary(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		switch request.URL.Path {
 		case "/repos/example/mobdesk/releases":
-			json.NewEncoder(response).Encode([]Release{{
+			_ = json.NewEncoder(response).Encode([]Release{{
 				TagName: "v1.1.0",
 				Assets: []Asset{
 					{Name: "mobdesk-linux-arm64", DownloadURL: serverURL(request, "/download/mobdesk")},
@@ -86,9 +86,9 @@ func TestApplyVerifiesChecksumAndReplacesBinary(t *testing.T) {
 				},
 			}})
 		case "/download/mobdesk":
-			response.Write(content)
+			_, _ = response.Write(content)
 		case "/download/checksums":
-			fmt.Fprintf(response, "%s  mobdesk-linux-arm64\n", checksum)
+			_, _ = fmt.Fprintf(response, "%s  mobdesk-linux-arm64\n", checksum)
 		default:
 			response.WriteHeader(http.StatusNotFound)
 		}
@@ -126,11 +126,77 @@ func TestApplyVerifiesChecksumAndReplacesBinary(t *testing.T) {
 	}
 }
 
+func TestApplyRecoversBackupFromInterruptedUpdate(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "mobdesk")
+	backupPath := path + ".bak"
+	if err := os.WriteFile(backupPath, []byte("previous mobdesk binary"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != "/repos/example/mobdesk/releases" {
+			response.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if err := json.NewEncoder(response).Encode([]Release{{TagName: "v1.0.0"}}); err != nil {
+			http.Error(response, err.Error(), http.StatusInternalServerError)
+		}
+	}))
+	defer server.Close()
+
+	result, err := Apply(context.Background(), Options{
+		APIBaseURL:     server.URL,
+		Repository:     "example/mobdesk",
+		CurrentVersion: "v1.0.0",
+		Channel:        "stable",
+		InstallPath:    path,
+		GOOS:           "linux",
+		GOARCH:         "arm64",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Updated {
+		t.Fatalf("update unexpectedly applied: %+v", result)
+	}
+	recovered, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(recovered) != "previous mobdesk binary" {
+		t.Fatalf("recovered binary = %q", recovered)
+	}
+	if _, err := os.Stat(backupPath); !os.IsNotExist(err) {
+		t.Fatalf("backup remains after recovery: %v", err)
+	}
+}
+
+func TestRecoverInterruptedUpdateLeavesExistingBinaryUntouched(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "mobdesk")
+	if err := os.WriteFile(path, []byte("current"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path+".bak", []byte("stale backup"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := recoverInterruptedUpdate(path); err != nil {
+		t.Fatal(err)
+	}
+	current, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(current) != "current" {
+		t.Fatalf("current binary = %q", current)
+	}
+}
+
 func TestApplyRejectsInvalidChecksumWithoutReplacingBinary(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		switch request.URL.Path {
 		case "/repos/example/mobdesk/releases":
-			json.NewEncoder(response).Encode([]Release{{
+			_ = json.NewEncoder(response).Encode([]Release{{
 				TagName: "v1.1.0",
 				Assets: []Asset{
 					{Name: "mobdesk-linux-arm64", DownloadURL: serverURL(request, "/download/mobdesk")},
@@ -138,9 +204,9 @@ func TestApplyRejectsInvalidChecksumWithoutReplacingBinary(t *testing.T) {
 				},
 			}})
 		case "/download/mobdesk":
-			response.Write([]byte("tampered"))
+			_, _ = response.Write([]byte("tampered"))
 		case "/download/checksums":
-			response.Write([]byte(strings.Repeat("0", sha256.Size*2) + "  mobdesk-linux-arm64\n"))
+			_, _ = response.Write([]byte(strings.Repeat("0", sha256.Size*2) + "  mobdesk-linux-arm64\n"))
 		}
 	}))
 	defer server.Close()
@@ -173,7 +239,7 @@ func TestApplyRejectsEmptyBinary(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
 		switch request.URL.Path {
 		case "/repos/example/mobdesk/releases":
-			json.NewEncoder(response).Encode([]Release{{
+			_ = json.NewEncoder(response).Encode([]Release{{
 				TagName: "v1.1.0",
 				Assets: []Asset{
 					{Name: "mobdesk-linux-arm64", DownloadURL: serverURL(request, "/download/mobdesk")},
@@ -184,7 +250,7 @@ func TestApplyRejectsEmptyBinary(t *testing.T) {
 			// O checksum corresponde ao conteúdo vazio; mesmo assim o updater
 			// deve recusar substituir um executável válido por zero bytes.
 		case "/download/checksums":
-			fmt.Fprintf(response, "%s  mobdesk-linux-arm64\n", strings.Repeat("0", sha256.Size*2))
+			_, _ = fmt.Fprintf(response, "%s  mobdesk-linux-arm64\n", strings.Repeat("0", sha256.Size*2))
 		}
 	}))
 	defer server.Close()

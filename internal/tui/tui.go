@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -60,24 +61,30 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.dragging = false
 		return m, nil
 	case statusMessage:
+		if msg.id != 0 && msg.id != m.statusID {
+			return m, nil
+		}
 		if msg.err != nil {
-			m.busy = false
-			m.installingTool = ""
-			m.message = msg.err.Error()
+			if !m.busy {
+				m.installingTool = ""
+				m.message = msg.err.Error()
+			}
 			return m, nil
 		}
 		m.status = msg.value
 		m.version = msg.info
 		m.statusLoaded = true
-		m.busy = false
 		m.installingTool = ""
 		m.statusTable.SetRows(statusRows(msg.value, m.width))
 	case operationMessage:
+		if msg.id != 0 && msg.id != m.operationID {
+			return m, nil
+		}
 		m.busy = false
 		m.operation = ""
 		m.message = operationMessageText(msg)
 		m.applyOperationState(msg)
-		return m, m.backend.StatusCmd()
+		return m.requestStatus()
 	case tea.KeyPressMsg:
 		return m.updateKey(msg)
 	}
@@ -123,15 +130,51 @@ func (m Model) runHostOperation(operation string, args ...string) (tea.Model, te
 	if !m.canManageHost() {
 		return m.hostActionUnavailable()
 	}
+	if m.busy {
+		return m, nil
+	}
+	m.operationID++
+	m.statusID++ // Invalida snapshots iniciados antes da operação mutável.
 	m.busy, m.operation = true, operation
-	return m, m.backend.OperationCmd(args...)
+	operationID := m.operationID
+	return m, func() tea.Msg {
+		message, ok := m.backend.OperationCmd(args...)().(operationMessage)
+		if !ok {
+			return operationMessage{command: operation, id: operationID, err: fmt.Errorf("resposta inesperada da operação")}
+		}
+		message.id = operationID
+		return message
+	}
+}
+
+func (m Model) requestStatus() (tea.Model, tea.Cmd) {
+	m.statusID++
+	return m, m.statusCommand(m.statusID)
+}
+
+func (m Model) statusCommand(statusID int) tea.Cmd {
+	return func() tea.Msg {
+		message, ok := m.backend.StatusCmd()().(statusMessage)
+		if !ok {
+			return statusMessage{id: statusID, err: fmt.Errorf("resposta inesperada do status")}
+		}
+		message.id = statusID
+		return message
+	}
+}
+
+func (m Model) cancelBackend() {
+	if backend, ok := m.backend.(interface{ Cancel() }); ok {
+		backend.Cancel()
+	}
 }
 
 func (m Model) updateMouseWheel(msg tea.MouseWheelMsg) (tea.Model, tea.Cmd) {
 	if m.screen == toolsScreen {
-		if msg.Button == tea.MouseWheelDown {
+		switch msg.Button {
+		case tea.MouseWheelDown:
 			m.toolsList.CursorDown()
-		} else if msg.Button == tea.MouseWheelUp {
+		case tea.MouseWheelUp:
 			m.toolsList.CursorUp()
 		}
 		m.selectedTool = m.toolsList.Index()
@@ -220,7 +263,9 @@ func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case "q", "ctrl+c", "x":
 		m.confirmExit = true
 	case "r":
-		return m, m.backend.StatusCmd()
+		if !m.busy {
+			return m.requestStatus()
+		}
 	case "1", "h":
 		m.navigate(homeScreen)
 	case "2", "d":
@@ -287,6 +332,7 @@ func (m Model) updateConfirmation(key string) (tea.Model, tea.Cmd) {
 		}
 		m.confirmExit = false
 		m.closing = true
+		m.cancelBackend()
 		return m, tea.Tick(time.Millisecond, func(time.Time) tea.Msg {
 			return quitAfterMouseResetMsg{}
 		})
@@ -305,6 +351,9 @@ func (m Model) installSelectedTool() (tea.Model, tea.Cmd) {
 	if !m.canManageHost() {
 		return m.hostActionUnavailable()
 	}
+	if m.busy {
+		return m, nil
+	}
 	entries := toolEntries("language")
 	index := m.toolsList.Index()
 	if index < 0 || index >= len(entries) {
@@ -318,6 +367,9 @@ func (m Model) installSelectedTool() (tea.Model, tea.Cmd) {
 func (m Model) toggleWorkstation() (tea.Model, tea.Cmd) {
 	if !m.canManageHost() {
 		return m.hostActionUnavailable()
+	}
+	if m.busy {
+		return m, nil
 	}
 	if m.status.SSH.Running {
 		m.confirmStop = true
@@ -384,7 +436,12 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 		return nil, true
 	case statusScreen:
 		if m.focus == 0 {
-			return m.backend.StatusCmd(), true
+			if m.busy {
+				return nil, true
+			}
+			updated, cmd := m.requestStatus()
+			*m = updated.(Model)
+			return cmd, true
 		}
 		m.navigate(homeScreen)
 		return nil, true
@@ -462,7 +519,7 @@ func (m Model) render() string {
 	if m.confirmExit || m.confirmStop {
 		body = confirmationModal(m.confirmStop, m.width)
 	}
-	footer := footerStyle.Copy().Width(max(1, terminalWidth(m.width)-2)).Render("↑↓ rolar  Tab foco  Enter agir  R atualizar  Q sair\n" + m.help.View(tuiHelpKeyMap{}))
+	footer := footerStyle.Width(max(1, terminalWidth(m.width)-2)).Render("↑↓ rolar  Tab foco  Enter agir  R atualizar  Q sair\n" + m.help.View(tuiHelpKeyMap{}))
 	return header + "\n" + body + "\n" + footer
 }
 
@@ -517,7 +574,7 @@ func (m Model) renderHeader() string {
 	leftGap := available / 2
 	rightGap := available - leftGap
 	line := brand + strings.Repeat(" ", leftGap) + state + strings.Repeat(" ", rightGap) + right
-	return headerStyle.Copy().Width(headerWidth).Render(line)
+	return headerStyle.Width(headerWidth).Render(line)
 }
 
 func (m Model) renderScreen() string {
@@ -545,26 +602,7 @@ func confirmationModal(stop bool, width int) string {
 	if stop {
 		text = "Parar workstation?\n\n[ S ] Sim     [ N ] Não"
 	}
-	style := modalStyle.Copy().Width(max(10, contentWidth(width)-6))
+	style := modalStyle.Width(max(10, contentWidth(width)-6))
 	dialog := style.Render(text)
 	return lipgloss.PlaceHorizontal(contentWidth(width), lipgloss.Center, dialog)
-}
-
-func screenLabel(value screen) string {
-	switch value {
-	case homeScreen:
-		return "Início"
-	case statusScreen:
-		return "Status"
-	case setupScreen:
-		return "Configurar"
-	case toolsScreen:
-		return "Apps"
-	case shellScreen:
-		return "Shell"
-	case systemScreen:
-		return "Sistema"
-	default:
-		return "Mobdesk"
-	}
 }

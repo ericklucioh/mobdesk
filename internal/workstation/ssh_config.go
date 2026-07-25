@@ -61,7 +61,7 @@ func writeSSHConfig(p paths.Paths) error {
 		return fmt.Errorf("criar configuração SSH temporária: %w", err)
 	}
 	temporaryPath := temporary.Name()
-	defer os.Remove(temporaryPath)
+	defer func() { _ = os.Remove(temporaryPath) }()
 	if err := temporary.Chmod(0o600); err != nil {
 		_ = temporary.Close()
 		return fmt.Errorf("proteger configuração SSH temporária: %w", err)

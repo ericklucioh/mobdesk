@@ -434,7 +434,7 @@ func sshPortResponds(ctx context.Context, port int) bool {
 	if err != nil {
 		return false
 	}
-	defer connection.Close()
+	defer func() { _ = connection.Close() }()
 	_ = connection.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 	buffer := make([]byte, 4)
 	_, err = connection.Read(buffer)

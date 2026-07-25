@@ -29,17 +29,37 @@ func init() {
 
 func runInstall(ctx context.Context, name string) error {
 	result, err := install.Install(ctx, name, install.Options{Paths: paths.Current()})
-	if err != nil {
+	if installJSON {
+		if encodeErr := json.NewEncoder(os.Stdout).Encode(installOperationResult(result, err)); encodeErr != nil {
+			return encodeErr
+		}
 		return err
 	}
-	if installJSON {
-		return json.NewEncoder(os.Stdout).Encode(result)
+	if err != nil {
+		return err
 	}
 
 	state := "já estava instalada"
 	if result.Changed {
 		state = "instalada"
 	}
-	fmt.Printf("%s %s no Ubuntu (%s): %s\n", strings.Title(result.Language), state, result.Executable, result.Version)
+	fmt.Printf("%s %s no Ubuntu (%s): %s\n", strings.ToUpper(result.Language[:1])+result.Language[1:], state, result.Executable, result.Version)
 	return nil
+}
+
+func installOperationResult(result install.Result, installErr error) operationResult {
+	response := operationResult{
+		SchemaVersion: 1,
+		Command:       "install",
+		Success:       installErr == nil,
+		State:         result.State,
+		Language:      result.Language,
+		Version:       result.Version,
+		Message:       "Linguagem instalada",
+	}
+	if installErr != nil {
+		response.State = "failed"
+		response.Message = installErr.Error()
+	}
+	return response
 }

@@ -83,6 +83,9 @@ func Check(ctx context.Context, options Options) (Result, error) {
 
 func Apply(ctx context.Context, options Options) (Result, error) {
 	options = options.withDefaults()
+	if err := recoverInterruptedUpdate(options.InstallPath); err != nil {
+		return Result{}, err
+	}
 	result, err := Check(ctx, options)
 	if err != nil {
 		return Result{}, err
@@ -185,7 +188,7 @@ func termuxNameservers() []string {
 	if err != nil {
 		return nil
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	var result []string
 	scanner := bufio.NewScanner(file)
@@ -229,7 +232,7 @@ func latestRelease(ctx context.Context, options Options) (Release, error) {
 	if err != nil {
 		return Release{}, fmt.Errorf("consultar releases: %w", err)
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode != http.StatusOK {
 		return Release{}, fmt.Errorf("consultar releases: HTTP %s", response.Status)
 	}
@@ -282,30 +285,44 @@ func replaceBinary(ctx context.Context, options Options, result Result) error {
 		return fmt.Errorf("criar arquivo temporário da atualização: %w", err)
 	}
 	temporaryPath := temporary.Name()
-	defer os.Remove(temporaryPath)
+	defer func() { _ = os.Remove(temporaryPath) }()
 	if err := downloadBinary(ctx, options.HTTPClient, binaryAsset.DownloadURL, temporary, expected); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return err
 	}
 	if err := temporary.Chmod(0o755); err != nil {
-		temporary.Close()
+		_ = temporary.Close()
 		return fmt.Errorf("definir permissões do update: %w", err)
 	}
 	if err := temporary.Close(); err != nil {
 		return fmt.Errorf("fechar arquivo temporário do update: %w", err)
 	}
 
-	backupPath := options.InstallPath + ".bak"
-	_ = os.Remove(backupPath)
-	if err := os.Rename(options.InstallPath, backupPath); err != nil {
-		return fmt.Errorf("preparar substituição do executável: %w", err)
-	}
 	if err := os.Rename(temporaryPath, options.InstallPath); err != nil {
-		_ = os.Rename(backupPath, options.InstallPath)
 		return fmt.Errorf("substituir executável: %w", err)
 	}
-	if err := os.Remove(backupPath); err != nil {
-		return fmt.Errorf("remover backup do executável: %w", err)
+	return nil
+}
+
+func recoverInterruptedUpdate(installPath string) error {
+	if installPath == "" {
+		return nil
+	}
+	if _, err := os.Stat(installPath); err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("verificar executável atual: %w", err)
+	}
+
+	backupPath := installPath + ".bak"
+	if _, err := os.Stat(backupPath); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return fmt.Errorf("verificar backup da atualização: %w", err)
+	}
+	if err := os.Rename(backupPath, installPath); err != nil {
+		return fmt.Errorf("recuperar atualização interrompida: %w", err)
 	}
 	return nil
 }
@@ -319,7 +336,7 @@ func downloadChecksum(ctx context.Context, client HTTPClient, url, binaryName st
 	if err != nil {
 		return "", fmt.Errorf("baixar checksums: %w", err)
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 	data, err := io.ReadAll(body)
 	if err != nil {
 		return "", fmt.Errorf("ler checksums: %w", err)
@@ -341,7 +358,7 @@ func downloadBinary(ctx context.Context, client HTTPClient, url string, destinat
 	if err != nil {
 		return fmt.Errorf("baixar binário: %w", err)
 	}
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 	hash := sha256.New()
 	bytesWritten, err := io.Copy(io.MultiWriter(destination, hash), body)
 	if err != nil {
@@ -368,7 +385,7 @@ func fetch(ctx context.Context, client HTTPClient, url string) (io.ReadCloser, e
 		return nil, err
 	}
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		response.Body.Close()
+		_ = response.Body.Close()
 		return nil, fmt.Errorf("HTTP %s", response.Status)
 	}
 	return response.Body, nil

@@ -80,7 +80,7 @@ func statusCard(width int, title string, state status.CheckState, detail string)
 	if contentColumns(width) == 2 {
 		cardWidth = (cardWidth - 2) / 2
 	}
-	return cardStyle.Copy().Width(cardWidth).Render(content)
+	return cardStyle.Width(cardWidth).Render(content)
 }
 
 func (m Model) statusAction(index int, label, shortcut string) string {

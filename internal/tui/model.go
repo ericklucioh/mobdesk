@@ -37,6 +37,8 @@ type Model struct {
 	confirmExit    bool
 	closing        bool
 	busy           bool
+	operationID    int
+	statusID       int
 	message        string
 	operation      string
 	installingTool string
@@ -56,14 +58,14 @@ type Model struct {
 }
 
 func New(values ...paths.Paths) Model {
-	return newModel(realBackend{}, tuiPaths(values))
+	return newModel(newRealBackend(), tuiPaths(values))
 }
 
 // NewWithBackend builds the TUI with an explicit communication backend. It is
 // used by the executable mock mode and by focused UI tests.
 func NewWithBackend(backend Backend, values ...paths.Paths) Model {
 	if backend == nil {
-		backend = realBackend{}
+		backend = newRealBackend()
 	}
 	return newModel(backend, tuiPaths(values))
 }
@@ -81,10 +83,10 @@ func newModel(backend Backend, p paths.Paths) Model {
 	columns := statusTableColumns(40)
 	statusTable := table.New(table.WithColumns(columns), table.WithRows(nil))
 	tableStyles := table.DefaultStyles()
-	tableStyles.Header = tagStyle.Copy().Padding(0, 1)
-	tableStyles.Cell = bodyStyle.Copy().Padding(0, 1)
+	tableStyles.Header = tagStyle.Padding(0, 1)
+	tableStyles.Cell = bodyStyle.Padding(0, 1)
 	// Status é uma tabela informativa; não há seleção de linha para destacar.
-	tableStyles.Selected = bodyStyle.Copy().Padding(0, 1).Foreground(lipgloss.Color(colorLilac)).Bold(true)
+	tableStyles.Selected = bodyStyle.Padding(0, 1).Foreground(lipgloss.Color(colorLilac)).Bold(true)
 	statusTable.SetStyles(tableStyles)
 
 	initialStatus := status.SystemStatus{Installations: status.ReadInstallations(p)}
@@ -92,6 +94,7 @@ func newModel(backend Backend, p paths.Paths) Model {
 		backend:      backend,
 		screen:       homeScreen,
 		status:       initialStatus,
+		statusID:     1,
 		toolsList:    toolsList,
 		setupActions: setupActions,
 		statusTable:  statusTable,
@@ -171,5 +174,5 @@ func toolInstalled(value status.SystemStatus, entry toolEntry) bool {
 func (m Model) Run() (tea.Model, error) { return tea.NewProgram(m).Run() }
 
 func (m Model) Init() tea.Cmd {
-	return m.backend.StatusCmd()
+	return m.statusCommand(m.statusID)
 }

@@ -35,9 +35,15 @@ func runSetup(ctx context.Context, p paths.Paths) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(os.Stdout, "\nSetup concluído.")
-	fmt.Fprintln(os.Stdout, "Ubuntu base instalado e pronto para o MVP.")
-	fmt.Fprintln(os.Stdout, "SSH preparado. Execute: mobdesk start")
+	if _, err := fmt.Fprintln(os.Stdout, "\nSetup concluído."); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(os.Stdout, "Ubuntu base instalado e pronto para o MVP."); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(os.Stdout, "SSH preparado. Execute: mobdesk start"); err != nil {
+		return err
+	}
 	return nil
 }
 

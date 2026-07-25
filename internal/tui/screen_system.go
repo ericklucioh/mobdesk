@@ -28,7 +28,7 @@ func (m Model) renderSystem() string {
 		systemCard(width, "CANAL", channelValue),
 		systemCard(width, "PLATAFORMA", osValue+"/"+architectureValue),
 	}
-	advanced := cardStyle.Copy().Width(max(1, width-4)).Render(
+	advanced := cardStyle.Width(max(1, width-4)).Render(
 		tagStyle.Render("ÁREA AVANÇADA") + "\n" +
 			titleStyle.Render("Operações protegidas") + "\n" +
 			mutedStyle.Render(wrapText("Ações destrutivas não fazem parte do MVP. O reset do Ubuntu exigirá confirmação explícita.", width-6)),
@@ -39,7 +39,7 @@ func (m Model) renderSystem() string {
 		tagStyle.Render("SISTEMA"),
 		titleStyle.Render("Mobdesk"),
 		mutedStyle.Render(wrapText("Atualizações, versão e informações do aplicativo.", width)),
-		cardStyle.Copy().Width(max(1, width-4)).Render(
+		cardStyle.Width(max(1, width-4)).Render(
 			tagStyle.Render("ATUALIZAÇÃO") + "\n" +
 				titleStyle.Render("Mobdesk "+versionValue) + "\n" +
 				mutedStyle.Render("Verifique se há uma versão mais recente.") + "\n\n" +
@@ -65,5 +65,5 @@ func systemCard(width int, label, value string) string {
 	if contentColumns(width) == 2 {
 		cardWidth = (cardWidth - 2) / 2
 	}
-	return cardStyle.Copy().Width(cardWidth).Render(tagStyle.Render(label) + "\n" + bodyStyle.Render(value))
+	return cardStyle.Width(cardWidth).Render(tagStyle.Render(label) + "\n" + bodyStyle.Render(value))
 }

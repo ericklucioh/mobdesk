@@ -38,7 +38,9 @@ func runStatus(ctx context.Context) error {
 			return fmt.Errorf("emitir status JSON: %w", err)
 		}
 	} else {
-		status.RenderText(os.Stdout, value)
+		if err := status.RenderText(os.Stdout, value); err != nil {
+			return fmt.Errorf("emitir status: %w", err)
+		}
 	}
 	if statusStrict && (value.Alerts.Warnings > 0 || value.Alerts.Errors > 0 || value.Alerts.Missing > 0 || value.Alerts.Unknown > 0) {
 		return ErrStatusStrict

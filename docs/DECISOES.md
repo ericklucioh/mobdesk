@@ -43,6 +43,10 @@ Ela mantém apenas informações do ambiente e o acesso ao shell Ubuntu.
 
 Ubuntu, ferramentas, projetos e configurações não devem ser recriados em cada execução. O instalador deve ser idempotente, ter estado e preservar dados.
 
+### Atualização do binário preserva uma versão executável
+
+O atualizador grava e verifica a nova versão em arquivo temporário no mesmo diretório do binário antes de usar `rename` atômico para substituí-lo. Se uma versão anterior deixou um `.bak` sem o executável principal, a próxima execução do atualizador recupera esse backup.
+
 ## Alternativas adiadas
 
 ### Termux nativo como runtime principal

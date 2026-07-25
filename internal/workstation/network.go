@@ -19,7 +19,9 @@ func ensureIfconfig(ctx context.Context, out io.Writer, run func(context.Context
 	if _, err := executil.Resolve("ifconfig"); err == nil {
 		return nil
 	}
-	fmt.Fprintln(out, "ifconfig não encontrado; instalando net-tools...")
+	if _, err := fmt.Fprintln(out, "ifconfig não encontrado; instalando net-tools..."); err != nil {
+		return err
+	}
 	return run(ctx, "pkg", "install", "-y", "-o", "Dpkg::Options::=--force-confold", "net-tools")
 }
 
@@ -37,7 +39,7 @@ func sshPortResponds(ctx context.Context, port int) bool {
 	if err != nil {
 		return false
 	}
-	defer connection.Close()
+	defer func() { _ = connection.Close() }()
 	_ = connection.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 	banner, err := bufio.NewReader(connection).ReadString('\n')
 	return err == nil && strings.HasPrefix(banner, "SSH-")

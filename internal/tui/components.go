@@ -38,15 +38,6 @@ func formatBytes(value int64) string {
 func nearLine(lines []string, index int, text string) bool {
 	return index >= 0 && index < len(lines) && strings.Contains(strings.ToLower(lines[index]), strings.ToLower(text))
 }
-func blockContains(lines []string, index int, text string) bool {
-	for position, line := range lines {
-		if strings.Contains(strings.ToLower(line), strings.ToLower(text)) {
-			return index >= max(0, position-2) && index < min(len(lines), position+3)
-		}
-	}
-	return false
-}
-
 func blockContainsAt(lines []string, index, x int, text string) bool {
 	for position, line := range lines {
 		plain := ansi.Strip(line)

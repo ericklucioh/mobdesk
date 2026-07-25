@@ -29,7 +29,7 @@ func (s Service) Start(ctx context.Context) (StartInfo, error) {
 		return info, fmt.Errorf("verificar configuração da senha SSH: %w", err)
 	}
 	if err := s.run(ctx, "proot-distro", "login", "ubuntu", "--", "true"); err != nil {
-		return info, fmt.Errorf("Ubuntu não está disponível; execute mobdesk setup: %w", err)
+		return info, fmt.Errorf("ubuntu não está disponível; execute mobdesk setup: %w", err)
 	}
 	if err := s.Deps.EnsureSSHConfigured(s.Paths); err != nil {
 		return info, err

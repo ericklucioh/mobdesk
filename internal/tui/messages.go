@@ -8,6 +8,7 @@ import (
 )
 
 type operationMessage struct {
+	id      int
 	command string
 	result  operationResult
 	err     error
@@ -27,6 +28,7 @@ type operationResult struct {
 }
 
 type statusMessage struct {
+	id    int
 	value status.SystemStatus
 	info  version.Info
 	err   error

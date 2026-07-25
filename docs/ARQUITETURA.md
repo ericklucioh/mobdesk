@@ -143,7 +143,9 @@ Regras estruturais:
 
 Os comandos da CLI são a fronteira pública de execução. Quando a TUI chama o
 backend real, a resposta esperada é uma mensagem final, normalmente derivada
-de JSON no stdout. Mensagens auxiliares e erros não devem corromper JSON.
+de JSON no stdout. Operações JSON devem emitir esse resultado estruturado tanto
+em sucesso quanto em falha, mesmo que retornem status não zero. Mensagens
+auxiliares e erros não devem corromper JSON.
 
 O fluxo normal é:
 
@@ -160,6 +162,10 @@ evento da TUI
 O fluxo real não depende de streaming de progresso ou de polling contínuo.
 Qualquer estado exibido durante uma operação deve ser tratado como espera até
 que exista uma resposta final confiável.
+
+A TUI executa no máximo uma operação de host por vez. Cada operação e coleta
+de status recebe um identificador monotônico para descartar respostas antigas.
+Ao encerrar a TUI, o backend cancela subprocessos que ela iniciou.
 
 ## Limitações da plataforma
 

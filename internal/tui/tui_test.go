@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"context"
+	"errors"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -653,3 +655,95 @@ func TestMockBackendRejectsCommandsOutsideCLI(t *testing.T) {
 		}
 	}
 }
+
+func TestHostOperationBlocksDuplicatesAndIgnoresStaleStatus(t *testing.T) {
+	backend := &controlledBackend{}
+	model := NewWithBackend(backend)
+	model.statusLoaded = true
+	model.status.Host.Termux = true
+
+	updated, first := model.runHostOperation("install", "install", "go", "--json")
+	model = updated.(Model)
+	if first == nil || !model.busy || backend.operationCalls != 0 {
+		t.Fatalf("first operation was not queued correctly: busy=%v calls=%d", model.busy, backend.operationCalls)
+	}
+
+	updated, duplicate := model.runHostOperation("install", "install", "python", "--json")
+	model = updated.(Model)
+	if duplicate != nil || model.operation != "install" {
+		t.Fatalf("duplicate operation was not blocked: cmd=%v operation=%q", duplicate != nil, model.operation)
+	}
+
+	stale := status.SystemStatus{Host: status.HostStatus{Termux: true}, SSH: status.SSHStatus{Running: false}}
+	updated, _ = model.Update(statusMessage{id: 1, value: stale})
+	model = updated.(Model)
+	if !model.busy || model.status.SSH.Running {
+		t.Fatalf("stale status changed active operation state: busy=%v ssh=%v", model.busy, model.status.SSH.Running)
+	}
+
+	operation := first().(operationMessage)
+	updated, refresh := model.Update(operation)
+	model = updated.(Model)
+	if model.busy || refresh == nil {
+		t.Fatalf("operation did not finish and request fresh status: busy=%v refresh=%v", model.busy, refresh != nil)
+	}
+
+	updated, _ = model.Update(statusMessage{id: 2, value: stale})
+	model = updated.(Model)
+	if model.status.SSH.Running {
+		t.Fatal("status requested before operation completion was accepted")
+	}
+
+	updated, _ = model.Update(refresh().(statusMessage))
+	model = updated.(Model)
+	if !model.status.SSH.Running || model.statusID != 3 {
+		t.Fatalf("fresh status was not applied: ssh=%v statusID=%d", model.status.SSH.Running, model.statusID)
+	}
+}
+
+func TestExitCancelsCancelableBackend(t *testing.T) {
+	backend := &controlledBackend{}
+	model := NewWithBackend(backend)
+	model.confirmExit = true
+
+	updated, cmd := model.updateConfirmation("y")
+	model = updated.(Model)
+	if !backend.canceled || cmd == nil || !model.closing {
+		t.Fatalf("exit did not cancel backend: canceled=%v cmd=%v closing=%v", backend.canceled, cmd != nil, model.closing)
+	}
+}
+
+func TestRunCommandUsesCanceledContext(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	message, ok := runCommand(ctx, "version")().(operationMessage)
+	if !ok || !errors.Is(message.err, context.Canceled) {
+		t.Fatalf("canceled command = %+v", message)
+	}
+}
+
+type controlledBackend struct {
+	operationCalls int
+	canceled       bool
+}
+
+func (b *controlledBackend) StatusCmd() tea.Cmd {
+	return func() tea.Msg {
+		return statusMessage{value: status.SystemStatus{
+			Host: status.HostStatus{Termux: true},
+			SSH:  status.SSHStatus{Running: true},
+		}}
+	}
+}
+
+func (b *controlledBackend) OperationCmd(args ...string) tea.Cmd {
+	return func() tea.Msg {
+		b.operationCalls++
+		return operationMessage{command: args[0], result: operationResult{Success: true}}
+	}
+}
+
+func (b *controlledBackend) ShellCmd() tea.Cmd { return nil }
+
+func (b *controlledBackend) Cancel() { b.canceled = true }
