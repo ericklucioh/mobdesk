@@ -20,11 +20,63 @@ O Termux controla o aparelho. O Ubuntu persistente é o ambiente de trabalho. Ao
 - acesso remoto direto ao Ubuntu;
 - detecção do IP local via `ifconfig`;
 - autenticação por senha;
-- comandos `setup`, `start` e `stop`;
+- comandos `setup`, `start`, `stop`, `shell`, `status`, `install`, `update` e `tui`;
+- instalação idempotente de Go, Python, Node.js, C, C++ e Lua no Ubuntu;
+- status humano e JSON para automação e TUI;
+- TUI com status, setup, ferramentas, shell e atualização;
+- versão local e atualização segura do binário por release;
 - execução no celular ou remotamente pelo computador;
 - ambiente reproduzível para desenvolvimento e testes.
 
-O MVP-1 é deliberadamente pequeno. Ele ainda não instala ferramentas de desenvolvimento no Ubuntu, não oferece TUI e não gerencia projetos. Essas capacidades fazem parte dos próximos estágios.
+O MVP continua deliberadamente pequeno. A TUI organiza as operações existentes,
+mas projetos, serviços, sessões persistentes e interface web permanecem para os
+próximos estágios.
+
+Consulte rapidamente o ambiente com:
+
+```bash
+mobdesk status
+mobdesk status --json
+```
+
+O status é somente leitura e verifica setup, Ubuntu, SSH, rede, espaço livre
+do dispositivo, bateria e Wi-Fi quando o Termux:API estiver disponível.
+
+## TUI
+
+Abra a interface textual no Termux com:
+
+```bash
+mobdesk tui
+```
+
+A TUI oferece status, setup, instalação de ferramentas, shell Ubuntu e
+atualização do Mobdesk. Quando ela é aberta por SSH, já está dentro do Ubuntu:
+nesse modo, mostra o workspace e permite abrir o shell local, mas não oferece
+ações que exigem o host Termux, como controlar SSH, executar setup, instalar
+ferramentas ou atualizar o binário.
+
+Instale uma linguagem no Ubuntu com:
+
+```bash
+mobdesk install go
+mobdesk install python
+mobdesk install node
+mobdesk install c
+mobdesk install cpp
+mobdesk install lua
+```
+
+Consulte a versão compilada e verifique atualizações:
+
+```bash
+mobdesk version --json
+mobdesk update --check
+mobdesk update
+```
+
+Builds locais aparecem como `dev` e podem ser atualizados para a última release
+estável. Builds do canal `stage` procuram releases `test-v*`.
 
 ## Instalação no Termux
 
@@ -55,6 +107,12 @@ Inicie a workstation:
 
 ```bash
 mobdesk start
+```
+
+Para abrir o Ubuntu localmente sem iniciar o servidor SSH:
+
+```bash
+mobdesk shell
 ```
 
 O Mobdesk exibirá um comando parecido com:
@@ -100,10 +158,11 @@ make shell        # abre outro shell no ambiente
 Verificações:
 
 ```bash
-make test
-make vet
-make build
+make check
+make integration-test  # smoke test do Termux/SSH no Docker
 ```
+
+O teste de integração cria volumes descartáveis, instala o Ubuntu, testa `setup`, `start`, acesso SSH e `stop`, e os remove ao terminar. Ele não reproduz bateria, permissões, wake-lock ou o kernel do Android.
 
 Para apagar o ambiente persistente e começar do zero:
 
@@ -130,21 +189,22 @@ O projeto não depende de root, VM ou Docker no celular. PRoot melhora a compati
 
 ## Próximos estágios
 
-1. Workstation TUI para setup, start, stop e diagnóstico;
-2. instalação de ferramentas de desenvolvimento sob demanda;
-3. sessões persistentes, projetos e serviços;
-4. central de gerenciamento acessível pelo navegador.
+1. consolidar a TUI e validar o fluxo em um aparelho Termux real;
+2. sessões persistentes, projetos, serviços e acesso remoto confiável;
+3. central local de gerenciamento;
+4. interface de gerenciamento acessível pelo navegador;
+5. plataforma reproduzível e extensível.
 
-Veja o [roadmap em seis estágios](docs/project/estagios_mobdesk.md).
+Veja o [roadmap em seis estágios](docs/ROADMAP.md).
 
 ## Documentação
 
-- [MVP-1](docs/project/MVP.md) — escopo e funcionamento atual;
-- [Missão](docs/project/MISSAO.md) — problema, público e valor;
-- [Estágios](docs/project/estagios_mobdesk.md) — evolução do produto;
-- [Arquitetura](docs/project/ARQUITETURA.md) — camadas e limites técnicos;
-- [Decisões](docs/project/DECISOES.md) — decisões do projeto;
-- [Ferramentas](docs/project/FERRAMENTAS.md) — catálogo técnico;
+- [Missão](docs/MISSAO.md) — problema, público e valor;
+- [Roadmap](docs/ROADMAP.md) — evolução do produto;
+- [Arquitetura](docs/ARQUITETURA.md) — camadas e limites técnicos;
+- [Decisões](docs/DECISOES.md) — decisões do projeto;
+- [Ferramentas](docs/ideias/FERRAMENTAS.md) — catálogo técnico em evolução;
+- [Refatoração prioritária](docs/PLANO-REFATORACAO-PRIORITARIA.md) — melhorias estruturais planejadas;
 - [Como contribuir](.github/CONTRIBUTING.md) — fluxo para colaboradores.
 
 ## Licença

@@ -49,7 +49,7 @@ O Mobdesk usa Termux e PRoot-Distro. Não exige root, máquina virtual ou Docker
 
 ## O que está disponível agora?
 
-O MVP atual concentra-se no bootstrap do ambiente:
+O MVP atual concentra-se no bootstrap e na TUI do ambiente:
 
 - instalação do Ubuntu persistente via PRoot-Distro;
 - instalação e configuração do OpenSSH no Termux;
@@ -58,9 +58,12 @@ O MVP atual concentra-se no bootstrap do ambiente:
 - detecção do endereço IP local;
 - configuração de senha para o acesso SSH;
 - operações repetíveis, sem reinstalar o que já existe;
-- comandos `setup`, `start` e `stop`.
+- comandos `setup`, `start`, `stop`, `shell`, `status`, `install`, `update` e
+  `tui`.
 
-A TUI completa, a instalação assistida de ferramentas, o gerenciamento de projetos e a central web fazem parte dos próximos estágios do produto. Consulte o [roadmap](../docs/project/ROADMAP.md) para acompanhar essa evolução.
+A TUI atual oferece status, setup, ferramentas, shell e atualização. Projetos,
+sessões persistentes e a central web permanecem para os próximos estágios.
+Consulte o [roadmap](../docs/ROADMAP.md) para acompanhar essa evolução.
 
 ## Instalação para usuários finais
 
@@ -157,10 +160,9 @@ Use SSH apenas em redes confiáveis. Não exponha a porta `8022` diretamente na 
 
 ## Documentação
 
-- [Missão do produto](../docs/project/MISSAO.md)
-- [MVP atual](../docs/project/MVP.md)
-- [Roadmap](../docs/project/ROADMAP.md)
-- [Arquitetura e limites](../docs/project/ARQUITETURA.md)
+- [Missão do produto](../docs/MISSAO.md)
+- [Roadmap](../docs/ROADMAP.md)
+- [Arquitetura e limites](../docs/ARQUITETURA.md)
 - [Contribuição](CONTRIBUTING.md)
 
 ## Licença

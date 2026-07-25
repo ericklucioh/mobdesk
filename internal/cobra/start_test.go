@@ -1,6 +1,10 @@
 package cobra
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/ericklucioh/mobdesk/internal/workstation"
+)
 
 func TestExtractIPv4AddressesPrefersWLAN(t *testing.T) {
 	output := `Warning: cannot open /proc/net/dev (Permission denied). Limited output.
@@ -12,7 +16,7 @@ wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
 `
 
 	want := []string{"192.168.3.228"}
-	got := extractIPv4Addresses(output)
+	got := workstation.ExtractIPv4Addresses(output)
 	assertAddresses(t, got, want)
 }
 
@@ -21,7 +25,7 @@ func TestExtractIPv4AddressesIgnoresLoopback(t *testing.T) {
         inet 127.0.0.1  netmask 255.0.0.0
 `
 
-	got := extractIPv4Addresses(output)
+	got := workstation.ExtractIPv4Addresses(output)
 	if len(got) != 0 {
 		t.Fatalf("esperava nenhum endereço, recebeu %v", got)
 	}
@@ -33,12 +37,12 @@ func TestExtractIPv4AddressesUsesOtherInterfacesAsFallback(t *testing.T) {
 `
 
 	want := []string{"10.23.45.6"}
-	got := extractIPv4Addresses(output)
+	got := workstation.ExtractIPv4Addresses(output)
 	assertAddresses(t, got, want)
 }
 
 func TestExtractIPv4AddressesHandlesEmptyOutput(t *testing.T) {
-	if got := extractIPv4Addresses(""); len(got) != 0 {
+	if got := workstation.ExtractIPv4Addresses(""); len(got) != 0 {
 		t.Fatalf("esperava nenhum endereço, recebeu %v", got)
 	}
 }

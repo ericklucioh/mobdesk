@@ -64,11 +64,13 @@ jobs:
             current="$(svu current --config "${svu_config}")"
             next="$(svu next --config "${svu_config}")"
             prerelease=true
+            channel=stage
           elif [[ "${GITHUB_REF_NAME}" == "main" ]]; then
             svu_config=.svu.yml
             current="$(svu current --config "${svu_config}")"
             next="$(svu next --config "${svu_config}")"
             prerelease=false
+            channel=stable
           else
             echo "Unsupported release branch: ${GITHUB_REF_NAME}" >&2
             exit 1
@@ -87,16 +89,21 @@ jobs:
             echo "release=true"
             echo "version=${next}"
             echo "prerelease=${prerelease}"
+            echo "channel=${channel}"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Build Mobdesk for Termux ARM64
         if: steps.version.outputs.release == 'true'
         run: |
           mkdir -p dist
+          export BUILT_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export VERSION="${{ steps.version.outputs.version }}"
+          export CHANNEL="${{ steps.version.outputs.channel }}"
           CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
-            go build -trimpath -ldflags='-s -w' \
+            go build -trimpath \
+            -ldflags="-s -w -X github.com/ericklucioh/mobdesk/internal/version.Value=${VERSION} -X github.com/ericklucioh/mobdesk/internal/version.Channel=${CHANNEL} -X github.com/ericklucioh/mobdesk/internal/version.Commit=${GITHUB_SHA} -X github.com/ericklucioh/mobdesk/internal/version.BuiltAt=${BUILT_AT}" \
             -o dist/mobdesk-linux-arm64 ./cmd/mobdesk
-          sha256sum dist/mobdesk-linux-arm64 > dist/SHA256SUMS
+          (cd dist && sha256sum mobdesk-linux-arm64 > SHA256SUMS)
 
       - name: Create and push version tag
         if: steps.version.outputs.release == 'true'

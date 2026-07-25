@@ -49,7 +49,7 @@ Mobdesk uses Termux and PRoot-Distro. It does not require root access, a virtual
 
 ## What is available today?
 
-The current MVP focuses on bootstrapping the environment:
+The current MVP focuses on environment bootstrapping and its TUI:
 
 - persistent Ubuntu installation through PRoot-Distro;
 - OpenSSH installation and configuration in Termux;
@@ -58,9 +58,12 @@ The current MVP focuses on bootstrapping the environment:
 - local IP address detection;
 - password setup for SSH access;
 - repeatable operations that do not reinstall existing components;
-- `setup`, `start`, and `stop` commands.
+- `setup`, `start`, `stop`, `shell`, `status`, `install`, `update`, and `tui`
+  commands.
 
-The full TUI, assisted tool installation, project management, and web control center are planned for later product stages. See the [roadmap](../docs/project/ROADMAP.md) for the planned evolution.
+The current TUI provides status, setup, tools, shell, and update screens.
+Projects, persistent sessions, and the web control center remain later stages.
+See the [roadmap](../docs/ROADMAP.md) for the planned evolution.
 
 ## Installation for end users
 
@@ -157,10 +160,9 @@ Use SSH only on trusted networks. Do not expose port `8022` directly to the publ
 
 ## Documentation
 
-- [Product mission](../docs/project/MISSAO.md)
-- [Current MVP](../docs/project/MVP.md)
-- [Roadmap](../docs/project/ROADMAP.md)
-- [Architecture and limitations](../docs/project/ARQUITETURA.md)
+- [Product mission](../docs/MISSAO.md)
+- [Roadmap](../docs/ROADMAP.md)
+- [Architecture and limitations](../docs/ARQUITETURA.md)
 - [Contributing](CONTRIBUTING.md)
 
 ## License
