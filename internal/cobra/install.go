@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ericklucioh/mobdesk/internal/install"
+	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +28,7 @@ func init() {
 }
 
 func runInstall(ctx context.Context, name string) error {
-	result, err := install.Install(ctx, name, install.Options{})
+	result, err := install.Install(ctx, name, install.Options{Paths: paths.Current()})
 	if err != nil {
 		return err
 	}

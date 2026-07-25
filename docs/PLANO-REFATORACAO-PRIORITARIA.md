@@ -52,6 +52,9 @@ workstation.
 
 ## 2. Centralizar paths e estado persistente
 
+**Status:** concluído. `internal/paths` é a fonte canônica do layout atual e
+os consumidores migrados preservam os diretórios e arquivos existentes.
+
 ### Problema
 
 Paths como `$HOME/.local/share/mobdesk`, `$HOME/.config/mobdesk`, logs,
@@ -62,6 +65,7 @@ marcadores de setup, registros de instalacao, configuracao SSH e
 
 Uma alteracao no layout de diretorios pode deixar setup, status, instalacao e
 SSH discordando entre si. Tambem fica mais dificil testar fluxos com diretorios
+temporarios, pois parte das regras depende diretamente do ambiente.
 
 ### Direcao
 
@@ -82,6 +86,10 @@ SSH discordando entre si. Tambem fica mais dificil testar fluxos com diretorios
 - Os testes conseguem usar um diretorio temporario sem depender do `HOME` real.
 
 ## 3. Tirar a orquestracao de start e setup da camada Cobra
+
+**Status:** concluído. `internal/workstation.Service` orquestra `start`,
+`stop` e todas as fases de `setup` com paths e dependências explícitos; Cobra
+adapta flags, streams e renderização humana/JSON.
 
 ### Problema
 
@@ -118,8 +126,7 @@ exige editar o comando Cobra e pode afetar tanto a CLI humana quanto a TUI.
 
 1. Corrigir o teste atual da TUI e alinhar a documentacao com a implementacao.
 2. Implementar a separacao Termux/Ubuntu na TUI.
-3. Centralizar paths e estado persistente.
-4. Extrair `start/stop`; depois aplicar o mesmo desenho ao `setup`.
+3. Extrair `start/stop`; depois aplicar o mesmo desenho ao `setup`.
 
 Esta ordem reduz primeiro um erro de experiencia e de runtime, depois elimina
 duplicacao estrutural e, por ultimo, torna a orquestracao testavel.

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/ericklucioh/mobdesk/internal/status"
 )
 
@@ -18,7 +19,7 @@ const (
 )
 
 type Options struct {
-	Home  string
+	Paths paths.Paths
 	Name  string
 	Lines int
 }
@@ -43,17 +44,11 @@ type Snapshot struct {
 }
 
 func Read(options Options) (Snapshot, error) {
-	if options.Home == "" {
-		options.Home = os.Getenv("HOME")
-	}
-	if options.Home == "" {
-		options.Home = "."
-	}
 	if options.Lines <= 0 {
 		options.Lines = DefaultLines
 	}
 
-	directory := filepath.Join(options.Home, ".local", "share", "mobdesk", "state", "installations")
+	directory := options.Paths.InstallationsDir()
 	entries, err := os.ReadDir(directory)
 	if err != nil && !os.IsNotExist(err) {
 		return Snapshot{}, fmt.Errorf("ler registros de instalação: %w", err)

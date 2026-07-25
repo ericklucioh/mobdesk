@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	logstore "github.com/ericklucioh/mobdesk/internal/logs"
+	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +34,7 @@ func init() {
 }
 
 func runLogs() error {
-	snapshot, err := logstore.Read(logstore.Options{Name: logsName, Lines: logsLines})
+	snapshot, err := logstore.Read(logstore.Options{Paths: paths.Current(), Name: logsName, Lines: logsLines})
 	if err != nil {
 		return err
 	}

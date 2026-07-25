@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/ericklucioh/mobdesk/internal/status"
 	"github.com/spf13/cobra"
 )
@@ -31,7 +32,7 @@ func init() {
 }
 
 func runStatus(ctx context.Context) error {
-	value := status.Collect(ctx, status.Options{})
+	value := status.Collect(ctx, status.Options{Paths: paths.Current()})
 	if statusJSON {
 		if err := status.EncodeJSON(os.Stdout, value); err != nil {
 			return fmt.Errorf("emitir status JSON: %w", err)

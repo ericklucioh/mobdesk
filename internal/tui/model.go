@@ -7,6 +7,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ericklucioh/mobdesk/internal/install"
+	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/ericklucioh/mobdesk/internal/status"
 	"github.com/ericklucioh/mobdesk/internal/version"
 )
@@ -54,20 +55,27 @@ type Model struct {
 	help           help.Model
 }
 
-func New() Model {
-	return newModel(realBackend{})
+func New(values ...paths.Paths) Model {
+	return newModel(realBackend{}, tuiPaths(values))
 }
 
 // NewWithBackend builds the TUI with an explicit communication backend. It is
 // used by the executable mock mode and by focused UI tests.
-func NewWithBackend(backend Backend) Model {
+func NewWithBackend(backend Backend, values ...paths.Paths) Model {
 	if backend == nil {
 		backend = realBackend{}
 	}
-	return newModel(backend)
+	return newModel(backend, tuiPaths(values))
 }
 
-func newModel(backend Backend) Model {
+func tuiPaths(values []paths.Paths) paths.Paths {
+	if len(values) == 0 {
+		return paths.Paths{}
+	}
+	return values[0]
+}
+
+func newModel(backend Backend, p paths.Paths) Model {
 	setupActions := selector{count: 2}
 	toolsList := selector{count: len(toolEntries("language"))}
 	columns := statusTableColumns(40)
@@ -79,7 +87,7 @@ func newModel(backend Backend) Model {
 	tableStyles.Selected = bodyStyle.Copy().Padding(0, 1).Foreground(lipgloss.Color(colorLilac)).Bold(true)
 	statusTable.SetStyles(tableStyles)
 
-	initialStatus := status.SystemStatus{Installations: status.ReadInstallations("")}
+	initialStatus := status.SystemStatus{Installations: status.ReadInstallations(p)}
 	return Model{
 		backend:      backend,
 		screen:       homeScreen,

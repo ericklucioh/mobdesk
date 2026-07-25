@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
 const defaultCommandTimeout = 10 * time.Minute
@@ -22,11 +24,10 @@ var catalog = []Language{
 }
 
 type Options struct {
-	Runner           CommandRunner
-	InstallationsDir string
-	LogsDir          string
-	Now              func() time.Time
-	CommandTimeout   time.Duration
+	Paths          paths.Paths
+	Runner         CommandRunner
+	Now            func() time.Time
+	CommandTimeout time.Duration
 }
 
 func Languages() []Language {
@@ -65,22 +66,10 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 	if options.CommandTimeout <= 0 {
 		options.CommandTimeout = defaultCommandTimeout
 	}
-	if options.InstallationsDir == "" || options.LogsDir == "" {
-		home := os.Getenv("HOME")
-		if home == "" {
-			home = "."
-		}
-		base := filepath.Join(home, ".local", "share", "mobdesk")
-		if options.InstallationsDir == "" {
-			options.InstallationsDir = filepath.Join(base, "state", "installations")
-		}
-		if options.LogsDir == "" {
-			options.LogsDir = filepath.Join(base, "logs", "install")
-		}
-	}
-
 	now := options.Now().UTC()
-	logPath := filepath.Join(options.LogsDir, language.Name+".log")
+	installationsDir := options.Paths.InstallationsDir()
+	logsDir := options.Paths.InstallLogsDir()
+	logPath := filepath.Join(logsDir, language.Name+".log")
 	result := Result{
 		SchemaVersion: 1,
 		Language:      language.Name,
@@ -98,13 +87,13 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 		LastAttemptAt: now,
 		LogPath:       logPath,
 	}
-	if err := os.MkdirAll(options.InstallationsDir, 0o700); err != nil {
+	if err := os.MkdirAll(installationsDir, 0o700); err != nil {
 		return result, fmt.Errorf("criar estado da instalação: %w", err)
 	}
-	if err := os.MkdirAll(options.LogsDir, 0o700); err != nil {
+	if err := os.MkdirAll(logsDir, 0o700); err != nil {
 		return result, fmt.Errorf("criar diretório de logs da instalação: %w", err)
 	}
-	if err := saveRecord(options.InstallationsDir, record); err != nil {
+	if err := saveRecord(installationsDir, record); err != nil {
 		return result, fmt.Errorf("registrar tentativa de instalação: %w", err)
 	}
 
@@ -112,18 +101,18 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 	if version.Err != nil {
 		if update := runUbuntuLogged(ctx, runner, options.CommandTimeout, logPath, "apt-get", "update"); update.Err != nil {
 			err := fmt.Errorf("atualizar índices do Ubuntu para %s: %w", language.Name, update.Err)
-			return failInstallation(options.InstallationsDir, record, result, err)
+			return failInstallation(installationsDir, record, result, err)
 		}
 		if install := runUbuntuLogged(ctx, runner, options.CommandTimeout, logPath, "apt-get", "install", "-y", language.Package); install.Err != nil {
 			err := fmt.Errorf("instalar %s: %w", language.Name, install.Err)
-			return failInstallation(options.InstallationsDir, record, result, err)
+			return failInstallation(installationsDir, record, result, err)
 		}
 		result.Changed = true
 		version = runUbuntuLogged(ctx, runner, options.CommandTimeout, logPath, language.Executable, language.VersionArg...)
 	}
 	if version.Err != nil {
 		err := fmt.Errorf("verificar %s após instalação: %w", language.Name, version.Err)
-		return failInstallation(options.InstallationsDir, record, result, err)
+		return failInstallation(installationsDir, record, result, err)
 	}
 	result.Version = commandOutput(version)
 	result.Installed = true
@@ -131,7 +120,7 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 	record.State = result.State
 	record.Version = result.Version
 	record.InstalledAt = options.Now().UTC()
-	if err := saveRecord(options.InstallationsDir, record); err != nil {
+	if err := saveRecord(installationsDir, record); err != nil {
 		return result, fmt.Errorf("registrar instalação concluída: %w", err)
 	}
 	return result, nil

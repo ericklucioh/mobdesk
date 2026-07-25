@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/ericklucioh/mobdesk/internal/executil"
+	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
 const (
@@ -27,18 +28,16 @@ const (
 )
 
 type Options struct {
+	Paths         paths.Paths
 	CommandRunner CommandRunner
 	LookPath      func(string) (string, error)
 	Now           func() time.Time
-	Home          string
-	Prefix        string
 	SSHPort       int
 	termux        bool
 }
 
 func (o Options) withDefaults() Options {
-	termuxPrefix := os.Getenv("PREFIX")
-	o.termux = detectTermuxRuntime(termuxPrefix)
+	o.termux = detectTermuxRuntime(o.Paths.Prefix)
 	if o.CommandRunner == nil {
 		o.CommandRunner = ExecRunner{}
 	}
@@ -47,21 +46,6 @@ func (o Options) withDefaults() Options {
 	}
 	if o.Now == nil {
 		o.Now = time.Now
-	}
-	if o.Home == "" {
-		o.Home = os.Getenv("HOME")
-	}
-	if o.Home == "" {
-		o.Home = "."
-	}
-	if o.Prefix == "" {
-		o.Prefix = termuxPrefix
-	}
-	if o.Prefix == "" {
-		o.Prefix = "/data/data/com.termux/files/usr"
-	}
-	if strings.HasPrefix(filepath.Clean(o.Prefix), "/data/data/com.termux/files/usr") {
-		o.termux = detectTermuxRuntime(o.Prefix)
 	}
 	if o.SSHPort == 0 {
 		o.SSHPort = SSHPort
@@ -91,8 +75,8 @@ func Collect(ctx context.Context, options Options) SystemStatus {
 // ReadInstallations returns the persisted installation records without
 // running external commands. The TUI uses it as an immediate snapshot while
 // the more expensive runtime status collection is still in progress.
-func ReadInstallations(home string) []InstallationStatus {
-	return collectInstallations(Options{Home: home}.withDefaults())
+func ReadInstallations(p paths.Paths) []InstallationStatus {
+	return collectInstallations(Options{Paths: p}.withDefaults())
 }
 
 func collectHost(o Options) HostStatus {
@@ -101,8 +85,8 @@ func collectHost(o Options) HostStatus {
 		Termux:       o.termux,
 		OS:           runtime.GOOS,
 		Architecture: runtime.GOARCH,
-		Home:         o.Home,
-		Prefix:       o.Prefix,
+		Home:         o.Paths.Home,
+		Prefix:       o.Paths.Prefix,
 	}
 	result.ProotDistro = commandAvailable(o, "proot-distro")
 	result.OpenSSH = commandAvailable(o, "sshd")
@@ -116,7 +100,7 @@ func collectHost(o Options) HostStatus {
 		result.Error = "termux_runtime_unavailable"
 		return result
 	}
-	if _, err := os.Stat(o.Home); err != nil {
+	if _, err := os.Stat(o.Paths.Home); err != nil {
 		result.State = CheckWarning
 		result.Error = "home_unavailable"
 	}
@@ -142,7 +126,7 @@ func collectSetup(o Options) SetupStatus {
 	result := SetupStatus{State: CheckWarning, Phases: make(map[string]string, len(phases))}
 	completed := true
 	for _, phase := range phases {
-		if _, err := os.Stat(filepath.Join(o.Home, ".local", "share", "mobdesk", "state", phase+".done")); err == nil {
+		if _, err := os.Stat(o.Paths.SetupPhase(phase)); err == nil {
 			result.Phases[phase] = "done"
 			continue
 		}
@@ -161,7 +145,7 @@ func collectSetup(o Options) SetupStatus {
 func collectStorage(ctx context.Context, o Options) StorageStatus {
 	result := StorageStatus{State: CheckUnknown}
 	var stat syscall.Statfs_t
-	if err := syscall.Statfs(o.Home, &stat); err != nil {
+	if err := syscall.Statfs(o.Paths.Home, &stat); err != nil {
 		result.Error = "device_storage_unavailable"
 	} else {
 		blockSize := int64(stat.Bsize)
@@ -179,7 +163,7 @@ func collectStorage(ctx context.Context, o Options) StorageStatus {
 }
 
 func collectUbuntu(ctx context.Context, o Options) UbuntuStatus {
-	result := UbuntuStatus{State: CheckUnknown, WorkspacePath: "/root/workspace"}
+	result := UbuntuStatus{State: CheckUnknown, WorkspacePath: o.Paths.UbuntuWorkspace()}
 	if !o.termux {
 		// The SSH session is already inside the Ubuntu workspace; proot-distro
 		// exists only on the Termux side.
@@ -217,14 +201,12 @@ func collectUbuntu(ctx context.Context, o Options) UbuntuStatus {
 }
 
 func collectSSH(ctx context.Context, o Options) SSHStatus {
-	home := o.Home
-	runtimeDir := filepath.Join(home, ".local", "share", "mobdesk", "ssh")
-	configPath := filepath.Join(home, ".config", "mobdesk", "ssh", "sshd_config")
+	configPath := o.Paths.SSHConfig()
 	result := SSHStatus{
 		State:        CheckUnknown,
 		Port:         o.SSHPort,
 		ConfigPath:   configPath,
-		LogPath:      filepath.Join(runtimeDir, "sshd.log"),
+		LogPath:      o.Paths.SSHLog(),
 		ConfigExists: fileExists(configPath),
 	}
 	if !o.termux {
@@ -238,7 +220,7 @@ func collectSSH(ctx context.Context, o Options) SSHStatus {
 		result.Error = "ssh_not_configured"
 		return result
 	}
-	pidPath := filepath.Join(runtimeDir, "sshd.pid")
+	pidPath := o.Paths.SSHPID()
 	pidBytes, err := os.ReadFile(pidPath)
 	if err != nil {
 		result.State = CheckWarning
@@ -373,7 +355,7 @@ func collectWiFi(ctx context.Context, o Options) WiFiStatus {
 }
 
 func collectInstallations(o Options) []InstallationStatus {
-	directory := filepath.Join(o.Home, ".local", "share", "mobdesk", "state", "installations")
+	directory := o.Paths.InstallationsDir()
 	entries, err := os.ReadDir(directory)
 	if err != nil {
 		return []InstallationStatus{}

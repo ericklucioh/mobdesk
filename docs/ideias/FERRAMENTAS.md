@@ -153,6 +153,7 @@ indica o quanto o aplicativo foi preparado ou validado para o ambiente.
 | stu | armazenamento | Interface para Amazon S3 | false | 0% |
 | termscp | armazenamento | Cliente de transferência por SCP e SFTP | false | 0% |
 
+micro, tree
 
 fresh
 ttt
@@ -170,7 +171,7 @@ micro
 [12:31, 7/24/2026] Érick Lúcio: Calcurse
 [12:33, 7/24/2026] Érick Lúcio: Logo ls
 
-
+https://github.com/thompsonemerson/moeda
 alsamixer
 aptitude-curses 
 fzf
@@ -192,7 +193,7 @@ Rede: curl, wget, ftp, ping, ip, nmcli, netstat, openssl
 - Áudio/vídeo: ffmpeg, ffplay, ffprobe, vlc, cvlc, qvlc
 
 top
-gh - procurar tui
+gh - procurar tui gh-dash
 neofetch
 duf
 inxi
@@ -201,6 +202,9 @@ webquiz?
 joguinhos
 pw-top
 glow
+
+leaf markdown mermaid 
+https://github.com/AlexanderGrooff/mermaid-ascii
 ## Critérios
 
 - `is_approved` não significa que o aplicativo está instalado.
@@ -208,3 +212,4 @@ glow
   testes no Termux e no Ubuntu.
 - Um aplicativo só deve virar dependência do Mobdesk depois de validação de
   licença, manutenção, arquitetura ARM64, consumo e execução no PRoot.
+

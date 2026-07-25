@@ -5,11 +5,13 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
 func TestReadReturnsRecentInstallationLogLines(t *testing.T) {
 	home := t.TempDir()
-	stateDir := filepath.Join(home, ".local", "share", "mobdesk", "state", "installations")
+	stateDir := paths.New(home, "").InstallationsDir()
 	logPath := filepath.Join(home, "go.log")
 	if err := os.MkdirAll(stateDir, 0o700); err != nil {
 		t.Fatal(err)
@@ -21,7 +23,7 @@ func TestReadReturnsRecentInstallationLogLines(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	snapshot, err := Read(Options{Home: home, Lines: 2})
+	snapshot, err := Read(Options{Paths: paths.New(home, ""), Lines: 2})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +37,7 @@ func TestReadReturnsRecentInstallationLogLines(t *testing.T) {
 
 func TestReadFiltersByNameAndMarksMissingFile(t *testing.T) {
 	home := t.TempDir()
-	stateDir := filepath.Join(home, ".local", "share", "mobdesk", "state", "installations")
+	stateDir := paths.New(home, "").InstallationsDir()
 	if err := os.MkdirAll(stateDir, 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +46,7 @@ func TestReadFiltersByNameAndMarksMissingFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	snapshot, err := Read(Options{Home: home, Name: "PYTHON"})
+	snapshot, err := Read(Options{Paths: paths.New(home, ""), Name: "PYTHON"})
 	if err != nil {
 		t.Fatal(err)
 	}

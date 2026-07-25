@@ -1,6 +1,7 @@
 package cobra
 
 import (
+	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/ericklucioh/mobdesk/internal/tui"
 	"github.com/spf13/cobra"
 )
@@ -9,9 +10,10 @@ var tuiCmd = &cobra.Command{
 	Use:   "tui",
 	Short: "abrir a interface textual do Mobdesk",
 	RunE: func(cmd *cobra.Command, _ []string) error {
-		model := tui.New()
+		p := paths.Current()
+		model := tui.New(p)
 		if tuiMock {
-			model = tui.NewWithBackend(tui.NewMockBackend(tuiMockScenario))
+			model = tui.NewWithBackend(tui.NewMockBackend(tuiMockScenario), p)
 		}
 		_, err := model.Run()
 		return err

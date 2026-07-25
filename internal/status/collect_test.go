@@ -11,6 +11,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
 type fakeRunner struct {
@@ -49,10 +51,11 @@ func availableCommands(names ...string) func(string) (string, error) {
 func TestCollectProducesStableJSONAndUsesOptionalTermuxAPI(t *testing.T) {
 	home := t.TempDir()
 	prefix := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(home, ".local", "share", "mobdesk", "state"), 0o700); err != nil {
+	paths := paths.New(home, prefix)
+	if err := os.MkdirAll(paths.StateDir(), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(home, ".local", "share", "mobdesk", "state", "directories.done"), []byte("done"), 0o600); err != nil {
+	if err := os.WriteFile(paths.SetupPhase("directories"), []byte("done"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	runner := &fakeRunner{outputs: map[string]CommandResult{
@@ -60,10 +63,9 @@ func TestCollectProducesStableJSONAndUsesOptionalTermuxAPI(t *testing.T) {
 		"termux-wifi-connectioninfo ": {Stdout: []byte(`{"ssid":"study","ip":"192.168.1.20","link_speed_mbps":433,"frequency_mhz":5180}`)},
 	}}
 	value := Collect(context.Background(), Options{
+		Paths:         paths,
 		CommandRunner: runner,
 		LookPath:      availableCommands("proot-distro", "sshd", "ifconfig", "termux-wake-lock", "termux-battery-status", "termux-wifi-connectioninfo"),
-		Home:          home,
-		Prefix:        prefix,
 		Now:           func() time.Time { return time.Date(2026, 7, 22, 15, 0, 0, 0, time.FixedZone("BRT", -3*60*60)) },
 	})
 
@@ -99,10 +101,9 @@ func TestCollectProducesStableJSONAndUsesOptionalTermuxAPI(t *testing.T) {
 func TestCollectDegradesGracefullyWhenTermuxAPIIsMissing(t *testing.T) {
 	runner := &fakeRunner{outputs: map[string]CommandResult{}}
 	value := Collect(context.Background(), Options{
+		Paths:         paths.New(t.TempDir(), t.TempDir()),
 		CommandRunner: runner,
 		LookPath:      availableCommands("ifconfig"),
-		Home:          t.TempDir(),
-		Prefix:        t.TempDir(),
 	})
 
 	if value.Battery.State != CheckMissing || value.Battery.Error != "termux_api_missing" {
@@ -118,7 +119,8 @@ func TestCollectDegradesGracefullyWhenTermuxAPIIsMissing(t *testing.T) {
 
 func TestSetupDoesNotRequireOptionalSystemUpgrade(t *testing.T) {
 	home := t.TempDir()
-	stateDir := filepath.Join(home, ".local", "share", "mobdesk", "state")
+	paths := paths.New(home, "")
+	stateDir := paths.StateDir()
 	if err := os.MkdirAll(stateDir, 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -126,12 +128,12 @@ func TestSetupDoesNotRequireOptionalSystemUpgrade(t *testing.T) {
 		"directories", "packages-updated", "packages-installed", "ubuntu-installed",
 		"workspace-created", "password-configured", "ssh-configured", "launcher-installed",
 	} {
-		if err := os.WriteFile(filepath.Join(stateDir, phase+".done"), []byte("done"), 0o600); err != nil {
+		if err := os.WriteFile(paths.SetupPhase(phase), []byte("done"), 0o600); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	value := collectSetup(Options{Home: home}.withDefaults())
+	value := collectSetup(Options{Paths: paths}.withDefaults())
 	if !value.Completed || value.State != CheckOK {
 		t.Fatalf("optional system upgrade made setup incomplete: %+v", value)
 	}
@@ -146,10 +148,9 @@ func TestCollectMarksInvalidTermuxJSONAsUnknown(t *testing.T) {
 		"termux-wifi-connectioninfo ": {Stdout: []byte("not-json")},
 	}}
 	value := Collect(context.Background(), Options{
+		Paths:         paths.New(t.TempDir(), t.TempDir()),
 		CommandRunner: runner,
 		LookPath:      availableCommands("termux-battery-status", "termux-wifi-connectioninfo"),
-		Home:          t.TempDir(),
-		Prefix:        t.TempDir(),
 	})
 
 	if value.Battery.State != CheckUnknown || value.Battery.Error != "battery_json_invalid" {
@@ -190,7 +191,7 @@ func TestRenderTextAndJSON(t *testing.T) {
 
 func TestCollectReadsGenericInstallationRecords(t *testing.T) {
 	home := t.TempDir()
-	directory := filepath.Join(home, ".local", "share", "mobdesk", "state", "installations")
+	directory := paths.New(home, "").InstallationsDir()
 	if err := os.MkdirAll(directory, 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -209,10 +210,9 @@ func TestCollectReadsGenericInstallationRecords(t *testing.T) {
 	}
 
 	value := Collect(context.Background(), Options{
+		Paths:         paths.New(home, t.TempDir()),
 		CommandRunner: &fakeRunner{outputs: map[string]CommandResult{}},
 		LookPath:      availableCommands(),
-		Home:          home,
-		Prefix:        t.TempDir(),
 	})
 	if len(value.Installations) != 2 || value.Installations[0].Name != "alpha-language" {
 		t.Fatalf("unexpected installations: %+v", value.Installations)

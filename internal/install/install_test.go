@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
 type fakeRunner struct {
@@ -30,10 +32,9 @@ func testOptions(t *testing.T, runner CommandRunner) Options {
 	t.Helper()
 	base := t.TempDir()
 	return Options{
-		Runner:           runner,
-		InstallationsDir: filepath.Join(base, "installations"),
-		LogsDir:          filepath.Join(base, "logs"),
-		Now:              func() time.Time { return time.Date(2026, 7, 22, 18, 0, 0, 0, time.UTC) },
+		Paths:  paths.New(base, ""),
+		Runner: runner,
+		Now:    func() time.Time { return time.Date(2026, 7, 22, 18, 0, 0, 0, time.UTC) },
 	}
 }
 
@@ -116,7 +117,7 @@ func TestInstallPersistsRecordAndCommandLog(t *testing.T) {
 	if result.State != "installed" || result.LogPath == "" {
 		t.Fatalf("unexpected result: %+v", result)
 	}
-	recordBytes, err := os.ReadFile(filepath.Join(options.InstallationsDir, "node.json"))
+	recordBytes, err := os.ReadFile(filepath.Join(options.Paths.InstallationsDir(), "node.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +150,7 @@ func TestInstallTimeoutPersistsFailure(t *testing.T) {
 	if result.State != "failed" {
 		t.Fatalf("state = %q, want failed", result.State)
 	}
-	recordBytes, readErr := os.ReadFile(filepath.Join(options.InstallationsDir, "go.json"))
+	recordBytes, readErr := os.ReadFile(filepath.Join(options.Paths.InstallationsDir(), "go.json"))
 	if readErr != nil {
 		t.Fatal(readErr)
 	}

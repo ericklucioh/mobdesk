@@ -13,14 +13,21 @@ type operationResult struct {
 }
 
 func withQuietStdout(run func() error) error {
+	return withQuietOutput(run)
+}
+
+func withQuietOutput(run func() error) error {
 	previous := os.Stdout
+	previousErr := os.Stderr
 	quiet, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
 	if err != nil {
 		return err
 	}
 	os.Stdout = quiet
+	os.Stderr = quiet
 	runErr := run()
 	os.Stdout = previous
+	os.Stderr = previousErr
 	_ = quiet.Close()
 	return runErr
 }
