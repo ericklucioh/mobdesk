@@ -28,6 +28,13 @@ O usuário não deve precisar dominar `pkg`, `proot-distro`, `apt`, mounts ou sc
 
 `mobdesk start` inicia a workstation e retorna sem abrir automaticamente um shell. A TUI mantém o controle da interface e suspende o terminal somente quando o usuário escolhe abrir o shell explicitamente.
 
+### A TUI respeita a fronteira entre Termux e Ubuntu
+
+O status identifica se a TUI roda no host Termux ou em uma sessão SSH dentro do
+Ubuntu. No Ubuntu remoto, a interface não tenta controlar SSH, PRoot, setup,
+instalações ou atualização do binário, pois essas operações pertencem ao host.
+Ela mantém apenas informações do ambiente e o acesso ao shell Ubuntu.
+
 ### Operações possuem resultado JSON único
 
 `setup`, `start` e `stop` oferecem `--json` com um único resultado estruturado em stdout. A TUI usa esse contrato para ações não interativas e o stderr permanece reservado para mensagens auxiliares.

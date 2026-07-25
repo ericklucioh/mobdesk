@@ -70,6 +70,7 @@ func TestToolsUseBorderedTwoLineItemsAndInstallationState(t *testing.T) {
 		t.Fatalf("tool phrase is not directly below App: %q", lines)
 	}
 	model.statusLoaded = true
+	model.status.Host.Termux = true
 	model.status.Installations = []status.InstallationStatus{{Name: "go", Kind: "language", State: "installed"}}
 	if !toolInstalled(model.status, toolEntries("language")[0]) {
 		t.Fatal("installed go was not recognized")
@@ -102,7 +103,10 @@ func TestToolsShowInstallingUntilFinalStatus(t *testing.T) {
 		t.Fatalf("operation result cleared state before status snapshot: busy=%v installing=%q", model.busy, model.installingTool)
 	}
 
-	value := status.SystemStatus{Installations: []status.InstallationStatus{{Name: "go", Kind: "language", State: "installed"}}}
+	value := status.SystemStatus{
+		Host:          status.HostStatus{Termux: true},
+		Installations: []status.InstallationStatus{{Name: "go", Kind: "language", State: "installed"}},
+	}
 	updated, _ = model.Update(statusMessage{value: value})
 	model = updated.(Model)
 	if model.installingTool != "" || !strings.Contains(ansi.Strip(model.renderTools()), "instalado") {
@@ -177,7 +181,7 @@ func TestStatusRendersResponsiveSections(t *testing.T) {
 	model.height = 30
 	model.status = status.SystemStatus{
 		Overall: status.StateHealthy,
-		Host:    status.HostStatus{State: status.CheckOK, OS: "Android", Architecture: "arm64"},
+		Host:    status.HostStatus{State: status.CheckOK, Termux: true, OS: "Android", Architecture: "arm64"},
 		Ubuntu:  status.UbuntuStatus{State: status.CheckOK, Workspace: true},
 		SSH:     status.SSHStatus{State: status.CheckWarning, Port: 8022},
 		Storage: status.StorageStatus{State: status.CheckOK, DeviceFree: 42 * 1024 * 1024 * 1024},
@@ -195,6 +199,73 @@ func TestStatusRendersResponsiveSections(t *testing.T) {
 		if lipgloss.Width(line) > contentWidth(model.width) {
 			t.Fatalf("status line exceeds narrow terminal: %q", line)
 		}
+	}
+}
+
+func TestRemoteRuntimeHidesHostActions(t *testing.T) {
+	model := New()
+	model.statusLoaded = true
+	model.status.Host.Termux = false
+	model.width = 44
+	model.height = 30
+
+	home := ansi.Strip(model.renderHome())
+	for _, expected := range []string{"Sessão Ubuntu remota", "Status", "Shell Ubuntu"} {
+		if !strings.Contains(home, expected) {
+			t.Fatalf("remote home does not contain %q: %s", expected, home)
+		}
+	}
+	if strings.Contains(home, "Iniciar") || strings.Contains(home, "Configurar") {
+		t.Fatalf("remote home still exposes host actions: %s", home)
+	}
+
+	for _, screenView := range []string{model.renderSetup(), model.renderTools(), model.renderSystem()} {
+		if !strings.Contains(ansi.Strip(screenView), "Termux") {
+			t.Fatalf("remote screen does not explain the Termux restriction: %s", screenView)
+		}
+	}
+}
+
+func TestRemoteRuntimeBlocksHostOperations(t *testing.T) {
+	model := New()
+	model.statusLoaded = true
+	model.status.Host.Termux = false
+
+	updated, cmd := model.toggleWorkstation()
+	model = updated.(Model)
+	if cmd != nil || model.busy || model.message != hostActionUnavailableMessage {
+		t.Fatalf("remote start was not blocked: cmd=%v busy=%v message=%q", cmd != nil, model.busy, model.message)
+	}
+
+	updated, cmd = model.installSelectedTool()
+	model = updated.(Model)
+	if cmd != nil || model.installingTool != "" || model.message != hostActionUnavailableMessage {
+		t.Fatalf("remote installation was not blocked: cmd=%v installing=%q message=%q", cmd != nil, model.installingTool, model.message)
+	}
+
+	updated, cmd = model.runHostOperation("setup", "setup", "--json")
+	model = updated.(Model)
+	if cmd != nil || model.message != hostActionUnavailableMessage {
+		t.Fatalf("remote setup was not blocked: cmd=%v message=%q", cmd != nil, model.message)
+	}
+}
+
+func TestRemoteHomeKeyboardKeepsStatusAndShellAvailable(t *testing.T) {
+	model := New()
+	model.statusLoaded = true
+	model.status.Host.Termux = false
+
+	if count := model.controlCount(); count != 2 {
+		t.Fatalf("remote home control count = %d, want 2", count)
+	}
+	model.focus = 0
+	if _, handled := model.activateFocusedControl(); !handled || model.screen != statusScreen {
+		t.Fatal("remote home status control is not available")
+	}
+	model.navigate(homeScreen)
+	model.focus = 1
+	if _, handled := model.activateFocusedControl(); !handled || model.screen != shellScreen {
+		t.Fatal("remote home shell control is not available")
 	}
 }
 

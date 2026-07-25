@@ -8,6 +8,22 @@ import (
 )
 
 func (m Model) renderHome() string {
+	if !m.canManageHost() {
+		width := contentWidth(m.width)
+		remote := primaryCardStyle.Copy().Width(width).Render(
+			titleStyle.Render("Sessão Ubuntu remota") + "\n" +
+				mutedStyle.Render(wrapText("O host Termux controla SSH, setup, instalações e atualizações. Volte ao Termux para gerenciar a workstation.", width-4)),
+		)
+		cards := []string{
+			cardStyle.Copy().Width(width).Render("◉  " + titleStyle.Render("Status") + "\n" + mutedStyle.Render("Workspace e ambiente atual")),
+			cardStyle.Copy().Width(width).Render("⌁  " + titleStyle.Render("Shell Ubuntu") + "\n" + mutedStyle.Render("Abrir terminal local")),
+		}
+		message := ""
+		if m.message != "" {
+			message = "\n\n" + statusColor("warning").Render(m.message)
+		}
+		return tagStyle.Render("INÍCIO") + "\n" + remote + "\n\n" + joinCards(cards, m.width) + message
+	}
 	state := "desativado"
 	action := "Iniciar"
 	if m.status.SSH.Running {

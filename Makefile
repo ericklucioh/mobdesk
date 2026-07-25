@@ -4,7 +4,7 @@ COMPOSE ?= docker compose
 SERVICE ?= termux
 TERMUX_ARCH ?= latest
 
-.PHONY: help termux build-image shell test integration-test vet build run dev clean-env reset-env clean-image arm64-image
+.PHONY: help termux build-image shell test integration-test vet build run dev clean-env reset-env clean-image arm64-image fmt check
 
 help:
 	@printf '%s\n' \
@@ -12,6 +12,7 @@ help:
 		'make termux       - abre um shell interativo no ambiente' \
 		'make shell        - abre um shell no container existente' \
 		'make test         - executa go test ./...' \
+		'make check        - formata, valida e compila o projeto' \
 		'make integration-test - testa o fluxo Termux/SSH no Docker' \
 		'make vet          - executa go vet ./...' \
 		'make build        - compila o Mobdesk dentro do container' \

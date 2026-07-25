@@ -84,7 +84,9 @@ Quando aberta dentro da sessão SSH do Mobdesk, a TUI roda no Ubuntu/PRoot, não
 no Termux. Nesse modo ela pode mostrar o workspace atual, mas não consegue
 inspecionar ou controlar diretamente o host Termux, o `sshd` e o
 `proot-distro`. O status deve identificar esse modo remoto em vez de tratar a
-ausência desses comandos como falha do workspace.
+ausência desses comandos como falha do workspace. A interface deve bloquear
+ações de host nesse contexto, incluindo setup, start, stop, instalação de
+ferramentas e atualização do binário.
 
 ### Serviços internos
 
@@ -190,10 +192,7 @@ abstração que prometa capacidades inexistentes.
 As mudanças estruturais devem ser verificadas com:
 
 ```bash
-gofmt -w ./cmd ./internal
-go test ./...
-go vet ./...
-go build ./cmd/mobdesk
+make check
 ```
 
 Testes locais validam a lógica e os contratos. A validação definitiva da

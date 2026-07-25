@@ -43,15 +43,20 @@ Levar o usuário de um Termux com Go instalado a um Ubuntu persistente acessíve
 
 ## Estágio 2 - Workstation TUI
 
+**Status:** implementação inicial em andamento; validação em Termux real ainda
+pendente.
+
 ### Objetivo
 
 Oferecer uma interface textual organizada para trabalhar no Ubuntu pelo celular ou por SSH.
 
 ### Escopo
 
-- TUI para setup, start, stop;
-- pagina de sugestao de apps e setup automatico de linguangens
-- perfis iniciais de ferramentas;
+- TUI para status, setup, start, stop, shell e atualização;
+- catálogo e instalação dos perfis iniciais de ferramentas;
+- suporte a teclado, mouse e terminais móveis;
+- identificação da sessão SSH no Ubuntu e bloqueio das ações exclusivas do
+  host Termux.
 
 ### Critério
 

@@ -196,7 +196,7 @@ func mockStatus(scenario string) status.SystemStatus {
 		SchemaVersion: 1,
 		GeneratedAt:   time.Now(),
 		Overall:       status.StateHealthy,
-		Host:          status.HostStatus{State: status.CheckOK, OS: "Android", Architecture: "arm64", ProotDistro: true, OpenSSH: true, Ifconfig: true, WakeLockAvailable: true},
+		Host:          status.HostStatus{State: status.CheckOK, Termux: true, OS: "Android", Architecture: "arm64", ProotDistro: true, OpenSSH: true, Ifconfig: true, WakeLockAvailable: true},
 		Setup:         status.SetupStatus{State: status.CheckOK, Completed: true, Phases: map[string]string{"directories": "completed", "ubuntu-installed": "completed", "workspace-created": "completed", "ssh-configured": "completed"}},
 		Storage:       status.StorageStatus{State: status.CheckOK, DeviceTotal: 128 * 1024 * 1024 * 1024, DeviceFree: 42 * 1024 * 1024 * 1024},
 		Ubuntu:        status.UbuntuStatus{State: status.CheckOK, Installed: true, Accessible: true, Workspace: true, WorkspacePath: "/root/workspace"},

@@ -106,6 +106,27 @@ func (m *Model) applyOperationState(msg operationMessage) {
 	}
 }
 
+const hostActionUnavailableMessage = "Esta ação exige o Termux host. Saia da sessão SSH e execute-a no Termux."
+
+func (m Model) canManageHost() bool {
+	// Enquanto o status inicial ainda carrega, preserve as ações do host em vez
+	// de tratá-las como indisponíveis por causa do valor zero do modelo.
+	return !m.statusLoaded || m.status.Host.Termux
+}
+
+func (m Model) hostActionUnavailable() (tea.Model, tea.Cmd) {
+	m.message = hostActionUnavailableMessage
+	return m, nil
+}
+
+func (m Model) runHostOperation(operation string, args ...string) (tea.Model, tea.Cmd) {
+	if !m.canManageHost() {
+		return m.hostActionUnavailable()
+	}
+	m.busy, m.operation = true, operation
+	return m, m.backend.OperationCmd(args...)
+}
+
 func (m Model) updateMouseWheel(msg tea.MouseWheelMsg) (tea.Model, tea.Cmd) {
 	if m.screen == toolsScreen {
 		if msg.Button == tea.MouseWheelDown {
@@ -214,18 +235,15 @@ func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.navigate(systemScreen)
 	case "v":
 		if m.screen == systemScreen {
-			m.busy, m.operation = true, "update-check"
-			return m, m.backend.OperationCmd("update", "--check", "--json")
+			return m.runHostOperation("update-check", "update", "--check", "--json")
 		}
 	case "a":
 		if m.screen == systemScreen {
-			m.busy, m.operation = true, "update"
-			return m, m.backend.OperationCmd("update", "--json")
+			return m.runHostOperation("update", "update", "--json")
 		}
 	case "e":
 		if m.screen == setupScreen {
-			m.busy, m.operation = true, "setup-upgrade"
-			return m, m.backend.OperationCmd("setup", "--upgrade-system", "--json")
+			return m.runHostOperation("setup-upgrade", "setup", "--upgrade-system", "--json")
 		}
 	case "i":
 		if m.screen == toolsScreen {
@@ -265,8 +283,7 @@ func (m Model) updateConfirmation(key string) (tea.Model, tea.Cmd) {
 	case "y", "Y", "s", "S", "enter":
 		if m.confirmStop {
 			m.confirmStop = false
-			m.busy, m.operation = true, "stop"
-			return m, m.backend.OperationCmd("stop", "--json")
+			return m.runHostOperation("stop", "stop", "--json")
 		}
 		m.confirmExit = false
 		m.closing = true
@@ -285,24 +302,28 @@ func isListKey(value string) bool {
 func isViewportKey(value string) bool { return isListKey(value) || value == "home" || value == "end" }
 
 func (m Model) installSelectedTool() (tea.Model, tea.Cmd) {
+	if !m.canManageHost() {
+		return m.hostActionUnavailable()
+	}
 	entries := toolEntries("language")
 	index := m.toolsList.Index()
 	if index < 0 || index >= len(entries) {
 		return m, nil
 	}
 	m.selectedTool = index
-	m.busy, m.operation = true, "install"
 	m.installingTool = entries[index].language.Name
-	return m, m.backend.OperationCmd("install", entries[index].language.Name, "--json")
+	return m.runHostOperation("install", "install", entries[index].language.Name, "--json")
 }
 
 func (m Model) toggleWorkstation() (tea.Model, tea.Cmd) {
+	if !m.canManageHost() {
+		return m.hostActionUnavailable()
+	}
 	if m.status.SSH.Running {
 		m.confirmStop = true
 		return m, nil
 	}
-	m.busy, m.operation = true, "start"
-	return m, m.backend.OperationCmd("start", "--json")
+	return m.runHostOperation("start", "start", "--json")
 }
 
 func (m *Model) navigate(next screen) {
@@ -316,6 +337,9 @@ func (m *Model) navigate(next screen) {
 func (m Model) controlCount() int {
 	switch m.screen {
 	case homeScreen:
+		if !m.canManageHost() {
+			return 2
+		}
 		return 7
 	case statusScreen, shellScreen:
 		return 2
@@ -333,6 +357,15 @@ func (m Model) controlCount() int {
 func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 	switch m.screen {
 	case homeScreen:
+		if !m.canManageHost() {
+			switch m.focus {
+			case 0:
+				m.navigate(statusScreen)
+			case 1:
+				m.navigate(shellScreen)
+			}
+			return nil, true
+		}
 		switch m.focus {
 		case 0:
 			_, cmd := m.toggleWorkstation()
@@ -357,12 +390,14 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 		return nil, true
 	case setupScreen:
 		if m.focus == 0 {
-			m.busy, m.operation = true, "setup"
-			return m.backend.OperationCmd("setup", "--json"), true
+			updated, cmd := m.runHostOperation("setup", "setup", "--json")
+			*m = updated.(Model)
+			return cmd, true
 		}
 		if m.focus == 1 {
-			m.busy, m.operation = true, "setup-upgrade"
-			return m.backend.OperationCmd("setup", "--upgrade-system", "--json"), true
+			updated, cmd := m.runHostOperation("setup-upgrade", "setup", "--upgrade-system", "--json")
+			*m = updated.(Model)
+			return cmd, true
 		}
 		return nil, true
 	case toolsScreen:
@@ -377,11 +412,13 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 	case systemScreen:
 		switch m.focus {
 		case 0:
-			m.busy, m.operation = true, "update-check"
-			return m.backend.OperationCmd("update", "--check", "--json"), true
+			updated, cmd := m.runHostOperation("update-check", "update", "--check", "--json")
+			*m = updated.(Model)
+			return cmd, true
 		case 1:
-			m.busy, m.operation = true, "update"
-			return m.backend.OperationCmd("update", "--json"), true
+			updated, cmd := m.runHostOperation("update", "update", "--json")
+			*m = updated.(Model)
+			return cmd, true
 		case 2:
 			m.navigate(homeScreen)
 		}

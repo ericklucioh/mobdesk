@@ -7,6 +7,9 @@ import (
 )
 
 func (m Model) renderSystem() string {
+	if !m.canManageHost() {
+		return renderPage("SISTEMA", "Atualizações disponíveis no Termux", "A atualização do Mobdesk altera o binário do host. Saia da sessão SSH e execute mobdesk update no Termux.")
+	}
 	width := contentWidth(m.width)
 	versionValue := valueOr(m.version.Version, "dev")
 	channelValue := valueOr(m.version.Channel, "dev")

@@ -3,6 +3,9 @@ package tui
 import "charm.land/lipgloss/v2"
 
 func (m Model) renderSetup() string {
+	if !m.canManageHost() {
+		return renderPage("CONFIGURAÇÃO", "Disponível no Termux", "O setup instala e configura componentes do host, como PRoot, SSH e wake-lock. Saia da sessão SSH e execute mobdesk setup no Termux.")
+	}
 	width := contentWidth(m.width)
 	var view string
 	view += tagStyle.Render("PRIMEIRO ACESSO") + "\n"

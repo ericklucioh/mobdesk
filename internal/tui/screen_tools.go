@@ -1,6 +1,9 @@
 package tui
 
 func (m Model) renderTools() string {
+	if !m.canManageHost() {
+		return renderPage("FERRAMENTAS UBUNTU", "Gerenciadas pelo Termux", "A instalação usa o host Termux para entrar no Ubuntu persistente. Saia da sessão SSH e execute mobdesk install <ferramenta> no Termux.")
+	}
 	width := contentWidth(m.width)
 	items := toolListItems(m.status, m.installingTool)
 	m.toolsList.count = len(items)

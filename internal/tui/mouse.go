@@ -69,20 +69,16 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 		}
 	case setupScreen:
 		if blockContainsAt(lines, bodyIndex, mouse.X, "Continuar configuração") {
-			m.busy, m.operation = true, "setup"
-			return m, m.backend.OperationCmd("setup", "--json")
+			return m.runHostOperation("setup", "setup", "--json")
 		}
 		if blockContainsAt(lines, bodyIndex, mouse.X, "upgrade completo") {
-			m.busy, m.operation = true, "setup-upgrade"
-			return m, m.backend.OperationCmd("setup", "--upgrade-system", "--json")
+			return m.runHostOperation("setup-upgrade", "setup", "--upgrade-system", "--json")
 		}
 		if nearLine(lines, bodyIndex, "upgrade") || nearLine(lines, bodyIndex, "upgrade completo") {
-			m.busy, m.operation = true, "setup-upgrade"
-			return m, m.backend.OperationCmd("setup", "--upgrade-system", "--json")
+			return m.runHostOperation("setup-upgrade", "setup", "--upgrade-system", "--json")
 		}
 		if nearLine(lines, bodyIndex, "Setup retomável") {
-			m.busy, m.operation = true, "setup"
-			return m, m.backend.OperationCmd("setup", "--json")
+			return m.runHostOperation("setup", "setup", "--json")
 		}
 	case statusScreen:
 		if blockContainsAt(lines, bodyIndex, mouse.X, "atualizar") {
@@ -97,12 +93,10 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 		}
 	case systemScreen:
 		if blockContainsAt(lines, bodyIndex, mouse.X, "Verificar") {
-			m.busy, m.operation = true, "update-check"
-			return m, m.backend.OperationCmd("update", "--check", "--json")
+			return m.runHostOperation("update-check", "update", "--check", "--json")
 		}
 		if blockContainsAt(lines, bodyIndex, mouse.X, "Atualizar") {
-			m.busy, m.operation = true, "update"
-			return m, m.backend.OperationCmd("update", "--json")
+			return m.runHostOperation("update", "update", "--json")
 		}
 		if blockContainsAt(lines, bodyIndex, mouse.X, "Voltar") {
 			m.navigate(homeScreen)
