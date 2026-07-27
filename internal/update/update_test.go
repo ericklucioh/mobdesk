@@ -107,6 +107,7 @@ func TestApplyVerifiesChecksumAndReplacesBinary(t *testing.T) {
 		InstallPath:    path,
 		GOOS:           "linux",
 		GOARCH:         "arm64",
+		ValidateBinary: validBinary,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -121,8 +122,46 @@ func TestApplyVerifiesChecksumAndReplacesBinary(t *testing.T) {
 	if string(updated) != string(content) {
 		t.Fatalf("binary content = %q, want %q", updated, content)
 	}
-	if _, err := os.Stat(path + ".bak"); !os.IsNotExist(err) {
-		t.Fatalf("backup still exists: %v", err)
+	backup, err := os.ReadFile(path + ".bak")
+	if err != nil || string(backup) != "old mobdesk binary" {
+		t.Fatalf("backup = %q, err = %v", backup, err)
+	}
+}
+
+func TestApplyRestoresBackupWhenActiveBinaryFailsValidation(t *testing.T) {
+	content := []byte("new mobdesk binary")
+	digest := sha256.Sum256(content)
+	checksum := hex.EncodeToString(digest[:])
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/repos/example/mobdesk/releases":
+			_ = json.NewEncoder(response).Encode([]Release{{TagName: "v1.1.0", Assets: []Asset{{Name: "mobdesk-linux-arm64", DownloadURL: serverURL(request, "/download/mobdesk")}, {Name: "SHA256SUMS", DownloadURL: serverURL(request, "/download/checksums")}}}})
+		case "/download/mobdesk":
+			_, _ = response.Write(content)
+		case "/download/checksums":
+			_, _ = fmt.Fprintf(response, "%s  mobdesk-linux-arm64\n", checksum)
+		}
+	}))
+	defer server.Close()
+
+	path := filepath.Join(t.TempDir(), "mobdesk")
+	if err := os.WriteFile(path, []byte("old"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	validations := 0
+	_, err := Apply(context.Background(), Options{APIBaseURL: server.URL, Repository: "example/mobdesk", CurrentVersion: "v1.0.0", InstallPath: path, GOOS: "linux", GOARCH: "arm64", ValidateBinary: func(_ context.Context, _ string, _ string) error {
+		validations++
+		if validations == 2 {
+			return fmt.Errorf("binary cannot start")
+		}
+		return nil
+	}})
+	if err == nil || !strings.Contains(err.Error(), "versão anterior restaurada") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	active, readErr := os.ReadFile(path)
+	if readErr != nil || string(active) != "old" {
+		t.Fatalf("active = %q, err = %v", active, readErr)
 	}
 }
 
@@ -279,6 +318,28 @@ func TestApplyRejectsEmptyBinary(t *testing.T) {
 	}
 }
 
+func TestDownloadChecksumRejectsAmbiguousManifestLine(t *testing.T) {
+	digest := strings.Repeat("0", sha256.Size*2)
+	server := httptest.NewServer(http.HandlerFunc(func(response http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprintf(response, "%s  mobdesk-linux-arm64 extra-field\n", digest)
+	}))
+	defer server.Close()
+
+	_, err := downloadChecksum(context.Background(), server.Client(), server.URL, "mobdesk-linux-arm64")
+	if err == nil || !strings.Contains(err.Error(), "não encontrado") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestRecoverInterruptedUpdateErrorsWithoutBinaryOrBackup(t *testing.T) {
+	err := recoverInterruptedUpdate(filepath.Join(t.TempDir(), "mobdesk"))
+	if err == nil || !strings.Contains(err.Error(), "go install") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func serverURL(request *http.Request, path string) string {
 	return "http://" + request.Host + path
 }
+
+func validBinary(context.Context, string, string) error { return nil }

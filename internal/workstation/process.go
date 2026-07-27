@@ -45,7 +45,7 @@ func acquireLock(path string) (func(), error) {
 	}
 	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
 		_ = file.Close()
-		return nil, fmt.Errorf("outro comando do Mobdesk já está controlando o SSH: %w", err)
+		return nil, fmt.Errorf("outro comando do Mobdesk já está em execução: %w", err)
 	}
 	return func() { _ = syscall.Flock(int(file.Fd()), syscall.LOCK_UN); _ = file.Close() }, nil
 }

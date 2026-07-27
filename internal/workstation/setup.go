@@ -18,6 +18,11 @@ type SetupResult struct {
 
 func (s Service) Setup(ctx context.Context, options SetupOptions) (SetupResult, error) {
 	result := SetupResult{}
+	release, err := s.Deps.AcquireLock(s.Paths.SetupLock())
+	if err != nil {
+		return result, fmt.Errorf("iniciar setup: %w", err)
+	}
+	defer release()
 	complete := func(phase string) error {
 		if err := s.markSetupPhase(phase); err != nil {
 			return err
@@ -26,10 +31,10 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (SetupResult, 
 		return nil
 	}
 	if !s.setupPhaseDone("directories") {
-		if err := s.Deps.MkdirAll(filepath.Join(s.Paths.DataDir(), "logs"), 0o700); err != nil {
+		if err := s.ensurePrivateDir(filepath.Join(s.Paths.DataDir(), "logs")); err != nil {
 			return result, fmt.Errorf("criar diretórios do Mobdesk: %w", err)
 		}
-		if err := s.Deps.MkdirAll(s.Paths.DataConfigDir(), 0o700); err != nil {
+		if err := s.ensurePrivateDir(s.Paths.DataConfigDir()); err != nil {
 			return result, fmt.Errorf("criar configuração do Mobdesk: %w", err)
 		}
 		if err := complete("directories"); err != nil {
@@ -87,7 +92,7 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (SetupResult, 
 			if err := s.run(ctx, "passwd"); err != nil {
 				return result, fmt.Errorf("configurar senha SSH: %w", err)
 			}
-			if err := s.Deps.WriteFile(s.Paths.PasswordDone(), []byte("senha configurada\n"), 0o600); err != nil {
+			if err := s.writePrivateFile(s.Paths.PasswordDone(), []byte("senha configurada\n")); err != nil {
 				return result, fmt.Errorf("registrar senha SSH configurada: %w", err)
 			}
 		}
@@ -111,7 +116,7 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (SetupResult, 
 			return result, err
 		}
 	}
-	if err := s.Deps.WriteFile(s.Paths.SetupDone(), []byte("setup concluido\n"), 0o600); err != nil {
+	if err := s.writePrivateFile(s.Paths.SetupDone(), []byte("setup concluido\n")); err != nil {
 		return result, fmt.Errorf("registrar setup concluído: %w", err)
 	}
 	return result, nil
@@ -123,11 +128,41 @@ func (s Service) setupPhaseDone(phase string) bool {
 }
 
 func (s Service) markSetupPhase(phase string) error {
-	if err := s.Deps.MkdirAll(s.Paths.StateDir(), 0o700); err != nil {
+	if err := s.ensurePrivateDir(s.Paths.StateDir()); err != nil {
 		return fmt.Errorf("criar estado da etapa %s: %w", phase, err)
 	}
-	if err := s.Deps.WriteFile(s.Paths.SetupPhase(phase), []byte("concluida\n"), 0o600); err != nil {
+	if err := s.writePrivateFile(s.Paths.SetupPhase(phase), []byte("concluida\n")); err != nil {
 		return fmt.Errorf("registrar etapa %s: %w", phase, err)
+	}
+	return nil
+}
+
+func (s Service) ensurePrivateDir(path string) error {
+	if info, err := s.Deps.Lstat(path); err == nil && info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("recusar diretório privado que é link simbólico: %s", path)
+	} else if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("verificar diretório privado: %w", err)
+	}
+	if err := s.Deps.MkdirAll(path, 0o700); err != nil {
+		return err
+	}
+	if err := s.Deps.Chmod(path, 0o700); err != nil {
+		return fmt.Errorf("definir permissões privadas: %w", err)
+	}
+	return nil
+}
+
+func (s Service) writePrivateFile(path string, contents []byte) error {
+	if info, err := s.Deps.Lstat(path); err == nil && info.Mode()&os.ModeSymlink != 0 {
+		return fmt.Errorf("recusar arquivo privado que é link simbólico: %s", path)
+	} else if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("verificar arquivo privado: %w", err)
+	}
+	if err := s.Deps.WriteFile(path, contents, 0o600); err != nil {
+		return err
+	}
+	if err := s.Deps.Chmod(path, 0o600); err != nil {
+		return fmt.Errorf("definir permissões privadas: %w", err)
 	}
 	return nil
 }

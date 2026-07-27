@@ -36,6 +36,7 @@ type Dependencies struct {
 	Addresses           func() []string
 	Username            func() string
 	MkdirAll            func(string, os.FileMode) error
+	Chmod               func(string, os.FileMode) error
 	WriteFile           func(string, []byte, os.FileMode) error
 	Lstat               func(string) (os.FileInfo, error)
 	Readlink            func(string) (string, error)
@@ -72,7 +73,7 @@ func defaultDependencies() Dependencies {
 		WakeLock: wakeLock, WakeUnlock: wakeUnlock, PortOpen: portOpen, SSHResponds: sshPortResponds,
 		WaitForPortClosed: waitForPortClosed, ProcessIsMobdeskSSH: ProcessIsMobdeskSSH, FindProcess: findProcess,
 		AcquireLock: acquireLock, EnsureSSHConfigured: EnsureSSHConfigured, EnsureIfconfig: ensureIfconfig, Addresses: LocalIPv4Addresses, Username: currentUsername,
-		MkdirAll: os.MkdirAll, WriteFile: os.WriteFile, Lstat: os.Lstat, Readlink: os.Readlink, Symlink: os.Symlink,
+		MkdirAll: os.MkdirAll, Chmod: os.Chmod, WriteFile: os.WriteFile, Lstat: os.Lstat, Readlink: os.Readlink, Symlink: os.Symlink,
 		Executable: os.Executable, Abs: filepath.Abs, EvalSymlinks: filepath.EvalSymlinks,
 	}
 }

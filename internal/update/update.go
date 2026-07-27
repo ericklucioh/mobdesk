@@ -13,13 +13,20 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
 )
 
-const DefaultRepository = "ericklucioh/mobdesk"
+const (
+	DefaultRepository  = "ericklucioh/mobdesk"
+	maxReleaseResponse = 1 << 20
+	maxChecksumSize    = 1 << 20
+	maxBinarySize      = 128 << 20
+	selfTestTimeout    = 10 * time.Second
+)
 
 type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
@@ -48,6 +55,7 @@ type Options struct {
 	BinaryName     string
 	ChecksumName   string
 	APIBaseURL     string
+	ValidateBinary func(context.Context, string, string) error
 }
 
 type Result struct {
@@ -103,6 +111,12 @@ func Apply(ctx context.Context, options Options) (Result, error) {
 	return result, nil
 }
 
+// Recover restores the last working binary when an interrupted update left
+// only its backup. It is safe to call before checking for updates.
+func Recover(options Options) error {
+	return recoverInterruptedUpdate(options.withDefaults().InstallPath)
+}
+
 func (o Options) withDefaults() Options {
 	if o.HTTPClient == nil {
 		o.HTTPClient = defaultHTTPClient()
@@ -144,11 +158,11 @@ func defaultHTTPClient() HTTPClient {
 	nameservers := termuxNameservers()
 	rootCAs := termuxRootCAs()
 	if len(nameservers) == 0 && rootCAs == nil {
-		return http.DefaultClient
+		return &http.Client{Timeout: 45 * time.Second}
 	}
 	transport, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {
-		return http.DefaultClient
+		return &http.Client{Timeout: 45 * time.Second}
 	}
 	transport = transport.Clone()
 	if rootCAs != nil {
@@ -176,7 +190,7 @@ func defaultHTTPClient() HTTPClient {
 	if len(nameservers) > 0 {
 		transport.DialContext = (&net.Dialer{Timeout: 30 * time.Second, Resolver: resolver}).DialContext
 	}
-	return &http.Client{Transport: transport}
+	return &http.Client{Transport: transport, Timeout: 45 * time.Second}
 }
 
 func termuxNameservers() []string {
@@ -236,8 +250,15 @@ func latestRelease(ctx context.Context, options Options) (Release, error) {
 	if response.StatusCode != http.StatusOK {
 		return Release{}, fmt.Errorf("consultar releases: HTTP %s", response.Status)
 	}
+	payload, err := io.ReadAll(io.LimitReader(response.Body, maxReleaseResponse+1))
+	if err != nil {
+		return Release{}, fmt.Errorf("ler releases: %w", err)
+	}
+	if len(payload) > maxReleaseResponse {
+		return Release{}, fmt.Errorf("resposta de releases excede o limite permitido")
+	}
 	var releases []Release
-	if err := json.NewDecoder(response.Body).Decode(&releases); err != nil {
+	if err := json.Unmarshal(payload, &releases); err != nil {
 		return Release{}, fmt.Errorf("ler releases: %w", err)
 	}
 	for _, release := range releases {
@@ -297,9 +318,29 @@ func replaceBinary(ctx context.Context, options Options, result Result) error {
 	if err := temporary.Close(); err != nil {
 		return fmt.Errorf("fechar arquivo temporário do update: %w", err)
 	}
+	if err := validateBinary(ctx, options, temporaryPath, release.TagName); err != nil {
+		return fmt.Errorf("validar binário recebido: %w", err)
+	}
 
+	backupPath := options.InstallPath + ".bak"
+	if err := os.Remove(backupPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("remover backup anterior: %w", err)
+	}
+	if err := os.Rename(options.InstallPath, backupPath); err != nil {
+		return fmt.Errorf("criar backup do executável: %w", err)
+	}
 	if err := os.Rename(temporaryPath, options.InstallPath); err != nil {
-		return fmt.Errorf("substituir executável: %w", err)
+		if restoreErr := os.Rename(backupPath, options.InstallPath); restoreErr != nil {
+			return fmt.Errorf("ativar atualização: %w; restaurar backup: %v", err, restoreErr)
+		}
+		return fmt.Errorf("ativar atualização: %w", err)
+	}
+	if err := validateBinary(ctx, options, options.InstallPath, release.TagName); err != nil {
+		_ = os.Remove(options.InstallPath)
+		if restoreErr := os.Rename(backupPath, options.InstallPath); restoreErr != nil {
+			return fmt.Errorf("validar atualização ativa: %w; restaurar backup: %v", err, restoreErr)
+		}
+		return fmt.Errorf("validar atualização ativa: %w; versão anterior restaurada", err)
 	}
 	return nil
 }
@@ -317,7 +358,7 @@ func recoverInterruptedUpdate(installPath string) error {
 	backupPath := installPath + ".bak"
 	if _, err := os.Stat(backupPath); err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return fmt.Errorf("executável e backup não encontrados; reinstale com go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest")
 		}
 		return fmt.Errorf("verificar backup da atualização: %w", err)
 	}
@@ -337,13 +378,16 @@ func downloadChecksum(ctx context.Context, client HTTPClient, url, binaryName st
 		return "", fmt.Errorf("baixar checksums: %w", err)
 	}
 	defer func() { _ = body.Close() }()
-	data, err := io.ReadAll(body)
+	data, err := io.ReadAll(io.LimitReader(body, maxChecksumSize+1))
 	if err != nil {
 		return "", fmt.Errorf("ler checksums: %w", err)
 	}
+	if len(data) > maxChecksumSize {
+		return "", fmt.Errorf("checksums excede o limite permitido")
+	}
 	for _, line := range strings.Split(string(data), "\n") {
 		fields := strings.Fields(line)
-		if len(fields) >= 2 && fields[1] == binaryName && len(fields[0]) == sha256.Size*2 {
+		if len(fields) == 2 && fields[1] == binaryName && len(fields[0]) == sha256.Size*2 {
 			if _, err := hex.DecodeString(fields[0]); err != nil {
 				return "", fmt.Errorf("checksum inválido para %s: %w", binaryName, err)
 			}
@@ -360,16 +404,42 @@ func downloadBinary(ctx context.Context, client HTTPClient, url string, destinat
 	}
 	defer func() { _ = body.Close() }()
 	hash := sha256.New()
-	bytesWritten, err := io.Copy(io.MultiWriter(destination, hash), body)
+	bytesWritten, err := io.Copy(io.MultiWriter(destination, hash), io.LimitReader(body, maxBinarySize+1))
 	if err != nil {
 		return fmt.Errorf("gravar binário: %w", err)
 	}
 	if bytesWritten == 0 {
 		return fmt.Errorf("download do binário vazio")
 	}
+	if bytesWritten > maxBinarySize {
+		return fmt.Errorf("download do binário excede o limite permitido")
+	}
 	actual := hex.EncodeToString(hash.Sum(nil))
 	if actual != expected {
 		return fmt.Errorf("checksum do binário não confere: esperado %s, obtido %s", expected, actual)
+	}
+	return nil
+}
+
+func validateBinary(ctx context.Context, options Options, path, expectedVersion string) error {
+	if options.ValidateBinary != nil {
+		return options.ValidateBinary(ctx, path, expectedVersion)
+	}
+	testContext, cancel := context.WithTimeout(ctx, selfTestTimeout)
+	defer cancel()
+	command := exec.CommandContext(testContext, path, "version", "--json")
+	output, err := command.Output()
+	if err != nil {
+		return fmt.Errorf("executar version --json: %w", err)
+	}
+	var info struct {
+		Version string `json:"version"`
+	}
+	if err := json.Unmarshal(output, &info); err != nil {
+		return fmt.Errorf("ler version --json: %w", err)
+	}
+	if info.Version != expectedVersion {
+		return fmt.Errorf("versão do binário é %q, esperada %q", info.Version, expectedVersion)
 	}
 	return nil
 }
