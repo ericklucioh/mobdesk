@@ -172,7 +172,9 @@ func TestRenderTextAndJSON(t *testing.T) {
 		WiFi:          WiFiStatus{State: CheckMissing},
 	}
 	var text bytes.Buffer
-	RenderText(&text, value)
+	if err := RenderText(&text, value); err != nil {
+		t.Fatal(err)
+	}
 	if !strings.Contains(text.String(), "Mobdesk status") || !strings.Contains(text.String(), "healthy") {
 		t.Fatalf("unexpected human output: %s", text.String())
 	}
@@ -224,7 +226,9 @@ func TestCollectReadsGenericInstallationRecords(t *testing.T) {
 		t.Fatalf("overall = %s, want degraded", value.Overall)
 	}
 	var text bytes.Buffer
-	RenderText(&text, value)
+	if err := RenderText(&text, value); err != nil {
+		t.Fatal(err)
+	}
 	if !strings.Contains(text.String(), "alpha-language") || !strings.Contains(text.String(), "/tmp/alpha.log") {
 		t.Fatalf("human output omitted installation diagnostics: %s", text.String())
 	}

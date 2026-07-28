@@ -33,6 +33,9 @@ func init() {
 func runUpdate(ctx context.Context) error {
 	info := version.Current()
 	options := update.Options{CurrentVersion: info.Version, Channel: info.Channel}
+	if err := update.Recover(options); err != nil {
+		return err
+	}
 	result, err := update.Check(ctx, options)
 	if err != nil {
 		return err

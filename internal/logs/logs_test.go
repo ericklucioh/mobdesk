@@ -11,9 +11,13 @@ import (
 
 func TestReadReturnsRecentInstallationLogLines(t *testing.T) {
 	home := t.TempDir()
-	stateDir := paths.New(home, "").InstallationsDir()
-	logPath := filepath.Join(home, "go.log")
+	p := paths.New(home, "")
+	stateDir := p.InstallationsDir()
+	logPath := filepath.Join(p.InstallLogsDir(), "go.log")
 	if err := os.MkdirAll(stateDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(p.InstallLogsDir(), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(stateDir, "go.json"), []byte(`{"name":"go","kind":"language","state":"installed","version":"1.26","log_path":"`+logPath+`"}`), 0o600); err != nil {
@@ -23,7 +27,7 @@ func TestReadReturnsRecentInstallationLogLines(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	snapshot, err := Read(Options{Paths: paths.New(home, ""), Lines: 2})
+	snapshot, err := Read(Options{Paths: p, Lines: 2})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +41,8 @@ func TestReadReturnsRecentInstallationLogLines(t *testing.T) {
 
 func TestReadFiltersByNameAndMarksMissingFile(t *testing.T) {
 	home := t.TempDir()
-	stateDir := paths.New(home, "").InstallationsDir()
+	p := paths.New(home, "")
+	stateDir := p.InstallationsDir()
 	if err := os.MkdirAll(stateDir, 0o700); err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +51,7 @@ func TestReadFiltersByNameAndMarksMissingFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	snapshot, err := Read(Options{Paths: paths.New(home, ""), Name: "PYTHON"})
+	snapshot, err := Read(Options{Paths: p, Name: "PYTHON"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,5 +60,39 @@ func TestReadFiltersByNameAndMarksMissingFile(t *testing.T) {
 	}
 	if !strings.EqualFold(snapshot.Logs[0].Name, "python") {
 		t.Fatalf("unexpected filtered log: %+v", snapshot.Logs[0])
+	}
+}
+
+func TestReadIgnoresPersistedLogPathOutsideMobdesk(t *testing.T) {
+	home := t.TempDir()
+	p := paths.New(home, "")
+	if err := os.MkdirAll(p.InstallationsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(p.InstallLogsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	sensitivePath := filepath.Join(home, "sensitive.txt")
+	if err := os.WriteFile(sensitivePath, []byte("secret"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	expectedPath := filepath.Join(p.InstallLogsDir(), "go.log")
+	if err := os.WriteFile(expectedPath, []byte("safe log\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	payload := `{"name":"go","kind":"language","state":"installed","log_path":"` + sensitivePath + `"}`
+	if err := os.WriteFile(filepath.Join(p.InstallationsDir(), "go.json"), []byte(payload), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	snapshot, err := Read(Options{Paths: p})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(snapshot.Logs) != 1 {
+		t.Fatalf("unexpected logs: %+v", snapshot.Logs)
+	}
+	if snapshot.Logs[0].LogPath != expectedPath || snapshot.Logs[0].Content != "safe log" {
+		t.Fatalf("persisted log path was trusted: %+v", snapshot.Logs[0])
 	}
 }

@@ -43,6 +43,22 @@ Ela mantém apenas informações do ambiente e o acesso ao shell Ubuntu.
 
 Ubuntu, ferramentas, projetos e configurações não devem ser recriados em cada execução. O instalador deve ser idempotente, ter estado e preservar dados.
 
+### Atualização do binário preserva uma versão executável
+
+O atualizador grava a nova versão em arquivo temporário privado no mesmo
+diretório do binário, confere SHA-256 e executa `version --json` antes de ativá-la.
+Ele renomeia a versão atual para `.bak`, promove a nova versão e a testa outra
+vez; em falha, restaura imediatamente o backup. O `.bak` permanece até a próxima
+atualização e também recupera uma interrupção que deixe o executável principal
+ausente. SHA-256 protege integridade do download, mas não autentica uma release
+comprometida sem uma assinatura independente.
+
+### Setup pode ser repetido com segurança
+
+O setup serializa execuções concorrentes, mantém estado e arquivos privados, e
+marca uma etapa somente após sua conclusão. O usuário pode repetir `mobdesk
+setup` depois de uma falha sem apagar Ubuntu, workspace ou projetos.
+
 ## Alternativas adiadas
 
 ### Termux nativo como runtime principal

@@ -8,12 +8,10 @@ type operationResult struct {
 	Success       bool     `json:"success"`
 	State         string   `json:"state"`
 	Message       string   `json:"message"`
+	Language      string   `json:"language,omitempty"`
+	Version       string   `json:"version,omitempty"`
 	Port          int      `json:"port,omitempty"`
 	Addresses     []string `json:"addresses,omitempty"`
-}
-
-func withQuietStdout(run func() error) error {
-	return withQuietOutput(run)
 }
 
 func withQuietOutput(run func() error) error {

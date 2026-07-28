@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 )
 
@@ -13,66 +14,55 @@ func EncodeJSON(w io.Writer, value SystemStatus) error {
 	return encoder.Encode(value)
 }
 
-func RenderText(w io.Writer, value SystemStatus) {
-	fmt.Fprintln(w, "Mobdesk status")
-	fmt.Fprintf(w, "\nResumo:        %s\n", value.Overall)
-	fmt.Fprintf(w, "Atualizado:    %s\n", value.GeneratedAt.Format(time.RFC3339))
+func RenderText(w io.Writer, value SystemStatus) error {
+	var text strings.Builder
+	text.WriteString("Mobdesk status\n")
+	summary := fmt.Sprintf("\nResumo:        %s\n", value.Overall)
+	text.WriteString(summary)
+	updated := fmt.Sprintf("Atualizado:    %s\n", value.GeneratedAt.Format(time.RFC3339))
+	text.WriteString(updated)
 
 	hostLabel := "Termux"
 	if !value.Host.Termux {
 		hostLabel = "Runtime"
 	}
-	fmt.Fprintln(w, "\nHost")
-	fmt.Fprintf(w, "  %-12s%s\n", hostLabel+":", value.Host.State)
-	fmt.Fprintf(w, "  Arquitetura: %s\n", value.Host.Architecture)
-	fmt.Fprintf(w, "  Wake-lock:   %s\n", availability(value.Host.WakeLockAvailable))
-	fmt.Fprintf(w, "  Termux:API:  %s\n", availability(value.Host.TermuxAPIAvailable))
-
-	fmt.Fprintln(w, "\nArmazenamento")
-	fmt.Fprintf(w, "  Dispositivo: %s livres de %s\n", formatBytes(value.Storage.DeviceFree), formatBytes(value.Storage.DeviceTotal))
-
-	fmt.Fprintln(w, "\nSetup")
-	fmt.Fprintf(w, "  Estado:      %s\n", value.Setup.State)
-	fmt.Fprintf(w, "  Completo:    %s\n", yesNo(value.Setup.Completed))
-
-	fmt.Fprintln(w, "\nUbuntu")
-	fmt.Fprintf(w, "  Estado:      %s\n", value.Ubuntu.State)
-	fmt.Fprintf(w, "  Acessível:   %s\n", yesNo(value.Ubuntu.Accessible))
-	fmt.Fprintf(w, "  Workspace:   %s\n", yesNo(value.Ubuntu.Workspace))
-
-	fmt.Fprintln(w, "\nSSH")
-	fmt.Fprintf(w, "  Estado:      %s\n", value.SSH.State)
-	fmt.Fprintf(w, "  Porta:       %d\n", value.SSH.Port)
-	fmt.Fprintf(w, "  Rodando:     %s\n", yesNo(value.SSH.Running))
-
-	fmt.Fprintln(w, "\nRede")
-	fmt.Fprintf(w, "  Estado:      %s\n", value.Network.State)
-	fmt.Fprintf(w, "  Endereços:   %s\n", joinOrUnknown(value.Network.Addresses))
-
-	fmt.Fprintln(w, "\nDispositivo")
-	fmt.Fprintf(w, "  Bateria:     %s\n", batteryText(value.Battery))
-	fmt.Fprintf(w, "  Wi-Fi:       %s\n", wifiText(value.WiFi))
+	text.WriteString("\nHost\n")
+	hostState := fmt.Sprintf("  %-12s%s\n", hostLabel+":", value.Host.State)
+	text.WriteString(hostState)
+	appendStatusf(&text, "  Arquitetura: %s\n  Wake-lock:   %s\n  Termux:API:  %s\n", value.Host.Architecture, availability(value.Host.WakeLockAvailable), availability(value.Host.TermuxAPIAvailable))
+	appendStatusf(&text, "\nArmazenamento\n  Dispositivo: %s livres de %s\n", formatBytes(value.Storage.DeviceFree), formatBytes(value.Storage.DeviceTotal))
+	appendStatusf(&text, "\nSetup\n  Estado:      %s\n  Completo:    %s\n", value.Setup.State, yesNo(value.Setup.Completed))
+	appendStatusf(&text, "\nUbuntu\n  Estado:      %s\n  Acessível:   %s\n  Workspace:   %s\n", value.Ubuntu.State, yesNo(value.Ubuntu.Accessible), yesNo(value.Ubuntu.Workspace))
+	appendStatusf(&text, "\nSSH\n  Estado:      %s\n  Porta:       %d\n  Rodando:     %s\n", value.SSH.State, value.SSH.Port, yesNo(value.SSH.Running))
+	appendStatusf(&text, "\nRede\n  Estado:      %s\n  Endereços:   %s\n", value.Network.State, joinOrUnknown(value.Network.Addresses))
+	appendStatusf(&text, "\nDispositivo\n  Bateria:     %s\n  Wi-Fi:       %s\n", batteryText(value.Battery), wifiText(value.WiFi))
 
 	if len(value.Installations) > 0 {
-		fmt.Fprintln(w, "\nInstalações")
+		text.WriteString("\nInstalações\n")
 		for _, installation := range value.Installations {
 			version := installation.Version
 			if version == "" {
 				version = installation.State
 			}
-			fmt.Fprintf(w, "  %s: %s (%s)\n", installation.Name, installation.State, version)
+			appendStatusf(&text, "  %s: %s (%s)\n", installation.Name, installation.State, version)
 			if installation.LastError != "" {
-				fmt.Fprintf(w, "    Erro: %s\n", installation.LastError)
+				appendStatusf(&text, "    Erro: %s\n", installation.LastError)
 			}
 			if installation.LogPath != "" {
-				fmt.Fprintf(w, "    Log:  %s\n", installation.LogPath)
+				appendStatusf(&text, "    Log:  %s\n", installation.LogPath)
 			}
 		}
 	}
 
-	fmt.Fprintln(w, "\nAlertas")
-	fmt.Fprintf(w, "  OK: %d | avisos: %d | erros: %d | ausentes: %d | desconhecidos: %d\n",
+	appendStatusf(&text, "\nAlertas\n  OK: %d | avisos: %d | erros: %d | ausentes: %d | desconhecidos: %d\n",
 		value.Alerts.OK, value.Alerts.Warnings, value.Alerts.Errors, value.Alerts.Missing, value.Alerts.Unknown)
+	_, err := io.WriteString(w, text.String())
+	return err
+}
+
+func appendStatusf(builder *strings.Builder, format string, values ...any) {
+	formatted := fmt.Sprintf(format, values...)
+	builder.WriteString(formatted)
 }
 
 func formatBytes(value int64) string {

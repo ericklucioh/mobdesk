@@ -29,12 +29,12 @@ func renderToolItem(value toolListItem, index, selected, width int) string {
 
 	appStyle := titleStyle
 	if index == selected {
-		appStyle = appStyle.Copy().Underline(true)
+		appStyle = appStyle.Underline(true)
 	}
 	app := ansi.Truncate(toolAppLabel(value.entry), leftWidth, "…")
 	phrase := ansi.Truncate(value.entry.phrase, leftWidth, "…")
 	state := ansi.Truncate(toolDisplayState(value.installed, value.installing), stateWidth, "…")
-	stateStyle := bodyStyle.Copy().Bold(true)
+	stateStyle := bodyStyle.Bold(true)
 	if value.installed {
 		stateStyle = stateStyle.Foreground(lipgloss.Color(colorGreen))
 	} else if value.installing {
@@ -45,9 +45,9 @@ func renderToolItem(value toolListItem, index, selected, width int) string {
 	gap := max(2, contentWidth-lipgloss.Width(appView)-lipgloss.Width(stateView))
 	firstLine := appView + strings.Repeat(" ", gap) + stateView
 	row := firstLine + "\n" + mutedStyle.Render(phrase)
-	itemStyle := cardStyle.Copy().Width(innerWidth).Padding(0, 1)
+	itemStyle := cardStyle.Width(innerWidth).Padding(0, 1)
 	if index == selected {
-		itemStyle = cardSelectedStyle.Copy().Width(innerWidth).Padding(0, 1)
+		itemStyle = cardSelectedStyle.Width(innerWidth).Padding(0, 1)
 	}
 	return itemStyle.Render(row)
 }

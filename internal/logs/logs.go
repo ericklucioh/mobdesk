@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/ericklucioh/mobdesk/internal/status"
 )
@@ -67,6 +68,10 @@ func Read(options Options) (Snapshot, error) {
 		if json.Unmarshal(payload, &installation) != nil || installation.Name == "" {
 			continue
 		}
+		logPath, ok := installationLogPath(options.Paths, entry.Name(), installation)
+		if !ok {
+			continue
+		}
 		if options.Name != "" && !strings.EqualFold(options.Name, installation.Name) {
 			continue
 		}
@@ -78,7 +83,7 @@ func Read(options Options) (Snapshot, error) {
 			LastAttemptAt: installation.LastAttemptAt,
 			InstalledAt:   installation.InstalledAt,
 			LastError:     installation.LastError,
-			LogPath:       installation.LogPath,
+			LogPath:       logPath,
 		}
 		record.Content, record.Missing = readTail(record.LogPath, options.Lines)
 		result.Logs = append(result.Logs, record)
@@ -87,6 +92,14 @@ func Read(options Options) (Snapshot, error) {
 		return result.Logs[i].Name < result.Logs[j].Name
 	})
 	return result, nil
+}
+
+func installationLogPath(p paths.Paths, stateFile string, installation status.InstallationStatus) (string, bool) {
+	language, ok := install.Resolve(installation.Name)
+	if !ok || installation.Name != language.Name || installation.Kind != "language" || stateFile != language.Name+".json" {
+		return "", false
+	}
+	return filepath.Join(p.InstallLogsDir(), language.Name+".log"), true
 }
 
 func readTail(path string, lines int) (string, bool) {

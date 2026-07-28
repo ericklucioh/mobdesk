@@ -24,7 +24,7 @@ O Termux controla o aparelho. O Ubuntu persistente é o ambiente de trabalho. Ao
 - instalação idempotente de Go, Python, Node.js, C, C++ e Lua no Ubuntu;
 - status humano e JSON para automação e TUI;
 - TUI com status, setup, ferramentas, shell e atualização;
-- versão local e atualização segura do binário por release;
+- versão local e atualização verificável do binário, com rollback automático;
 - execução no celular ou remotamente pelo computador;
 - ambiente reproduzível para desenvolvimento e testes.
 
@@ -78,6 +78,13 @@ mobdesk update
 Builds locais aparecem como `dev` e podem ser atualizados para a última release
 estável. Builds do canal `stage` procuram releases `test-v*`.
 
+O update baixa o binário em arquivo temporário, confere seu SHA-256, testa
+`version --json` e só então o ativa. Se a ativação falhar, a versão anterior é
+restaurada automaticamente. O backup é administrado pelo Mobdesk; não é
+necessário mover ou remover arquivos manualmente. O checksum detecta downloads
+corrompidos, mas não autentica uma release comprometida que publique binário e
+checksum correspondentes.
+
 ## Instalação no Termux
 
 Instale o Termux por uma fonte confiável e abra o aplicativo. Depois:
@@ -92,6 +99,10 @@ go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
 Na primeira execução, o binário é chamado diretamente pelo caminho criado pelo Go. Depois do setup, o launcher global permite usar `mobdesk` normalmente.
 
 O setup instala apenas as dependências necessárias. Para atualizar todo o ambiente Termux explicitamente, use `mobdesk setup --upgrade-system`.
+
+O setup pode ser executado novamente depois de uma falha. Ele mantém as etapas
+concluídas, recupera a etapa pendente e não apaga Ubuntu, workspace ou projetos.
+Somente uma execução de setup pode modificar o ambiente por vez.
 
 Durante o setup, o Mobdesk irá:
 

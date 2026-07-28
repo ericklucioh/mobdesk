@@ -30,9 +30,9 @@ func setupAction(width int, focused bool, label string, primary bool) string {
 		style = primaryButtonStyle
 	}
 	if focused {
-		style = cardSelectedStyle.Copy().Padding(0, 1)
+		style = cardSelectedStyle.Padding(0, 1)
 		if primary {
-			style = primaryButtonStyle.Copy().Bold(true)
+			style = primaryButtonStyle.Bold(true)
 		}
 	}
 	return style.Width(max(1, width-4)).Render(label)
@@ -40,13 +40,13 @@ func setupAction(width int, focused bool, label string, primary bool) string {
 
 func setupStep(width int, mark, title, detail string, style lipgloss.Style) string {
 	text := mark + "  " + title + "\n   " + detail
-	return style.Copy().Width(max(1, width-2)).Render(text) + "\n"
+	return style.Width(max(1, width-2)).Render(text) + "\n"
 }
 
 func setupAdvanced(width int, focused bool) string {
-	style := cardStyle.Copy().Width(max(1, width-4))
+	style := cardStyle.Width(max(1, width-4))
 	if focused {
-		style = cardSelectedStyle.Copy().Width(max(1, width-4))
+		style = cardSelectedStyle.Width(max(1, width-4))
 	}
 	text := tagStyle.Render("OPÇÃO AVANÇADA") + "\n" + titleStyle.Render("Atualizar todo o Termux") + "\n" + wrapText("Equivale a usar setup --upgrade-system.", width-4) + "\n\n" + mutedStyle.Render("Selecione a ação na lista ou pressione E.")
 	return style.Render(text)

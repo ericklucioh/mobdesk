@@ -31,7 +31,7 @@ func runShell(ctx context.Context, p paths.Paths) error {
 		return err
 	}
 	if err := command.Run(); err != nil {
-		return fmt.Errorf("Ubuntu não está disponível; execute mobdesk setup: %w", err)
+		return fmt.Errorf("ubuntu não está disponível; execute mobdesk setup: %w", err)
 	}
 	return runInteractive(ctx, "proot-distro", "login", "ubuntu", "--", "bash", "-l")
 }
@@ -57,7 +57,7 @@ func runInteractive(ctx context.Context, name string, args ...string) error {
 	if err != nil {
 		return fmt.Errorf("iniciar PTY para %q: %w", name, err)
 	}
-	defer ptmx.Close()
+	defer func() { _ = ptmx.Close() }()
 	_ = pty.InheritSize(os.Stdin, ptmx)
 
 	fd := int(os.Stdin.Fd())

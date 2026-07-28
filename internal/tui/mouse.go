@@ -82,7 +82,10 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 		}
 	case statusScreen:
 		if blockContainsAt(lines, bodyIndex, mouse.X, "atualizar") {
-			return m, m.backend.StatusCmd()
+			if !m.busy {
+				return m.requestStatus()
+			}
+			return m, nil
 		}
 		if blockContainsAt(lines, bodyIndex, mouse.X, "voltar") {
 			m.navigate(homeScreen)

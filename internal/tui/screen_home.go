@@ -10,13 +10,13 @@ import (
 func (m Model) renderHome() string {
 	if !m.canManageHost() {
 		width := contentWidth(m.width)
-		remote := primaryCardStyle.Copy().Width(width).Render(
+		remote := primaryCardStyle.Width(width).Render(
 			titleStyle.Render("Sessão Ubuntu remota") + "\n" +
 				mutedStyle.Render(wrapText("O host Termux controla SSH, setup, instalações e atualizações. Volte ao Termux para gerenciar a workstation.", width-4)),
 		)
 		cards := []string{
-			cardStyle.Copy().Width(width).Render("◉  " + titleStyle.Render("Status") + "\n" + mutedStyle.Render("Workspace e ambiente atual")),
-			cardStyle.Copy().Width(width).Render("⌁  " + titleStyle.Render("Shell Ubuntu") + "\n" + mutedStyle.Render("Abrir terminal local")),
+			cardStyle.Width(width).Render("◉  " + titleStyle.Render("Status") + "\n" + mutedStyle.Render("Workspace e ambiente atual")),
+			cardStyle.Width(width).Render("⌁  " + titleStyle.Render("Shell Ubuntu") + "\n" + mutedStyle.Render("Abrir terminal local")),
 		}
 		message := ""
 		if m.message != "" {
@@ -34,15 +34,15 @@ func (m Model) renderHome() string {
 		stateStyle = homeActiveStyle
 	}
 	width := contentWidth(m.width)
-	primary := primaryCardStyle.Copy().Width(width)
+	primary := primaryCardStyle.Width(width)
 	cardWidth := width
 	if contentColumns(m.width) == 2 {
 		cardWidth = (width - 2) / 2
 	}
 	card := func(index int, icon, title, description string) string {
-		marker, style := "  ", cardStyle.Copy()
+		marker, style := "  ", cardStyle
 		if m.focus == index {
-			marker, style = "> ", cardSelectedStyle.Copy()
+			marker, style = "> ", cardSelectedStyle
 		}
 		return style.Width(cardWidth).Render(marker + icon + "  " + titleStyle.Render(title) + "\n" + mutedStyle.Render(description))
 	}
@@ -54,7 +54,7 @@ func (m Model) renderHome() string {
 	primaryText := titleStyle.Render("Workstation SSH") + "\n" + homeStatusLabelStyle.Render("Status: ") + stateStyle.Render(state) + "\n\n" + primaryAction
 	access := ""
 	if m.status.SSH.Running {
-		access = "\n\n" + cardStyle.Copy().Width(max(1, width-4)).Padding(0, 1).Render(
+		access = "\n\n" + cardStyle.Width(max(1, width-4)).Padding(0, 1).Render(
 			tagStyle.Render("ACESSO SSH")+"\n"+bodyStyle.Render(m.sshCommand()),
 		)
 	}

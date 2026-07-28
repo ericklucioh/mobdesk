@@ -434,7 +434,7 @@ func sshPortResponds(ctx context.Context, port int) bool {
 	if err != nil {
 		return false
 	}
-	defer connection.Close()
+	defer func() { _ = connection.Close() }()
 	_ = connection.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 	buffer := make([]byte, 4)
 	_, err = connection.Read(buffer)
@@ -452,16 +452,15 @@ func directoryExists(path string) bool {
 }
 
 func detectTermuxRuntime(prefix string) bool {
+	// A raiz visível do PRoot é mais confiável que variáveis do host herdadas.
+	osRelease, err := os.ReadFile("/etc/os-release")
+	if err == nil && strings.Contains(string(osRelease), "ID=ubuntu") {
+		return false
+	}
 	if os.Getenv("TERMUX_VERSION") != "" {
 		return true
 	}
 	if !strings.HasPrefix(filepath.Clean(prefix), "/data/data/com.termux/files/usr") {
-		return false
-	}
-	// proot-distro can preserve PREFIX while changing the visible root. The
-	// distro's os-release is then a stronger signal than the inherited env.
-	osRelease, err := os.ReadFile("/etc/os-release")
-	if err == nil && strings.Contains(string(osRelease), "ID=ubuntu") {
 		return false
 	}
 	return true
