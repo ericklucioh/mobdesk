@@ -354,7 +354,7 @@ func (m Model) installSelectedTool() (tea.Model, tea.Cmd) {
 	if m.busy {
 		return m, nil
 	}
-	entries := toolEntries("language")
+	entries := toolEntries("")
 	index := m.toolsList.Index()
 	if index < 0 || index >= len(entries) {
 		return m, nil

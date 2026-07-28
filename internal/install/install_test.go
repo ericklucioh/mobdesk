@@ -49,6 +49,81 @@ func TestResolveLanguagesAndAliases(t *testing.T) {
 	}
 }
 
+func TestResolveToolsAndPrerequisites(t *testing.T) {
+	for _, name := range []string{"git", "gh", "tmux", "zellij", "micro", "lazygit", "tree", "ttt", "posting", "btop", "ncdu", "inxi", "speedtest-cli", "opencode-cli", "codex-cli", "claudecode-cli", "leetgo"} {
+		tool, ok := Resolve(name)
+		if !ok || tool.Kind == "" || tool.InstallKind == "" {
+			t.Fatalf("Resolve(%q) = %+v, %t", name, tool, ok)
+		}
+	}
+	for _, unsupported := range []string{"tuifi", "clin", "glint"} {
+		if _, ok := Resolve(unsupported); ok {
+			t.Fatalf("Resolve(%q) unexpectedly succeeded", unsupported)
+		}
+	}
+}
+
+func TestInstallToolUsesPrivateNPMPrefix(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{
+		"proot-distro login ubuntu -- apt-get install -y npm":                                        {{}},
+		"proot-distro login ubuntu -- env NPM_CONFIG_PREFIX=/root/.local npm install -g opencode-ai": {{}},
+	}}
+	tool, ok := Resolve("opencode-cli")
+	if !ok {
+		t.Fatal("opencode-cli missing from catalog")
+	}
+	if result := installTool(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", tool); result.Err != nil {
+		t.Fatal(result.Err)
+	}
+	if len(runner.commands) != 2 {
+		t.Fatalf("commands = %v", runner.commands)
+	}
+}
+
+func TestInstallNodeInstallsNPM(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{
+		"proot-distro login ubuntu -- apt-get install -y nodejs npm": {{}},
+	}}
+	tool, ok := Resolve("node")
+	if !ok {
+		t.Fatal("node missing from catalog")
+	}
+	if result := installTool(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", tool); result.Err != nil {
+		t.Fatal(result.Err)
+	}
+}
+
+func TestInstallTTTInstallsRequiredTools(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{
+		"proot-distro login ubuntu -- apt-get install -y git ripgrep":                                                {{}},
+		"proot-distro login ubuntu -- env GOBIN=/usr/local/bin go install github.com/eugenioenko/ttt/cmd/ttt@v1.1.0": {{}},
+	}}
+	tool, ok := Resolve("ttt")
+	if !ok {
+		t.Fatal("ttt missing from catalog")
+	}
+	if result := installTool(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", tool); result.Err != nil {
+		t.Fatal(result.Err)
+	}
+	if len(runner.commands) != 2 {
+		t.Fatalf("commands = %v", runner.commands)
+	}
+}
+
+func TestRunToolVersionAddsUserBinToPath(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{
+		"proot-distro login ubuntu -- sh -ec PATH=\"$HOME/.local/bin:$PATH\"; exec \"$@\" -- zellij --version": {{Stdout: []byte("zellij 0.44.3")}},
+	}}
+	tool, ok := Resolve("zellij")
+	if !ok {
+		t.Fatal("zellij missing from catalog")
+	}
+	result := runToolVersion(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", tool)
+	if result.Err != nil || string(result.Stdout) != "zellij 0.44.3" {
+		t.Fatalf("result = %+v, commands = %v", result, runner.commands)
+	}
+}
+
 func TestResolveNativeLanguageProfiles(t *testing.T) {
 	tests := []struct {
 		name        string

@@ -15,12 +15,29 @@ import (
 const defaultCommandTimeout = 10 * time.Minute
 
 var catalog = []Language{
-	{Name: "go", Aliases: []string{"golang"}, Package: "golang", Executable: "go", VersionArg: []string{"version"}},
-	{Name: "python", Aliases: []string{"python3"}, Package: "python3", Executable: "python3", VersionArg: []string{"--version"}},
-	{Name: "node", Aliases: []string{"nodejs"}, Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}},
-	{Name: "c", Aliases: []string{"c-lang"}, Package: "clang", Executable: "clang", VersionArg: []string{"--version"}},
-	{Name: "cpp", Aliases: []string{"c++", "cplusplus"}, Package: "clang", Executable: "clang++", VersionArg: []string{"--version"}},
-	{Name: "lua", Aliases: []string{"lua5.4"}, Package: "lua5.4", Executable: "lua5.4", VersionArg: []string{"-v"}},
+	{Name: "go", Aliases: []string{"golang"}, Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt"},
+	{Name: "python", Aliases: []string{"python3"}, Package: "python3", Executable: "python3", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt"},
+	{Name: "node", Aliases: []string{"nodejs"}, Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "node"},
+	{Name: "c", Aliases: []string{"c-lang"}, Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt"},
+	{Name: "cpp", Aliases: []string{"c++", "cplusplus"}, Package: "clang", Executable: "clang++", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt"},
+	{Name: "lua", Aliases: []string{"lua5.4"}, Package: "lua5.4", Executable: "lua5.4", VersionArg: []string{"-v"}, Kind: "language", InstallKind: "apt"},
+	{Name: "git", Package: "git", Executable: "git", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
+	{Name: "gh", Aliases: []string{"github-cli"}, Package: "gh", Executable: "gh", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "apt"},
+	{Name: "tmux", Package: "tmux", Executable: "tmux", VersionArg: []string{"-V"}, Kind: "terminal", InstallKind: "apt"},
+	{Name: "zellij", Package: "zellij", Executable: "zellij", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "script", UserBin: true, Script: "apt-get install -y ca-certificates curl tar; mkdir -p \"$HOME/.local/bin\"; archive=$(mktemp); curl -fsSL https://github.com/zellij-org/zellij/releases/download/v0.44.3/zellij-aarch64-unknown-linux-musl.tar.gz -o \"$archive\"; printf '%s  %s\\n' '15e6534d42644d66973d136c590c49739dcfd6a1a2a0d3d917973f16c81b45fb' \"$archive\" | sha256sum -c -; tar -xzf \"$archive\" -C \"$HOME/.local/bin\" zellij; chmod 0755 \"$HOME/.local/bin/zellij\"; rm -f \"$archive\""},
+	{Name: "micro", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
+	{Name: "lazygit", Package: "github.com/jesseduffield/lazygit@latest", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "go", Requires: []string{"go"}},
+	{Name: "tree", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
+	{Name: "ttt", Package: "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0", Executable: "ttt", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "ttt", Requires: []string{"go"}},
+	{Name: "btop", Package: "btop", Executable: "btop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
+	{Name: "ncdu", Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
+	{Name: "inxi", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
+	{Name: "speedtest-cli", Package: "speedtest-cli", Executable: "speedtest-cli", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
+	{Name: "posting", Package: "posting", Executable: "posting", VersionArg: []string{"--help"}, Kind: "terminal", InstallKind: "pipx", Requires: []string{"python"}},
+	{Name: "opencode-cli", Aliases: []string{"opencode"}, Package: "opencode-ai", Executable: "opencode", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
+	{Name: "codex-cli", Aliases: []string{"codex"}, Package: "@openai/codex", Executable: "codex", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
+	{Name: "claudecode-cli", Aliases: []string{"claude-code"}, Package: "@anthropic-ai/claude-code", Executable: "claude", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
+	{Name: "leetgo", Package: "github.com/j178/leetgo@latest", Executable: "leetgo", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "go", Requires: []string{"go"}},
 }
 
 type Options struct {
@@ -35,6 +52,8 @@ func Languages() []Language {
 	copy(result, catalog)
 	return result
 }
+
+func Tools() []Language { return Languages() }
 
 func Resolve(name string) (Language, bool) {
 	name = strings.ToLower(strings.TrimSpace(name))
@@ -66,6 +85,11 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 	if options.CommandTimeout <= 0 {
 		options.CommandTimeout = defaultCommandTimeout
 	}
+	for _, prerequisite := range language.Requires {
+		if _, err := Install(ctx, prerequisite, options); err != nil {
+			return Result{}, fmt.Errorf("preparar dependência %s para %s: %w", prerequisite, language.Name, err)
+		}
+	}
 	now := options.Now().UTC()
 	installationsDir := options.Paths.InstallationsDir()
 	logsDir := options.Paths.InstallLogsDir()
@@ -80,7 +104,7 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 	}
 	record := InstallationRecord{
 		Name:          language.Name,
-		Kind:          "language",
+		Kind:          language.Kind,
 		Package:       language.Package,
 		Executable:    language.Executable,
 		State:         "installing",
@@ -97,18 +121,18 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 		return result, fmt.Errorf("registrar tentativa de instalação: %w", err)
 	}
 
-	version := runUbuntuLogged(ctx, runner, options.CommandTimeout, logPath, language.Executable, language.VersionArg...)
+	version := runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
 	if version.Err != nil {
 		if update := runUbuntuLogged(ctx, runner, options.CommandTimeout, logPath, "apt-get", "update"); update.Err != nil {
 			err := fmt.Errorf("atualizar índices do Ubuntu para %s: %w", language.Name, update.Err)
 			return failInstallation(installationsDir, record, result, err)
 		}
-		if install := runUbuntuLogged(ctx, runner, options.CommandTimeout, logPath, "apt-get", "install", "-y", language.Package); install.Err != nil {
+		if install := installTool(ctx, runner, options.CommandTimeout, logPath, language); install.Err != nil {
 			err := fmt.Errorf("instalar %s: %w", language.Name, install.Err)
 			return failInstallation(installationsDir, record, result, err)
 		}
 		result.Changed = true
-		version = runUbuntuLogged(ctx, runner, options.CommandTimeout, logPath, language.Executable, language.VersionArg...)
+		version = runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
 	}
 	if version.Err != nil {
 		err := fmt.Errorf("verificar %s após instalação: %w", language.Name, version.Err)
@@ -124,6 +148,49 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 		return result, fmt.Errorf("registrar instalação concluída: %w", err)
 	}
 	return result, nil
+}
+
+func runToolVersion(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool Language) CommandResult {
+	if !tool.UserBin {
+		return runUbuntuLogged(ctx, runner, timeout, logPath, tool.Executable, tool.VersionArg...)
+	}
+	args := append([]string{"-ec", `PATH="$HOME/.local/bin:$PATH"; exec "$@"`, "--", tool.Executable}, tool.VersionArg...)
+	return runUbuntuLogged(ctx, runner, timeout, logPath, "sh", args...)
+}
+
+func installTool(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool Language) CommandResult {
+	switch tool.InstallKind {
+	case "node":
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", "nodejs", "npm")
+	case "npm":
+		if result := runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", "npm"); result.Err != nil {
+			return result
+		}
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "NPM_CONFIG_PREFIX=/root/.local", "npm", "install", "-g", tool.Package)
+	case "pipx":
+		if result := runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", "pipx"); result.Err != nil {
+			return result
+		}
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "PIPX_BIN_DIR=/usr/local/bin", "pipx", "install", tool.Package)
+	case "go":
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "GOBIN=/usr/local/bin", "go", "install", tool.Package)
+	case "ttt":
+		if result := runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", "git", "ripgrep"); result.Err != nil {
+			return result
+		}
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "GOBIN=/usr/local/bin", "go", "install", tool.Package)
+	case "cargo":
+		if result := runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", "cargo"); result.Err != nil {
+			return result
+		}
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "CARGO_INSTALL_ROOT=/usr/local", "cargo", "install", "--locked", tool.Package)
+	case "script":
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "sh", "-ec", tool.Script)
+	case "gh-extension":
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "gh", "extension", "install", tool.Package)
+	default:
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", tool.Package)
+	}
 }
 
 func runUbuntuLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, name string, args ...string) CommandResult {

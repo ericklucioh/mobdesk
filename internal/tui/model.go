@@ -128,16 +128,33 @@ func toolAppLabel(entry toolEntry) string {
 
 func toolEntries(kind string) []toolEntry {
 	phrases := map[string]string{
-		"go":     "Linguagem compilada",
-		"python": "Scripts e automação",
-		"node":   "JavaScript no servidor",
-		"c":      "Compilador C",
-		"cpp":    "Compilador C++",
-		"lua":    "Scripts leves",
+		"go":             "Linguagem compilada",
+		"python":         "Scripts e automação",
+		"node":           "JavaScript no servidor",
+		"c":              "Compilador C",
+		"cpp":            "Compilador C++",
+		"lua":            "Scripts leves",
+		"git":            "Controle de versão",
+		"gh":             "GitHub pelo terminal",
+		"tmux":           "Sessões persistentes",
+		"zellij":         "Multiplexador moderno",
+		"micro":          "Editor de terminal",
+		"lazygit":        "Git interativo",
+		"tree":           "Árvore de diretórios",
+		"ttt":            "Editor e IDE de terminal",
+		"btop":           "Monitor do sistema",
+		"ncdu":           "Uso de disco",
+		"inxi":           "Informações do sistema",
+		"speedtest-cli":  "Teste de rede",
+		"posting":        "Cliente HTTP no terminal",
+		"opencode-cli":   "Assistente de IA",
+		"codex-cli":      "Assistente de IA",
+		"claudecode-cli": "Assistente de IA",
+		"leetgo":         "Exercícios LeetCode",
 	}
 	entries := make([]toolEntry, 0)
-	for _, item := range install.Languages() {
-		entry := toolEntry{language: item, kind: "language", phrase: phrases[item.Name]}
+	for _, item := range install.Tools() {
+		entry := toolEntry{language: item, kind: item.Kind, phrase: phrases[item.Name]}
 		if kind == "" || entry.kind == kind {
 			entries = append(entries, entry)
 		}
@@ -146,7 +163,7 @@ func toolEntries(kind string) []toolEntry {
 }
 
 func toolListItems(value status.SystemStatus, installing string) []toolListItem {
-	entries := toolEntries("language")
+	entries := toolEntries("")
 	items := make([]toolListItem, 0, len(entries))
 	for _, entry := range entries {
 		items = append(items, toolListItem{

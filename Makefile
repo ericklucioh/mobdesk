@@ -3,8 +3,9 @@ SHELL := /bin/sh
 COMPOSE ?= docker compose
 SERVICE ?= termux
 TERMUX_ARCH ?= latest
+CATALOG_TIMEOUT ?= 30m
 
-.PHONY: help termux build-image shell test integration-test vet build run dev clean-env reset-env clean-image arm64-image fmt check
+.PHONY: help termux build-image catalog-image shell test integration-test catalog-test leetgo-test vet build run dev clean-env reset-env clean-image arm64-image fmt check
 
 help:
 	@printf '%s\n' \
@@ -14,6 +15,8 @@ help:
 		'make test         - executa go test ./...' \
 		'make check        - formata, valida e compila o projeto' \
 		'make integration-test - testa o fluxo Termux/SSH no Docker' \
+		'make catalog-test - testa apps no Ubuntu fixture em cache' \
+		'make leetgo-test  - testa Leetgo com cache Go persistente' \
 		'make vet          - executa go vet ./...' \
 		'make build        - compila o Mobdesk dentro do container' \
 		'make run          - executa o binário do Mobdesk' \
@@ -26,6 +29,9 @@ help:
 build-image:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) build
 
+catalog-image:
+	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) build termux-catalog
+
 termux:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm --service-ports $(SERVICE) bash
 
@@ -37,6 +43,12 @@ test:
 
 integration-test:
 	TERMUX_ARCH=$(TERMUX_ARCH) COMPOSE="$(COMPOSE)" ./scripts/test-termux.sh
+
+catalog-test:
+	timeout $(CATALOG_TIMEOUT) env TERMUX_ARCH=$(TERMUX_ARCH) COMPOSE="$(COMPOSE)" ./scripts/test-catalog.sh
+
+leetgo-test:
+	timeout $(CATALOG_TIMEOUT) env TERMUX_ARCH=$(TERMUX_ARCH) COMPOSE="$(COMPOSE)" ./scripts/test-leetgo.sh
 
 vet:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm $(SERVICE) bash -lc 'go vet ./...'
