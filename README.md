@@ -202,11 +202,9 @@ O projeto não depende de root, VM ou Docker no celular. PRoot melhora a compati
 
 1. consolidar a TUI e validar o fluxo em um aparelho Termux real;
 2. sessões persistentes, projetos, serviços e acesso remoto confiável;
-3. central local de gerenciamento;
-4. interface de gerenciamento acessível pelo navegador;
-5. plataforma reproduzível e extensível.
+3. central local de gerenciamento de projetos, sessões e serviços.
 
-Veja o [roadmap em seis estágios](docs/ROADMAP.md).
+Veja o [roadmap em quatro estágios](docs/ROADMAP.md).
 
 ## Documentação
 

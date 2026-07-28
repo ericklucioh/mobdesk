@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.termux
+      target: termux-dev
       args:
         TERMUX_ARCH: ${TERMUX_ARCH:-latest}
     image: mobdesk-termux:${TERMUX_ARCH:-latest}
@@ -19,8 +20,30 @@ services:
       - termux-prefix:/data/data/com.termux/files/usr
       - .:/data/data/com.termux/files/home/mobdesk
 
+  termux-catalog:
+    build:
+      context: .
+      dockerfile: Dockerfile.termux
+      target: termux-catalog-test
+      args:
+        TERMUX_ARCH: ${TERMUX_ARCH:-latest}
+    image: mobdesk-termux-catalog:${TERMUX_ARCH:-latest}
+    working_dir: /data/data/com.termux/files/home/mobdesk
+    stdin_open: true
+    tty: true
+    environment:
+      TERM: xterm-256color
+      COLORTERM: truecolor
+    volumes:
+      - catalog-go-mod:/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu/root/go/pkg/mod
+      - catalog-go-build:/data/data/com.termux/files/usr/var/lib/proot-distro/installed-rootfs/ubuntu/root/.cache/go-build
+
 volumes:
   termux-home:
     name: ${MOBDESK_TERMUX_HOME_VOLUME:-mobdesk_termux_home}
   termux-prefix:
     name: ${MOBDESK_TERMUX_PREFIX_VOLUME:-mobdesk_termux_prefix}
+  catalog-go-mod:
+    name: mobdesk_catalog_go_mod
+  catalog-go-build:
+    name: mobdesk_catalog_go_build

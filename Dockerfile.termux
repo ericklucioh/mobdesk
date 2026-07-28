@@ -1,26 +1,43 @@
-# Ambiente local de desenvolvimento que reproduz o userland do Termux.
-# A imagem não reproduz Android, Dalvik, permissões do app ou Termux:API.
+# syntax=docker/dockerfile:1.7
+# Ambiente local que reproduz o userland do Termux. Android, Termux:API e
+# permissões do app continuam fora do escopo do container.
 ARG TERMUX_ARCH=latest
-FROM termux/termux-docker:${TERMUX_ARCH}
+
+FROM termux/termux-docker:${TERMUX_ARCH} AS termux-base
 
 USER root
-
-# Air espera o shell Unix tradicional neste caminho. O Termux usa $PREFIX/bin/sh.
-RUN mkdir -p /bin && \
-    ln -sf /data/data/com.termux/files/usr/bin/sh /bin/sh
+RUN mkdir -p /bin && ln -sf /data/data/com.termux/files/usr/bin/sh /bin/sh
 
 USER 1000:1000
-
 RUN pkg update -y && \
-	pkg upgrade -y && \
-	pkg install -y golang make expect && \
-    go install github.com/air-verse/air@latest
+    pkg upgrade -y && \
+    pkg install -y golang make expect
 
 WORKDIR /data/data/com.termux/files/home/mobdesk
-
 ENV PATH="/data/data/com.termux/files/usr/bin:/data/data/com.termux/files/home/go/bin:${PATH}"
-
-# Porta padrão do servidor SSH do Termux.
 EXPOSE 8022
+CMD ["bash"]
 
+FROM termux-base AS termux-dev
+USER root
+RUN mkdir -p /data/data/com.termux/files/home/go/bin && \
+    chown -R 1000:1000 /data/data/com.termux/files/home/go
+USER 1000:1000
+RUN --mount=type=cache,target=/data/data/com.termux/files/home/go/pkg,uid=1000,gid=1000 \
+    go install github.com/air-verse/air@latest
+
+FROM termux-base AS termux-catalog-fixture
+# This layer is deliberately before source code. Catalog changes reuse the
+# installed Ubuntu instead of provisioning PRoot again.
+RUN pkg install -y proot-distro && proot-distro install ubuntu
+
+FROM termux-catalog-fixture AS termux-catalog-test
+COPY --chown=1000:1000 go.mod go.sum ./
+RUN --mount=type=cache,target=/data/data/com.termux/files/home/go/pkg,uid=1000,gid=1000 \
+    --mount=type=cache,target=/data/data/com.termux/files/home/.cache/go-build,uid=1000,gid=1000 \
+    go mod download
+COPY --chown=1000:1000 . ./
+RUN --mount=type=cache,target=/data/data/com.termux/files/home/go/pkg,uid=1000,gid=1000 \
+    --mount=type=cache,target=/data/data/com.termux/files/home/.cache/go-build,uid=1000,gid=1000 \
+    go build -o /data/data/com.termux/files/home/mobdesk/bin/mobdesk ./cmd/mobdesk
 CMD ["bash"]

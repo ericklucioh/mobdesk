@@ -15,8 +15,8 @@ import (
 var installJSON bool
 
 var installCmd = &cobra.Command{
-	Use:   "install <linguagem>",
-	Short: "instalar uma linguagem no Ubuntu",
+	Use:   "install <ferramenta>",
+	Short: "instalar uma ferramenta no Ubuntu",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runInstall(cmd.Context(), args[0])
@@ -55,7 +55,7 @@ func installOperationResult(result install.Result, installErr error) operationRe
 		State:         result.State,
 		Language:      result.Language,
 		Version:       result.Version,
-		Message:       "Linguagem instalada",
+		Message:       "Ferramenta instalada",
 	}
 	if installErr != nil {
 		response.State = "failed"

@@ -3,11 +3,16 @@ package install
 import "time"
 
 type Language struct {
-	Name       string   `json:"name"`
-	Aliases    []string `json:"aliases"`
-	Package    string   `json:"package"`
-	Executable string   `json:"executable"`
-	VersionArg []string `json:"version_arg"`
+	Name        string   `json:"name"`
+	Aliases     []string `json:"aliases"`
+	Package     string   `json:"package"`
+	Executable  string   `json:"executable"`
+	VersionArg  []string `json:"version_arg"`
+	Kind        string   `json:"kind,omitempty"`
+	InstallKind string   `json:"install_kind,omitempty"`
+	Requires    []string `json:"requires,omitempty"`
+	Script      string   `json:"-"`
+	UserBin     bool     `json:"-"`
 }
 
 type Result struct {

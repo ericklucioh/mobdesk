@@ -1,6 +1,6 @@
 # Roadmap do Mobdesk
 
-O Mobdesk evolui em seis estágios. Termux continua sendo o host de controle, enquanto Ubuntu via PRoot permanece como o ambiente principal de desenvolvimento.
+O Mobdesk evolui em quatro estágios. Termux continua sendo o host de controle, enquanto Ubuntu via PRoot permanece como o ambiente principal de desenvolvimento.
 
 ## Visão geral
 
@@ -10,8 +10,6 @@ O Mobdesk evolui em seis estágios. Termux continua sendo o host de controle, en
 | 2 | MVP | Workstation TUI | Trabalhar com ferramentas textuais organizadas |
 | 3 | MVP | Ambiente persistente | Recuperar sessões, serviços e acesso remoto |
 | 4 | Aplicação | Mobdesk Manager | Administrar projetos, sessões e serviços |
-| 5 | Aplicação | Mobdesk Web | Controlar a workstation pelo navegador |
-| 6 | Plataforma | Mobdesk Platform | Distribuir ambientes reproduzíveis e extensíveis |
 
 ## Estágio 1 - Bootstrap Ubuntu
 
@@ -100,44 +98,11 @@ Transformar os comandos do Termux, PRoot e Ubuntu em uma central local de gerenc
 - atualização e remoção controladas;
 - configuração persistida e observável.
 
-## Estágio 5 - Mobdesk Web
-
-### Objetivo
-
-Oferecer uma interface visual leve pelo navegador, sem tentar reproduzir um desktop Linux completo.
-
-### Escopo
-
-- dashboard;
-- terminal web;
-- arquivos e logs;
-- projetos, sessões e serviços;
-- aplicações HTTP e túneis;
-- autenticação, permissões e notificações.
-
-## Estágio 6 - Mobdesk Platform
-
-### Objetivo
-
-Distribuir uma workstation móvel reproduzível, extensível e fácil de manter.
-
-### Escopo
-
-- instalação assistida e configurações declarativas;
-- perfis de dispositivo e projeto;
-- catálogo de ferramentas e extensões;
-- atualizações versionadas e rollback;
-- backup e restauração;
-- suporte a múltiplos dispositivos;
-- API, plugins e automação;
-- imagens ARM64 próprias e releases;
-- Nix-on-Droid, Neko e outras integrações apenas como opções futuras.
-
 ## Princípios de evolução
 
 1. Cada estágio deve preservar o funcionamento do anterior.
 2. A CLI e a TUI devem usar os mesmos serviços internos.
-3. Não antecipar interface web, plugins, Nix ou múltiplos usuários sem necessidade validada.
+3. Não antecipar plugins, Nix ou múltiplos usuários sem necessidade validada.
 4. O próximo estágio só começa depois de o fluxo atual ser validado no Termux real.
 
 ## Fora do núcleo
