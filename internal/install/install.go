@@ -40,6 +40,8 @@ var catalog = []Language{
 	{Name: "inxi", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
 	{Name: "speedtest-cli", Package: "speedtest-cli", Executable: "speedtest-cli", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
 	{Name: "posting", Package: "posting", Executable: "posting", VersionArg: []string{"--help"}, Kind: "terminal", InstallKind: "pipx", Requires: []string{"python"}},
+	{Name: "yazi", Aliases: []string{"yazi-fm"}, Package: "yazi@v26.5.6", Executable: "yazi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "script", UserBin: true, Script: yaziReleaseScript()},
+	{Name: "tuifi", Aliases: []string{"tuifimanager"}, Package: "TUIFIManager==5.2.6", Executable: "tuifi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "script", Requires: []string{"python"}, Script: tuifiInstallScript()},
 	{Name: "opencode-cli", Aliases: []string{"opencode"}, Package: "opencode-ai", Executable: "opencode", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
 	{Name: "codex-cli", Aliases: []string{"codex"}, Package: "@openai/codex", Executable: "codex", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
 	{Name: "claudecode-cli", Aliases: []string{"claude-code"}, Package: "@anthropic-ai/claude-code", Executable: "claude", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
@@ -69,6 +71,43 @@ curl -fsSL "https://github.com/%s/releases/download/%s/$archive_name" -o "$archi
 printf '%%s  %%s\n' "$checksum" "$archive" | sha256sum -c -
 tar -xzf "$archive" -C /usr/local/bin %s
 chmod 0755 "/usr/local/bin/%s"`, arm64Archive, arm64Checksum, amd64Archive, amd64Checksum, repository, version, executable, executable)
+}
+
+func yaziReleaseScript() string {
+	return `set -eu
+apt-get -o DPkg::Lock::Timeout=300 install -y ca-certificates curl unzip file ffmpeg 7zip jq poppler-utils fd-find ripgrep fzf zoxide chafa imagemagick
+case "$(uname -m)" in
+aarch64|arm64)
+    archive_name=yazi-aarch64-unknown-linux-gnu.zip
+    checksum=c38b07961e7fc4c76503fd0f4a1b4bd0b379a99835b818cd899b0315c728e1e1
+    ;;
+x86_64|amd64)
+    archive_name=yazi-x86_64-unknown-linux-gnu.zip
+    checksum=1c9096f0a83b8102c194385f644cdeff93cc8269426163c9d033041ebd537bd2
+    ;;
+*)
+    printf 'arquitetura nao suportada: %s\n' "$(uname -m)" >&2
+    exit 1
+    ;;
+esac
+archive=$(mktemp)
+temporary=$(mktemp -d)
+trap 'rm -f "$archive"; rm -rf "$temporary"' EXIT
+curl -fsSL "https://github.com/sxyazi/yazi/releases/download/v26.5.6/$archive_name" -o "$archive"
+printf '%s  %s\n' "$checksum" "$archive" | sha256sum -c -
+unzip -q "$archive" -d "$temporary"
+yazi_binary=$(find "$temporary" -type f -name yazi -print -quit)
+ya_binary=$(find "$temporary" -type f -name ya -print -quit)
+test -n "$yazi_binary" -a -n "$ya_binary"
+mkdir -p "$HOME/.local/bin"
+install -m 0755 "$yazi_binary" "$HOME/.local/bin/yazi"
+install -m 0755 "$ya_binary" "$HOME/.local/bin/ya"`
+}
+
+func tuifiInstallScript() string {
+	return `set -eu
+apt-get -o DPkg::Lock::Timeout=300 install -y build-essential python3-dev libncurses-dev pipx
+PIPX_BIN_DIR=/usr/local/bin pipx install --force TUIFIManager==5.2.6`
 }
 
 type Options struct {

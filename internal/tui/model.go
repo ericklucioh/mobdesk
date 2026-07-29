@@ -150,6 +150,8 @@ func toolEntries(kind string) []toolEntry {
 		"inxi":           "Informações do sistema",
 		"speedtest-cli":  "Teste de rede",
 		"posting":        "Cliente HTTP no terminal",
+		"yazi":           "Gerenciador de arquivos com previews",
+		"tuifi":          "Explorador visual de arquivos",
 		"opencode-cli":   "Assistente de IA",
 		"codex-cli":      "Assistente de IA",
 		"claudecode-cli": "Assistente de IA",

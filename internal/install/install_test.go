@@ -51,16 +51,34 @@ func TestResolveLanguagesAndAliases(t *testing.T) {
 }
 
 func TestResolveToolsAndPrerequisites(t *testing.T) {
-	for _, name := range []string{"git", "gh", "tmux", "zellij", "micro", "lazygit", "tree", "ttt", "posting", "htop", "ncdu", "inxi", "speedtest-cli", "opencode-cli", "codex-cli", "claudecode-cli", "leetgo"} {
+	for _, name := range []string{"git", "gh", "tmux", "zellij", "micro", "lazygit", "tree", "ttt", "posting", "yazi", "tuifi", "htop", "ncdu", "inxi", "speedtest-cli", "opencode-cli", "codex-cli", "claudecode-cli", "leetgo"} {
 		tool, ok := Resolve(name)
 		if !ok || tool.Kind == "" || tool.InstallKind == "" {
 			t.Fatalf("Resolve(%q) = %+v, %t", name, tool, ok)
 		}
 	}
-	for _, unsupported := range []string{"tuifi", "clin", "glint"} {
+	for _, unsupported := range []string{"clin", "glint"} {
 		if _, ok := Resolve(unsupported); ok {
 			t.Fatalf("Resolve(%q) unexpectedly succeeded", unsupported)
 		}
+	}
+}
+
+func TestFileManagersUsePinnedInstallProfiles(t *testing.T) {
+	yazi, ok := Resolve("yazi")
+	if !ok || yazi.InstallKind != "script" || !yazi.UserBin || !strings.Contains(yazi.Script, "v26.5.6") || !strings.Contains(yazi.Script, "sha256sum -c") {
+		t.Fatalf("unexpected yazi profile: %+v", yazi)
+	}
+	if yazi.Executable != "yazi" || !slices.Contains(yazi.VersionArg, "--version") {
+		t.Fatalf("unexpected yazi verification: %+v", yazi)
+	}
+
+	tuifi, ok := Resolve("tuifimanager")
+	if !ok || tuifi.InstallKind != "script" || tuifi.UserBin || tuifi.Package != "TUIFIManager==5.2.6" || !slices.Contains(tuifi.Requires, "python") {
+		t.Fatalf("unexpected tuifi profile: %+v", tuifi)
+	}
+	if !strings.Contains(tuifi.Script, "pipx install --force TUIFIManager==5.2.6") || tuifi.Executable != "tuifi" {
+		t.Fatalf("unexpected tuifi installation: %+v", tuifi)
 	}
 }
 
