@@ -64,6 +64,8 @@ func (p Paths) SSHLock() string { return filepath.Join(p.SSHRuntimeDir(), "sshd.
 
 func (p Paths) SetupLock() string { return filepath.Join(p.StateDir(), "setup.lock") }
 
+func (p Paths) InstallLock() string { return filepath.Join(p.StateDir(), "install.lock") }
+
 func (p Paths) Launcher() string { return filepath.Join(p.Prefix, "bin", "mobdesk") }
 
 func (p Paths) UbuntuWorkspace() string { return "/root/workspace" }

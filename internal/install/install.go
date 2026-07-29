@@ -7,12 +7,17 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
-const defaultCommandTimeout = 10 * time.Minute
+const (
+	defaultCommandTimeout = 10 * time.Minute
+	defaultLockTimeout    = 5 * time.Minute
+	aptLockTimeoutSeconds = 300
+)
 
 var catalog = []Language{
 	{Name: "go", Aliases: []string{"golang"}, Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt"},
@@ -29,7 +34,7 @@ var catalog = []Language{
 	{Name: "lazygit", Package: "github.com/jesseduffield/lazygit@latest", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "go", Requires: []string{"go"}},
 	{Name: "tree", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
 	{Name: "ttt", Package: "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0", Executable: "ttt", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "ttt", Requires: []string{"go"}},
-	{Name: "btop", Package: "btop", Executable: "btop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
+	{Name: "htop", Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
 	{Name: "ncdu", Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
 	{Name: "inxi", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
 	{Name: "speedtest-cli", Package: "speedtest-cli", Executable: "speedtest-cli", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
@@ -45,6 +50,7 @@ type Options struct {
 	Runner         CommandRunner
 	Now            func() time.Time
 	CommandTimeout time.Duration
+	LockTimeout    time.Duration
 	Progress       func(string)
 }
 
@@ -72,6 +78,24 @@ func Resolve(name string) (Language, bool) {
 }
 
 func Install(ctx context.Context, name string, options Options) (Result, error) {
+	if options.Now == nil {
+		options.Now = time.Now
+	}
+	if options.CommandTimeout <= 0 {
+		options.CommandTimeout = defaultCommandTimeout
+	}
+	if options.LockTimeout <= 0 {
+		options.LockTimeout = defaultLockTimeout
+	}
+	release, err := acquireInstallLock(ctx, options)
+	if err != nil {
+		return Result{}, err
+	}
+	defer release()
+	return install(ctx, name, options)
+}
+
+func install(ctx context.Context, name string, options Options) (Result, error) {
 	language, ok := Resolve(name)
 	if !ok {
 		return Result{}, fmt.Errorf("linguagem não suportada %q", name)
@@ -80,15 +104,9 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 	if runner == nil {
 		runner = ExecRunner{}
 	}
-	if options.Now == nil {
-		options.Now = time.Now
-	}
-	if options.CommandTimeout <= 0 {
-		options.CommandTimeout = defaultCommandTimeout
-	}
 	for _, prerequisite := range language.Requires {
 		progress(options, fmt.Sprintf("Preparando dependência %s", prerequisite))
-		if _, err := Install(ctx, prerequisite, options); err != nil {
+		if _, err := install(ctx, prerequisite, options); err != nil {
 			return Result{}, fmt.Errorf("preparar dependência %s para %s: %w", prerequisite, language.Name, err)
 		}
 	}
@@ -127,7 +145,8 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 	version := runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
 	if version.Err != nil {
 		progress(options, "Atualizando índices do Ubuntu")
-		if update := runUbuntuLogged(ctx, runner, options.CommandTimeout, logPath, "apt-get", "update"); update.Err != nil {
+		progress(options, "Aguardando gerenciador de pacotes")
+		if update := runAptLogged(ctx, runner, options.CommandTimeout, logPath, "update"); update.Err != nil {
 			err := fmt.Errorf("atualizar índices do Ubuntu para %s: %w", language.Name, update.Err)
 			return failInstallation(installationsDir, record, result, err)
 		}
@@ -162,6 +181,43 @@ func progress(options Options, message string) {
 	}
 }
 
+func acquireInstallLock(parent context.Context, options Options) (func(), error) {
+	path := options.Paths.InstallLock()
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return nil, fmt.Errorf("criar lock de instalação: %w", err)
+	}
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
+	if err != nil {
+		return nil, fmt.Errorf("abrir lock de instalação: %w", err)
+	}
+	ctx, cancel := context.WithTimeout(parent, options.LockTimeout)
+	defer cancel()
+	waited := false
+	for {
+		err = syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+		if err == nil {
+			return func() {
+				_ = syscall.Flock(int(file.Fd()), syscall.LOCK_UN)
+				_ = file.Close()
+			}, nil
+		}
+		if err != syscall.EWOULDBLOCK && err != syscall.EAGAIN {
+			_ = file.Close()
+			return nil, fmt.Errorf("bloquear instalação: %w", err)
+		}
+		if !waited {
+			progress(options, "Aguardando outra instalação do Mobdesk")
+			waited = true
+		}
+		select {
+		case <-ctx.Done():
+			_ = file.Close()
+			return nil, fmt.Errorf("aguardar outra instalação do Mobdesk: %w", ctx.Err())
+		case <-time.After(250 * time.Millisecond):
+		}
+	}
+}
+
 func runToolVersion(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool Language) CommandResult {
 	if !tool.UserBin {
 		return runUbuntuLogged(ctx, runner, timeout, logPath, tool.Executable, tool.VersionArg...)
@@ -173,26 +229,26 @@ func runToolVersion(ctx context.Context, runner CommandRunner, timeout time.Dura
 func installTool(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool Language) CommandResult {
 	switch tool.InstallKind {
 	case "node":
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", "nodejs", "npm")
+		return runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "nodejs", "npm")
 	case "npm":
-		if result := runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", "npm"); result.Err != nil {
+		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "npm"); result.Err != nil {
 			return result
 		}
 		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "NPM_CONFIG_PREFIX=/root/.local", "npm", "install", "-g", tool.Package)
 	case "pipx":
-		if result := runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", "pipx"); result.Err != nil {
+		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "pipx"); result.Err != nil {
 			return result
 		}
 		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "PIPX_BIN_DIR=/usr/local/bin", "pipx", "install", tool.Package)
 	case "go":
 		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "GOBIN=/usr/local/bin", "go", "install", tool.Package)
 	case "ttt":
-		if result := runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", "git", "ripgrep"); result.Err != nil {
+		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "git", "ripgrep"); result.Err != nil {
 			return result
 		}
 		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "GOBIN=/usr/local/bin", "go", "install", tool.Package)
 	case "cargo":
-		if result := runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", "cargo"); result.Err != nil {
+		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "cargo"); result.Err != nil {
 			return result
 		}
 		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "CARGO_INSTALL_ROOT=/usr/local", "cargo", "install", "--locked", tool.Package)
@@ -201,8 +257,13 @@ func installTool(ctx context.Context, runner CommandRunner, timeout time.Duratio
 	case "gh-extension":
 		return runUbuntuLogged(ctx, runner, timeout, logPath, "gh", "extension", "install", tool.Package)
 	default:
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", "install", "-y", tool.Package)
+		return runAptLogged(ctx, runner, timeout, logPath, "install", "-y", tool.Package)
 	}
+}
+
+func runAptLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, args ...string) CommandResult {
+	aptArgs := append([]string{"-o", fmt.Sprintf("DPkg::Lock::Timeout=%d", aptLockTimeoutSeconds)}, args...)
+	return runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", aptArgs...)
 }
 
 func runUbuntuLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, name string, args ...string) CommandResult {

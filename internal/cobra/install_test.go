@@ -9,9 +9,9 @@ import (
 
 func TestInstallOperationResultReportsFailureAsJSON(t *testing.T) {
 	installErr := errors.New("apt-get falhou")
-	result := installOperationResult(install.Result{Language: "go", State: "installing"}, installErr)
+	result := installOperationResult(install.Result{Language: "go", State: "installing", LogPath: "/private/install.log"}, installErr)
 
-	if result.Success || result.State != "failed" || result.Message != installErr.Error() || result.Language != "go" {
+	if result.Success || result.State != "failed" || result.Message != installErr.Error() || result.Language != "go" || result.LogPath != "/private/install.log" {
 		t.Fatalf("unexpected result: %+v", result)
 	}
 }

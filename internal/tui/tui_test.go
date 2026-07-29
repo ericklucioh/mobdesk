@@ -155,6 +155,17 @@ func TestInstallOperationViewShowsReportedProgress(t *testing.T) {
 	}
 }
 
+func TestInstallFailureIncludesLogPath(t *testing.T) {
+	message := operationMessageText(operationMessage{command: "install", result: operationResult{
+		Success: false,
+		Message: "apt-get falhou",
+		LogPath: "/private/install.log",
+	}})
+	if message != "apt-get falhou\nLog: /private/install.log" {
+		t.Fatalf("installation failure message = %q", message)
+	}
+}
+
 func TestToolsMouseWheelMovesBubbleList(t *testing.T) {
 	model := New()
 	model.screen = toolsScreen

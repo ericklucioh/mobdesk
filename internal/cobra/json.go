@@ -11,6 +11,7 @@ type operationResult struct {
 	CurrentVersion string   `json:"current_version,omitempty"`
 	LatestVersion  string   `json:"latest_version,omitempty"`
 	Updated        bool     `json:"updated,omitempty"`
+	LogPath        string   `json:"log_path,omitempty"`
 	Language       string   `json:"language,omitempty"`
 	Version        string   `json:"version,omitempty"`
 	Port           int      `json:"port,omitempty"`

@@ -51,7 +51,7 @@ func TestResolveLanguagesAndAliases(t *testing.T) {
 }
 
 func TestResolveToolsAndPrerequisites(t *testing.T) {
-	for _, name := range []string{"git", "gh", "tmux", "zellij", "micro", "lazygit", "tree", "ttt", "posting", "btop", "ncdu", "inxi", "speedtest-cli", "opencode-cli", "codex-cli", "claudecode-cli", "leetgo"} {
+	for _, name := range []string{"git", "gh", "tmux", "zellij", "micro", "lazygit", "tree", "ttt", "posting", "htop", "ncdu", "inxi", "speedtest-cli", "opencode-cli", "codex-cli", "claudecode-cli", "leetgo"} {
 		tool, ok := Resolve(name)
 		if !ok || tool.Kind == "" || tool.InstallKind == "" {
 			t.Fatalf("Resolve(%q) = %+v, %t", name, tool, ok)
@@ -66,7 +66,7 @@ func TestResolveToolsAndPrerequisites(t *testing.T) {
 
 func TestInstallToolUsesPrivateNPMPrefix(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- apt-get install -y npm":                                        {{}},
+		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y npm":             {{}},
 		"proot-distro login ubuntu -- env NPM_CONFIG_PREFIX=/root/.local npm install -g opencode-ai": {{}},
 	}}
 	tool, ok := Resolve("opencode-cli")
@@ -83,7 +83,7 @@ func TestInstallToolUsesPrivateNPMPrefix(t *testing.T) {
 
 func TestInstallNodeInstallsNPM(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- apt-get install -y nodejs npm": {{}},
+		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y nodejs npm": {{}},
 	}}
 	tool, ok := Resolve("node")
 	if !ok {
@@ -96,7 +96,7 @@ func TestInstallNodeInstallsNPM(t *testing.T) {
 
 func TestInstallTTTInstallsRequiredTools(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- apt-get install -y git ripgrep":                                                {{}},
+		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y git ripgrep":                     {{}},
 		"proot-distro login ubuntu -- env GOBIN=/usr/local/bin go install github.com/eugenioenko/ttt/cmd/ttt@v1.1.0": {{}},
 	}}
 	tool, ok := Resolve("ttt")
@@ -165,9 +165,9 @@ func TestInstallSkipsAlreadyInstalledLanguage(t *testing.T) {
 
 func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- go version":                {{Err: errors.New("not found")}, {Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
-		"proot-distro login ubuntu -- apt-get update":            {{}},
-		"proot-distro login ubuntu -- apt-get install -y golang": {{}},
+		"proot-distro login ubuntu -- go version":                                           {{Err: errors.New("not found")}, {Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
+		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 update":            {{}},
+		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y golang": {{}},
 	}}
 	options := testOptions(t, runner)
 	var updates []string
@@ -182,7 +182,7 @@ func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 	if len(runner.commands) != 4 {
 		t.Fatalf("commands = %v, want version, update, install, version", runner.commands)
 	}
-	wantUpdates := []string{"Verificando go", "Atualizando índices do Ubuntu", "Instalando go", "Verificando go após a instalação"}
+	wantUpdates := []string{"Verificando go", "Atualizando índices do Ubuntu", "Aguardando gerenciador de pacotes", "Instalando go", "Verificando go após a instalação"}
 	if !slices.Equal(updates, wantUpdates) {
 		t.Fatalf("progress = %v, want %v", updates, wantUpdates)
 	}
@@ -239,6 +239,29 @@ func TestInstallTimeoutPersistsFailure(t *testing.T) {
 	}
 	if !strings.Contains(string(recordBytes), `"state": "failed"`) {
 		t.Fatalf("record did not contain failed state: %s", recordBytes)
+	}
+}
+
+func TestInstallWaitsForAnotherMobdeskInstallation(t *testing.T) {
+	options := testOptions(t, &fakeRunner{})
+	release, err := acquireInstallLock(context.Background(), options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release()
+
+	options.LockTimeout = time.Millisecond
+	var updates []string
+	options.Progress = func(message string) { updates = append(updates, message) }
+	_, err = Install(context.Background(), "go", options)
+	if err == nil || !strings.Contains(err.Error(), "aguardar outra instalação") {
+		t.Fatalf("unexpected lock error: %v", err)
+	}
+	if !slices.Equal(updates, []string{"Aguardando outra instalação do Mobdesk"}) {
+		t.Fatalf("progress = %v", updates)
+	}
+	if _, statErr := os.Stat(options.Paths.InstallationsDir()); !os.IsNotExist(statErr) {
+		t.Fatalf("lock failure unexpectedly created installation state: %v", statErr)
 	}
 }
 

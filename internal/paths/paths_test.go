@@ -22,6 +22,9 @@ func TestLayoutUsesExistingMobdeskPaths(t *testing.T) {
 	if paths.InstallationsDir() != "/home/mobdesk/.local/share/mobdesk/state/installations" || paths.InstallLogsDir() != "/home/mobdesk/.local/share/mobdesk/logs/install" {
 		t.Fatalf("unexpected installation paths: %q, %q", paths.InstallationsDir(), paths.InstallLogsDir())
 	}
+	if paths.InstallLock() != "/home/mobdesk/.local/share/mobdesk/state/install.lock" {
+		t.Fatalf("install lock = %q", paths.InstallLock())
+	}
 	if paths.SSHConfig() != "/home/mobdesk/.config/mobdesk/ssh/sshd_config" || paths.SSHPID() != "/home/mobdesk/.local/share/mobdesk/ssh/sshd.pid" || paths.SSHLog() != "/home/mobdesk/.local/share/mobdesk/ssh/sshd.log" || paths.SSHWrapper() != "/home/mobdesk/.local/share/mobdesk/ssh/mobdesk-ssh-shell" || paths.SSHLock() != "/home/mobdesk/.local/share/mobdesk/ssh/sshd.lock" {
 		t.Fatal("unexpected SSH layout")
 	}

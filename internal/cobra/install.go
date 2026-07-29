@@ -68,6 +68,7 @@ func installOperationResult(result install.Result, installErr error) operationRe
 		State:         result.State,
 		Language:      result.Language,
 		Version:       result.Version,
+		LogPath:       result.LogPath,
 		Message:       "Ferramenta instalada",
 	}
 	if installErr != nil {

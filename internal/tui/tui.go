@@ -234,7 +234,11 @@ func operationMessageText(msg operationMessage) string {
 		return msg.err.Error()
 	}
 	if msg.result.Message != "" {
-		return msg.result.Message
+		message := msg.result.Message
+		if !msg.result.Success && msg.result.LogPath != "" {
+			message += "\nLog: " + msg.result.LogPath
+		}
+		return message
 	}
 	switch msg.command {
 	case "update":

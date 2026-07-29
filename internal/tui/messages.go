@@ -28,6 +28,7 @@ type operationResult struct {
 	CurrentVersion string   `json:"current_version"`
 	LatestVersion  string   `json:"latest_version"`
 	Updated        bool     `json:"updated"`
+	LogPath        string   `json:"log_path"`
 	Language       string   `json:"language"`
 	Version        string   `json:"version"`
 	Port           int      `json:"port"`

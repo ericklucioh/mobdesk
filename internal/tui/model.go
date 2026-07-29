@@ -145,7 +145,7 @@ func toolEntries(kind string) []toolEntry {
 		"lazygit":        "Git interativo",
 		"tree":           "Árvore de diretórios",
 		"ttt":            "Editor e IDE de terminal",
-		"btop":           "Monitor do sistema",
+		"htop":           "Monitor do sistema",
 		"ncdu":           "Uso de disco",
 		"inxi":           "Informações do sistema",
 		"speedtest-cli":  "Teste de rede",
