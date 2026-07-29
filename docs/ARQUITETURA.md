@@ -66,7 +66,10 @@ internal/tui             apresentação interativa Bubble Tea
 ### Entrada e orquestração
 
 `cmd/mobdesk` inicia a aplicação. `internal/cobra` registra os comandos,
-interpreta argumentos e coordena os serviços internos.
+interpreta argumentos e coordena os serviços internos. `install`, `uninstall` e
+`config apply/remove` compartilham os serviços de apps e oferecem saída humana
+ou contrato JSON schema 1; o progresso, quando solicitado, usa eventos JSON
+separados do resultado final.
 
 Os serviços não devem depender da renderização da TUI. A saída humana e a
 saída JSON são responsabilidades da camada de apresentação da CLI.

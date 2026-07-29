@@ -56,6 +56,8 @@ Oferecer uma interface textual organizada para trabalhar no Ubuntu pelo celular 
 - identificação da sessão SSH no Ubuntu e bloqueio das ações exclusivas do
   host Termux.
 - perfis opcionais de configuração para apps, começando por Neovim/LazyVim.
+- comandos CLI para instalar, desinstalar e aplicar/remover configurações com
+  contrato JSON versionado.
 
 ### Critério
 

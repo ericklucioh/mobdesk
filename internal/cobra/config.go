@@ -15,6 +15,8 @@ func init() {
 	RootCmd.AddCommand(stopCmd)
 	RootCmd.AddCommand(statusCmd)
 	RootCmd.AddCommand(installCmd)
+	RootCmd.AddCommand(uninstallCmd)
+	RootCmd.AddCommand(appConfigCmd)
 	RootCmd.AddCommand(shellCmd)
 	RootCmd.AddCommand(versionCmd)
 	RootCmd.AddCommand(updateCmd)

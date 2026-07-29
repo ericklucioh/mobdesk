@@ -12,6 +12,13 @@ type operationResult struct {
 	Success         bool                     `json:"success"`
 	State           string                   `json:"state"`
 	Message         string                   `json:"message"`
+	Target          string                   `json:"target,omitempty"`
+	Action          string                   `json:"action,omitempty"`
+	Changed         bool                     `json:"changed"`
+	ConfigState     string                   `json:"config_state,omitempty"`
+	Conflicts       []string                 `json:"conflicts,omitempty"`
+	Paths           []string                 `json:"paths,omitempty"`
+	Source          string                   `json:"source,omitempty"`
 	CurrentVersion  string                   `json:"current_version,omitempty"`
 	LatestVersion   string                   `json:"latest_version,omitempty"`
 	Updated         bool                     `json:"updated,omitempty"`

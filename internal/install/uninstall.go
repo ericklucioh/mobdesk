@@ -38,6 +38,7 @@ func Uninstall(ctx context.Context, name string, options Options) (Result, error
 		Package:         profile.Package,
 		Executable:      profile.Executable,
 		State:           "failed",
+		Source:          "mobdesk",
 		StorageEstimate: profile.StorageEstimate,
 	}
 	record, err := loadInstallationRecord(options.Paths, profile.Name)
@@ -47,6 +48,7 @@ func Uninstall(ctx context.Context, name string, options Options) (Result, error
 	if record.Source == "" {
 		record.Source = "mobdesk"
 	}
+	result.Source = record.Source
 	if record.Source != "mobdesk" {
 		return result, fmt.Errorf("não é seguro desinstalar %s: instalação apenas detectada", profile.Name)
 	}
@@ -72,11 +74,14 @@ func Uninstall(ctx context.Context, name string, options Options) (Result, error
 	if strategy == "" {
 		strategy = profile.InstallKind
 	}
+	progress(options, fmt.Sprintf("Removendo %s", profile.Name))
 	runner := options.Runner
 	if runner == nil {
 		runner = ExecRunner{}
 	}
 	removedFiles, preservedFiles, removeErr := uninstallStrategy(ctx, runner, options, strategy, record)
+	result.Paths = append(removedFiles, preservedFiles...)
+	result.Conflicts = append([]string(nil), preservedFiles...)
 	if removeErr != nil {
 		record.State = "failed"
 		record.LastError = removeErr.Error()
@@ -96,6 +101,7 @@ func Uninstall(ctx context.Context, name string, options Options) (Result, error
 	if len(record.PreservedFiles) > 0 {
 		record.State = "modified"
 	}
+	progress(options, fmt.Sprintf("Desinstalação de %s concluída", profile.Name))
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
 		return result, fmt.Errorf("registrar desinstalação concluída: %w", err)
 	}

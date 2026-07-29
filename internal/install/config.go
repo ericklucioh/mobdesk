@@ -95,6 +95,7 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 		result.State = ConfigStateFailed
 		return result, err
 	}
+	progress(options, "Criando arquivos da configuração")
 
 	createdFiles := []string{}
 	createdPaths := []string{}
@@ -117,6 +118,7 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 		createdFiles = append(createdFiles, file.Path)
 	}
 	for _, plugin := range profile.Plugins {
+		progress(options, "Instalando plugin "+plugin.Name)
 		clone := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "git", "clone", "--filter=blob:none", "--no-checkout", "--", plugin.Repository, plugin.Path)
 		if clone.Err != nil {
 			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, clone.Err)
@@ -132,6 +134,7 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 		}
 	}
 	for _, validation := range profile.Validation {
+		progress(options, "Validando configuração")
 		if command := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", validation.Name, validation.Args...); command.Err != nil {
 			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, command.Err)
 		}
@@ -176,6 +179,7 @@ func removeConfig(ctx context.Context, app string, options Options) (ConfigOpera
 		return result, fmt.Errorf("registro de configuração não pertence ao perfil %s", profile.ID)
 	}
 	runner := runnerFor(options)
+	progress(options, "Removendo configuração")
 	record.State = ConfigStateRemoving
 	if err := SaveConfigurationRecord(options.Paths, record); err != nil {
 		return result, err
@@ -262,6 +266,7 @@ func resolveConfigProfile(app string, options Options) (ConfigProfile, AppProfil
 		result.State = ConfigStateConflict
 		return ConfigProfile{}, appProfile, result, fmt.Errorf("perfil de configuração %q pertence a %s", profile.ID, profile.App)
 	}
+	result.StorageEstimate = profile.StorageEstimate
 	return profile, appProfile, result, nil
 }
 

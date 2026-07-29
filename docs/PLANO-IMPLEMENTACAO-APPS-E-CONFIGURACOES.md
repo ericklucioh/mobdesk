@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 7 concluida; Fase 8 pendente
+**Status:** Fase 8 concluida; Fase 9 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -870,6 +870,20 @@ continuará preenchendo `language` quando aplicável.
 - O schema continua compatível.
 - Erros não corrompem stdout JSON.
 - Operações destrutivas continuam exigindo confirmação na TUI; a CLI informa a operação sem criar confirmação interativa.
+
+### Resultado da Fase 8
+
+- A CLI agora expõe `uninstall`, `config apply` e `config remove`, todos com
+  `--json` e `--progress`.
+- Os resultados preservam o schema 1, mantêm `language` no install e adicionam
+  `target`, `action`, `changed`, `config_state`, `source`, `paths`, `conflicts`
+  e `storage_estimate` quando aplicáveis.
+- Sucesso, conflito, falha parcial, app sem proveniência e runtime Ubuntu
+  remoto retornam um resultado JSON final sem diagnóstico humano no stdout.
+- O progresso usa eventos JSON separados do resultado final; a confirmação
+  destrutiva continua sendo responsabilidade da TUI nas fases seguintes.
+- Testes cobrem argumentos exatos, conversão do contrato, falha estruturada e
+  bloqueio fora do Termux.
 
 ## 16. Fase 9: Status e Reconciliação
 

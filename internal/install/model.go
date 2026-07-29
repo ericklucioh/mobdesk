@@ -82,6 +82,9 @@ type Result struct {
 	Changed         bool             `json:"changed"`
 	State           string           `json:"state"`
 	LogPath         string           `json:"log_path"`
+	Source          string           `json:"source,omitempty"`
+	Paths           []string         `json:"paths,omitempty"`
+	Conflicts       []string         `json:"conflicts,omitempty"`
 	StorageEstimate *StorageEstimate `json:"storage_estimate,omitempty"`
 }
 
@@ -159,15 +162,16 @@ type ConfigPlugin struct {
 }
 
 type ConfigOperationResult struct {
-	SchemaVersion int         `json:"schema_version"`
-	Command       string      `json:"command"`
-	App           string      `json:"app"`
-	Action        string      `json:"action"`
-	Success       bool        `json:"success"`
-	State         ConfigState `json:"state"`
-	Changed       bool        `json:"changed"`
-	Message       string      `json:"message"`
-	Profile       string      `json:"profile,omitempty"`
-	Conflicts     []string    `json:"conflicts,omitempty"`
-	Paths         []string    `json:"paths,omitempty"`
+	SchemaVersion   int              `json:"schema_version"`
+	Command         string           `json:"command"`
+	App             string           `json:"app"`
+	Action          string           `json:"action"`
+	Success         bool             `json:"success"`
+	State           ConfigState      `json:"state"`
+	Changed         bool             `json:"changed"`
+	Message         string           `json:"message"`
+	Profile         string           `json:"profile,omitempty"`
+	StorageEstimate *StorageEstimate `json:"storage_estimate,omitempty"`
+	Conflicts       []string         `json:"conflicts,omitempty"`
+	Paths           []string         `json:"paths,omitempty"`
 }

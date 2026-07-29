@@ -75,9 +75,13 @@ func installOperationResult(result install.Result, installErr error) operationRe
 		Command:         "install",
 		Success:         installErr == nil,
 		State:           result.State,
+		Target:          result.Language,
+		Action:          "install",
+		Changed:         result.Changed,
 		Language:        result.Language,
 		Version:         result.Version,
 		LogPath:         result.LogPath,
+		Source:          result.Source,
 		StorageEstimate: result.StorageEstimate,
 		Message:         "Ferramenta instalada",
 	}

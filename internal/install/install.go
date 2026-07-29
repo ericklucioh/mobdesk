@@ -205,6 +205,7 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		Executable:      language.Executable,
 		State:           "installing",
 		LogPath:         logPath,
+		Source:          "mobdesk",
 		StorageEstimate: language.StorageEstimate,
 	}
 	record := InstallationRecord{
