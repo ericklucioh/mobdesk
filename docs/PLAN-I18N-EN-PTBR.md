@@ -1,6 +1,6 @@
 # English-First Localization and Documentation Migration Plan
 
-**Status:** Phase 3 complete; Phase 4 pending.
+**Status:** Phase 4 complete; Phase 5 pending.
 
 **Primary locale:** `en-US`
 
@@ -322,6 +322,19 @@ Acceptance criteria:
 - Popup hit-tests use the rendered locale and do not depend on fixed English or
   Portuguese text.
 - Narrow terminals do not overflow in either locale.
+
+#### Phase 4 Result
+
+- The Bubble Tea model stores one selected `i18n.Localizer`, and real child
+  commands, including the interactive shell, receive that locale explicitly.
+- Every TUI screen, popup, modal, status label, operation state, progress
+  message, help label, button and Termux/remote restriction renders through
+  bilingual message IDs; machine states and action IDs remain stable.
+- Mock backends use the selected locale without executing host commands.
+- Mouse targets are derived from localized rendered labels and geometry,
+  including app rows, popup actions, confirmations and header navigation.
+- Focused tests cover both locales, keyboard and mouse confirmations, popup
+  actions, remote restrictions and narrow terminals.
 
 ### Phase 5: Complete Code, Script and Test Migration
 

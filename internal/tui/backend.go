@@ -2,8 +2,6 @@ package tui
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"sync"
 	"time"
 
@@ -46,7 +44,7 @@ func (b *realBackend) OperationCmd(args ...string) tea.Cmd {
 }
 
 func (b *realBackend) ShellCmd() tea.Cmd {
-	return realShellCommand(b.ctx)
+	return realShellCommand(b.ctx, b.locale)
 }
 
 func (b *realBackend) Cancel() {
@@ -57,22 +55,27 @@ func (b *realBackend) Cancel() {
 // Supported scenarios are healthy, degraded and error. Unknown values use
 // healthy so a typo never prevents the TUI from opening.
 func NewMockBackend(scenario string) Backend {
-	return newMockBackend(scenario)
+	return newMockBackend(scenario, i18n.LocaleENUS)
+}
+
+func NewMockBackendLocale(scenario string, locale i18n.Locale) Backend {
+	return newMockBackend(scenario, locale)
 }
 
 type mockBackend struct {
-	mu       sync.Mutex
-	scenario string
-	status   status.SystemStatus
-	info     version.Info
+	mu        sync.Mutex
+	scenario  string
+	localizer i18n.Localizer
+	status    status.SystemStatus
+	info      version.Info
 }
 
-func newMockBackend(scenario string) *mockBackend {
+func newMockBackend(scenario string, locale i18n.Locale) *mockBackend {
 	if scenario != "degraded" && scenario != "error" {
 		scenario = "healthy"
 	}
 	value := mockStatus(scenario)
-	return &mockBackend{scenario: scenario, status: value, info: version.Current()}
+	return &mockBackend{scenario: scenario, localizer: i18n.New(locale), status: value, info: version.Current()}
 }
 
 func (m *mockBackend) StatusCmd() tea.Cmd {
@@ -97,18 +100,18 @@ func (m *mockBackend) OperationCmd(args ...string) tea.Cmd {
 		time.Sleep(700 * time.Millisecond)
 		m.mu.Lock()
 		defer m.mu.Unlock()
-		if err := validateMockOperation(args); err != nil {
+		if err := validateMockOperation(args, m.localizer); err != nil {
 			return operationMessage{command: command, err: err}
 		}
 
 		if m.scenario == "error" {
 			return operationMessage{
 				command: command,
-				err:     errors.New(mockError(command)),
+				err:     i18n.NewError(i18n.ErrorOperationFailed, "mock_operation_failed", map[string]any{"Detail": mockError(m.localizer, command)}, nil),
 			}
 		}
 
-		result := operationResult{Success: true, State: "completed", Message: mockSuccess(command)}
+		result := operationResult{Success: true, State: "completed", Message: mockSuccess(m.localizer, command)}
 		switch command {
 		case "start":
 			m.status.SSH.Running = true
@@ -126,20 +129,20 @@ func (m *mockBackend) OperationCmd(args ...string) tea.Cmd {
 			m.status.Ubuntu.Accessible = true
 			m.status.Ubuntu.Workspace = true
 			if upgradeOnly {
-				result.Message = "Upgrade mock concluído"
+				result.Message = m.localizer.Text(i18n.TUIOperationCompleted, nil)
 			}
 		case "update":
 			result.CurrentVersion = m.info.Version
 			result.LatestVersion = m.info.Version
 			if checkOnly {
 				result.State = "current"
-				result.Message = "Nenhuma atualização pendente"
+				result.Message = m.localizer.Text(i18n.OutputUpdateCurrent, map[string]any{"Version": m.info.Version})
 			} else {
 				result.State = "updated"
 				result.Updated = true
 				result.LatestVersion = "mock-2.0"
 				m.info.Version = result.LatestVersion
-				result.Message = "Atualização mock concluída"
+				result.Message = m.localizer.Text(i18n.TUIOperationCompleted, nil)
 			}
 		case "install":
 			if len(args) > 1 {
@@ -163,9 +166,9 @@ func (m *mockBackend) OperationCmd(args ...string) tea.Cmd {
 	}
 }
 
-func validateMockOperation(args []string) error {
+func validateMockOperation(args []string, localizer i18n.Localizer) error {
 	if len(args) == 0 {
-		return errors.New("operação mock sem comando")
+		return i18n.NewError(i18n.ErrorInvalidArgs, "mock_invalid_args", map[string]any{"Detail": "missing command"}, nil)
 	}
 	command := args[0]
 	switch command {
@@ -173,23 +176,23 @@ func validateMockOperation(args []string) error {
 		return nil
 	case "install":
 		if len(args) < 2 || args[1] == "" {
-			return errors.New("mobdesk install exige uma linguagem")
+			return i18n.NewError(i18n.ErrorInvalidArgs, "mock_invalid_args", map[string]any{"Detail": localizer.Text(i18n.CommandInstallUse, nil)}, nil)
 		}
 		return nil
 	case "uninstall":
 		if len(args) < 2 || args[1] == "" {
-			return errors.New("mobdesk uninstall exige um app")
+			return i18n.NewError(i18n.ErrorInvalidArgs, "mock_invalid_args", map[string]any{"Detail": localizer.Text(i18n.CommandUninstallUse, nil)}, nil)
 		}
 		return nil
 	case "config":
 		if len(args) < 3 || (args[1] != "apply" && args[1] != "remove") || args[2] == "" {
-			return errors.New("mobdesk config exige apply/remove e um app")
+			return i18n.NewError(i18n.ErrorInvalidArgs, "mock_invalid_args", map[string]any{"Detail": localizer.Text(i18n.CommandConfigApplyUse, nil)}, nil)
 		}
 		return nil
 	case "setup", "update":
 		return nil
 	default:
-		return fmt.Errorf("comando mock inexistente no CLI: %s", command)
+		return i18n.NewError(i18n.ErrorUnknownCommand, "mock_unknown_command", map[string]any{"Command": command}, nil)
 	}
 }
 
@@ -208,7 +211,7 @@ func (m *mockBackend) ShellCmd() tea.Cmd {
 		return operationMessage{command: "shell", result: operationResult{
 			Success: true,
 			State:   "completed",
-			Message: "Shell mock encerrado",
+			Message: m.localizer.Text(i18n.TUIOperationCompleted, nil),
 		}}
 	}
 }
@@ -308,23 +311,23 @@ func mockStatus(scenario string) status.SystemStatus {
 
 func intPointer(value int) *int { return &value }
 
-func mockSuccess(command string) string {
+func mockSuccess(localizer i18n.Localizer, command string) string {
 	switch command {
 	case "start":
-		return "Workstation mock iniciada"
+		return localizer.Text(i18n.TUIOperationCompleted, nil)
 	case "stop":
-		return "Workstation mock parada"
+		return localizer.Text(i18n.TUIOperationCompleted, nil)
 	case "setup":
-		return "Setup mock concluído"
+		return localizer.Text(i18n.TUIOperationCompleted, nil)
 	case "update":
-		return "Atualização mock concluída"
+		return localizer.Text(i18n.TUIOperationCompleted, nil)
 	case "install":
-		return "Ferramenta mock instalada"
+		return localizer.Text(i18n.TUIOperationInstalled, map[string]any{"Name": "tool"})
 	default:
-		return fmt.Sprintf("Operação mock %s concluída", command)
+		return localizer.Text(i18n.TUIOperationCompleted, nil)
 	}
 }
 
-func mockError(command string) string {
-	return fmt.Sprintf("falha simulada na operação %s", command)
+func mockError(localizer i18n.Localizer, command string) string {
+	return localizer.Text(i18n.ErrorOperationFailed, map[string]any{"Detail": command})
 }

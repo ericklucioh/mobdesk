@@ -5,6 +5,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
 
 type toolListItem struct {
@@ -18,6 +19,10 @@ func (i toolListItem) FilterValue() string {
 }
 
 func renderToolItem(value toolListItem, index, selected, width int) string {
+	return renderToolItemLocalized(value, index, selected, width, i18n.New(i18n.LocaleENUS))
+}
+
+func renderToolItemLocalized(value toolListItem, index, selected, width int, localizer i18n.Localizer) string {
 	width = max(20, width)
 	innerWidth := max(1, width-4)
 	contentWidth := max(1, innerWidth-4) // borda e padding horizontal
@@ -33,7 +38,7 @@ func renderToolItem(value toolListItem, index, selected, width int) string {
 	}
 	app := ansi.Truncate(toolAppLabel(value.entry), leftWidth, "…")
 	phrase := ansi.Truncate(value.entry.profile.Description, leftWidth, "…")
-	state := ansi.Truncate(toolDisplayState(value.installed, value.installing), stateWidth, "…")
+	state := ansi.Truncate(toolDisplayStateLocalized(value.installed, value.installing, localizer), stateWidth, "…")
 	stateStyle := bodyStyle.Bold(true)
 	if value.installed {
 		stateStyle = stateStyle.Foreground(lipgloss.Color(colorGreen))
@@ -53,6 +58,10 @@ func renderToolItem(value toolListItem, index, selected, width int) string {
 }
 
 func renderToolItems(items []toolListItem, selected, width, height int) string {
+	return renderToolItemsLocalized(items, selected, width, height, i18n.New(i18n.LocaleENUS))
+}
+
+func renderToolItemsLocalized(items []toolListItem, selected, width, height int, localizer i18n.Localizer) string {
 	if len(items) == 0 {
 		return ""
 	}
@@ -62,17 +71,21 @@ func renderToolItems(items []toolListItem, selected, width, height int) string {
 	end := min(len(items), start+perPage)
 	views := make([]string, 0, end-start)
 	for index := start; index < end; index++ {
-		views = append(views, renderToolItem(items[index], index, selected, width))
+		views = append(views, renderToolItemLocalized(items[index], index, selected, width, localizer))
 	}
 	return strings.Join(views, "\n")
 }
 
 func toolDisplayState(installed, installing bool) string {
+	return toolDisplayStateLocalized(installed, installing, i18n.New(i18n.LocaleENUS))
+}
+
+func toolDisplayStateLocalized(installed, installing bool, localizer i18n.Localizer) string {
 	if installed {
-		return "instalado"
+		return localizer.Text(i18n.TUIToolStateInstalled, nil)
 	}
 	if installing {
-		return "Instalando"
+		return localizer.Text(i18n.TUIToolStateInstalling, nil)
 	}
-	return "instalar"
+	return localizer.Text(i18n.TUIToolStateInstall, nil)
 }

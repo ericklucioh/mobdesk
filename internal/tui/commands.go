@@ -187,12 +187,12 @@ func appendLocale(args []string, locale i18n.Locale) []string {
 	return append(result, "--locale", string(locale))
 }
 
-func realShellCommand(ctx context.Context) tea.Cmd {
+func realShellCommand(ctx context.Context, locale i18n.Locale) tea.Cmd {
 	binary, err := os.Executable()
 	if err != nil {
 		return func() tea.Msg { return operationMessage{command: "shell", err: err} }
 	}
-	return tea.ExecProcess(exec.CommandContext(ctx, binary, "shell"), func(err error) tea.Msg {
+	return tea.ExecProcess(exec.CommandContext(ctx, binary, appendLocale([]string{"shell"}, locale)...), func(err error) tea.Msg {
 		return operationMessage{command: "shell", err: err}
 	})
 }

@@ -1,13 +1,13 @@
 package tui
 
 import (
-	"fmt"
 	"strings"
 	"unicode/utf8"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/status"
 )
@@ -21,7 +21,7 @@ type popupAction struct {
 }
 
 func (m Model) popupEntry() (toolEntry, bool) {
-	entries := toolEntries("")
+	entries := toolEntriesLocalized("", m.localizer)
 	if m.popupAppIndex < 0 || m.popupAppIndex >= len(entries) {
 		return toolEntry{}, false
 	}
@@ -46,10 +46,56 @@ func (m Model) popupConfiguration(entry toolEntry) (status.ConfigurationStatus, 
 	return status.ConfigurationStatus{}, false
 }
 
+func (m Model) configStateLabel(value status.ConfigState) string {
+	id := i18n.TUIPopupConfigState
+	switch value {
+	case status.ConfigStateUnavailable:
+		id = i18n.TUIPopupConfigUnavailableState
+	case status.ConfigStateNotApplied:
+		id = i18n.TUIPopupConfigNotApplied
+	case status.ConfigStateApplying:
+		id = i18n.TUIPopupConfigApplying
+	case status.ConfigStateApplied:
+		id = i18n.TUIPopupConfigApplied
+	case status.ConfigStateRemoving:
+		id = i18n.TUIPopupConfigRemoving
+	case status.ConfigStateRemoved:
+		id = i18n.TUIPopupConfigRemoved
+	case status.ConfigStateModified:
+		id = i18n.TUIPopupConfigModified
+	case status.ConfigStateConflict:
+		id = i18n.TUIPopupConfigConflict
+	case status.ConfigStateFailed:
+		id = i18n.TUIPopupConfigFailed
+	}
+	return m.text(id, nil)
+}
+
+func (m Model) appStateLabel(value string) string {
+	id := i18n.TUIPopupConfigState
+	switch value {
+	case "available":
+		id = i18n.TUIPopupAppStateAvailable
+	case "installing":
+		id = i18n.TUIPopupAppStateInstalling
+	case "installed":
+		id = i18n.TUIPopupAppStateInstalled
+	case "uninstalling":
+		id = i18n.TUIPopupAppStateUninstalling
+	case "uninstalled":
+		id = i18n.TUIPopupAppStateUninstalled
+	case "partial":
+		id = i18n.TUIPopupAppStatePartial
+	case "failed":
+		id = i18n.TUIPopupAppStateFailed
+	}
+	return m.text(id, map[string]any{"Value": value})
+}
+
 func (m Model) popupActions() []popupAction {
 	entry, ok := m.popupEntry()
 	if !ok {
-		return []popupAction{{ID: "close", Label: "Fechar", Enabled: true}}
+		return []popupAction{{ID: "close", Label: m.text(i18n.TUIPopupClose, nil), Enabled: true}}
 	}
 	installation, installed := m.popupInstallation(entry)
 	configuration, hasConfig := m.popupConfiguration(entry)
@@ -59,49 +105,49 @@ func (m Model) popupActions() []popupAction {
 	}
 	actions := make([]popupAction, 0, 5)
 	if !installed || installation.State != "installed" {
-		actions = append(actions, popupAction{ID: "install", Label: "Instalar", Enabled: m.canManageHost(), Reason: hostActionReason(m.canManageHost())})
+		actions = append(actions, popupAction{ID: "install", Label: m.text(i18n.TUIPopupInstall, nil), Enabled: m.canManageHost(), Reason: m.hostActionReason(m.canManageHost())})
 	} else {
-		reason := "O app já está instalado"
+		reason := m.text(i18n.TUIPopupAlreadyInstalled, nil)
 		if !m.canManageHost() {
-			reason = hostActionUnavailableMessage
+			reason = m.text(i18n.TUIHostRestriction, nil)
 		}
-		actions = append(actions, popupAction{ID: "install", Label: "Instalar", Reason: reason})
+		actions = append(actions, popupAction{ID: "install", Label: m.text(i18n.TUIPopupInstall, nil), Reason: reason})
 	}
 	managed := installed && installation.State == "installed" && installation.Managed && installation.Source == "mobdesk"
-	uninstallReason := "O app foi apenas detectado; não há proveniência segura"
+	uninstallReason := m.text(i18n.TUIPopupDetectedReason, nil)
 	if !installed || installation.State != "installed" {
-		uninstallReason = "Instale o app antes de desinstalá-lo"
+		uninstallReason = m.text(i18n.TUIPopupInstallFirst, nil)
 	} else if managed && m.canManageHost() {
 		uninstallReason = ""
 	}
-	actions = append(actions, popupAction{ID: "uninstall", Label: "Desinstalar", Enabled: managed && m.canManageHost(), Destructive: true, Reason: uninstallReason})
+	actions = append(actions, popupAction{ID: "uninstall", Label: m.text(i18n.TUIPopupUninstall, nil), Enabled: managed && m.canManageHost(), Destructive: true, Reason: uninstallReason})
 	if entry.profile.ConfigProfile != "" {
 		reason := ""
 		enabled := installed && installation.State == "installed" && hasConfig && configuration.State != status.ConfigStateApplied && configuration.State != status.ConfigStateModified && configuration.State != status.ConfigStateConflict && m.canManageHost()
 		if !installed || installation.State != "installed" {
-			reason = "Instale o app antes de aplicar a configuração"
+			reason = m.text(i18n.TUIPopupInstallFirst, nil)
 		} else if configuration.State == status.ConfigStateConflict {
-			reason = "A configuração existente gera conflito"
+			reason = m.text(i18n.TUIPopupConflict, nil)
 		} else if !m.canManageHost() {
-			reason = hostActionUnavailableMessage
+			reason = m.text(i18n.TUIHostRestriction, nil)
 		}
-		actions = append(actions, popupAction{ID: "config_apply", Label: "Adicionar configuração Mobdesk", Enabled: enabled, Reason: reason})
+		actions = append(actions, popupAction{ID: "config_apply", Label: m.text(i18n.TUIPopupApplyConfig, nil), Enabled: enabled, Reason: reason})
 		removeEnabled := installed && (configuration.State == status.ConfigStateApplied || configuration.State == status.ConfigStateModified) && m.canManageHost()
-		removeReason := "A configuração ainda não foi aplicada"
+		removeReason := m.text(i18n.TUIPopupNotApplied, nil)
 		if !m.canManageHost() {
-			removeReason = hostActionUnavailableMessage
+			removeReason = m.text(i18n.TUIHostRestriction, nil)
 		}
-		actions = append(actions, popupAction{ID: "config_remove", Label: "Remover configuração Mobdesk", Enabled: removeEnabled, Destructive: true, Reason: removeReason})
+		actions = append(actions, popupAction{ID: "config_remove", Label: m.text(i18n.TUIPopupRemoveConfig, nil), Enabled: removeEnabled, Destructive: true, Reason: removeReason})
 	}
-	actions = append(actions, popupAction{ID: "close", Label: "Fechar", Enabled: true})
+	actions = append(actions, popupAction{ID: "close", Label: m.text(i18n.TUIPopupClose, nil), Enabled: true})
 	return actions
 }
 
-func hostActionReason(manageable bool) string {
+func (m Model) hostActionReason(manageable bool) string {
 	if manageable {
 		return ""
 	}
-	return hostActionUnavailableMessage
+	return m.text(i18n.TUIHostRestriction, nil)
 }
 
 func popupWrap(text string, width int) string {
@@ -109,14 +155,18 @@ func popupWrap(text string, width int) string {
 }
 
 func popupActionLabel(action popupAction, width int) string {
+	return popupActionLabelLocalized(action, width, i18n.New(i18n.LocaleENUS))
+}
+
+func popupActionLabelLocalized(action popupAction, width int, localizer i18n.Localizer) string {
 	if width < 32 {
 		switch action.ID {
 		case "uninstall":
-			return "[ Remover app ]"
+			return localizer.Text(i18n.TUIPopupUninstallShort, nil)
 		case "config_apply":
-			return "[ Aplicar config ]"
+			return localizer.Text(i18n.TUIPopupApplyConfigShort, nil)
 		case "config_remove":
-			return "[ Remover config ]"
+			return localizer.Text(i18n.TUIPopupRemoveConfigShort, nil)
 		}
 	}
 	return "[ " + action.Label + " ]"
@@ -134,48 +184,48 @@ func (m Model) renderAppPopup() string {
 		configuration = status.ConfigurationStatus{State: status.ConfigStateNotApplied, Profile: entry.profile.ConfigProfile}
 		hasConfig = true
 	}
-	state, source, version := "disponível", "não instalado", "não detectada"
+	state, source, version := m.text(i18n.TUIPopupAppAvailable, nil), m.text(i18n.TUIPopupNotInstalled, nil), m.text(i18n.TUIPopupNotDetected, nil)
 	if installed {
-		state, source = installation.State, installation.Source
+		state, source = m.appStateLabel(installation.State), installation.Source
 		if source == "mobdesk" {
-			source = "Mobdesk"
+			source = m.text(i18n.TUIPopupMobdesk, nil)
 		} else if source == "detected" {
-			source = "detectado"
+			source = m.text(i18n.TUIPopupDetected, nil)
 		}
 		if installation.Version != "" {
 			version = installation.Version
 		}
 	}
 	var builder strings.Builder
-	builder.WriteString(tagStyle.Render("DETALHES DO APP") + "\n")
+	builder.WriteString(tagStyle.Render(m.text(i18n.TUIPopupTag, nil)) + "\n")
 	builder.WriteString(titleStyle.Render(toolAppLabel(entry)) + "\n")
 	builder.WriteString(popupWrap(entry.profile.Description, width-8) + "\n\n")
-	builder.WriteString(popupWrap(fmt.Sprintf("Estado: %s\nOrigem: %s\nVersão: %s", state, source, version), width-8) + "\n")
+	builder.WriteString(popupWrap(strings.Join([]string{m.text(i18n.TUIPopupState, map[string]any{"Value": state}), m.text(i18n.TUIPopupSource, map[string]any{"Value": source}), m.text(i18n.TUIPopupVersion, map[string]any{"Value": version})}, "\n"), width-8) + "\n")
 	if len(entry.profile.Requires) > 0 {
-		builder.WriteString(popupWrap("Dependências: "+strings.Join(entry.profile.Requires, ", "), width-8) + "\n")
+		builder.WriteString(popupWrap(m.text(i18n.TUIPopupDependencies, map[string]any{"Value": strings.Join(entry.profile.Requires, ", ")}), width-8) + "\n")
 	}
 	if hasConfig {
-		builder.WriteString(popupWrap(fmt.Sprintf("Configuração Mobdesk: %s", configuration.State), width-8) + "\n")
+		builder.WriteString(popupWrap(m.text(i18n.TUIPopupConfig, map[string]any{"Value": m.configStateLabel(configuration.State)}), width-8) + "\n")
 		if len(configuration.ManagedPaths) > 0 {
-			builder.WriteString(popupWrap("Caminhos: "+strings.Join(configuration.ManagedPaths, ", "), width-8) + "\n")
+			builder.WriteString(popupWrap(m.text(i18n.TUIPopupPaths, map[string]any{"Value": strings.Join(configuration.ManagedPaths, ", ")}), width-8) + "\n")
 		}
 		profile := install.DefaultConfigProfiles()[entry.profile.ConfigProfile]
 		if len(profile.ManagedPlugins) > 0 {
-			builder.WriteString(popupWrap(fmt.Sprintf("Plugins gerenciados: %d", len(profile.ManagedPlugins)), width-8) + "\n")
+			builder.WriteString(popupWrap(m.text(i18n.TUIPopupPlugins, map[string]any{"Count": len(profile.ManagedPlugins)}), width-8) + "\n")
 		}
 	} else {
-		builder.WriteString(popupWrap("Configuração Mobdesk: indisponível", width-8) + "\n")
+		builder.WriteString(popupWrap(m.text(i18n.TUIPopupConfigUnavailable, nil), width-8) + "\n")
 	}
 	if estimate := entry.profile.StorageEstimate; estimate != nil {
-		builder.WriteString(popupWrap(fmt.Sprintf("Armazenamento: app %d-%d MB · dependências %d-%d MB · config %d-%d MB", estimate.AppMinMB, estimate.AppMaxMB, estimate.DependenciesMinMB, estimate.DependenciesMaxMB, estimate.ConfigMinMB, estimate.ConfigMaxMB), width-8) + "\n")
-		builder.WriteString(popupWrap(fmt.Sprintf("Total estimado: %d-%d MB", estimate.TotalMinMB(), estimate.TotalMaxMB()), width-8) + "\n")
+		builder.WriteString(popupWrap(m.text(i18n.TUIPopupStorage, map[string]any{"AppMin": estimate.AppMinMB, "AppMax": estimate.AppMaxMB, "DepMin": estimate.DependenciesMinMB, "DepMax": estimate.DependenciesMaxMB, "ConfigMin": estimate.ConfigMinMB, "ConfigMax": estimate.ConfigMaxMB}), width-8) + "\n")
+		builder.WriteString(popupWrap(m.text(i18n.TUIPopupStorageTotal, map[string]any{"Min": estimate.TotalMinMB(), "Max": estimate.TotalMaxMB()}), width-8) + "\n")
 	}
 	if m.popupMessage != "" {
 		builder.WriteString("\n" + statusColor("warning").Render(popupWrap(m.popupMessage, width-8)) + "\n")
 	}
-	builder.WriteString("\nAções\n")
+	builder.WriteString("\n" + m.text(i18n.TUIPopupActions, nil) + "\n")
 	for index, action := range m.popupActions() {
-		label := popupActionLabel(action, width)
+		label := popupActionLabelLocalized(action, width, m.localizer)
 		style := mutedStyle
 		if action.Enabled {
 			style = buttonStyle
@@ -190,13 +240,13 @@ func (m Model) renderAppPopup() string {
 		builder.WriteString(line + "\n")
 	}
 	if m.popupConfirm {
-		builder.WriteString("\n" + modalStyle.Render("Confirmar ação destrutiva?\n\n[ Y ] Sim     [ N ] Não"))
+		builder.WriteString("\n" + modalStyle.Render(m.text(i18n.TUIPopupConfirm, nil)+"\n\n"+m.text(i18n.TUIConfirmationYes, nil)+"     "+m.text(i18n.TUIConfirmationNo, nil)))
 	}
 	return lipgloss.PlaceHorizontal(width, lipgloss.Center, modalStyle.Width(max(10, width-8)).Render(builder.String()))
 }
 
 func (m *Model) openAppPopup(index int) {
-	entries := toolEntries("")
+	entries := toolEntriesLocalized("", m.localizer)
 	if index < 0 || index >= len(entries) {
 		return
 	}
@@ -226,7 +276,7 @@ func (m Model) updatePopupKey(key string) (tea.Model, tea.Cmd) {
 		case "n", "N", "esc":
 			m.popupConfirm = false
 			m.popupAction = ""
-			m.popupMessage = "Ação cancelada"
+			m.popupMessage = m.text(i18n.TUIActionCancelled, nil)
 		}
 		return m, nil
 	}
@@ -291,11 +341,11 @@ func (m Model) dispatchPopupAction(action string) (tea.Model, tea.Cmd) {
 func (m Model) popupActionAt(lines []string, bodyIndex, x int) (int, bool) {
 	actions := m.popupActions()
 	for index, action := range actions {
-		label := popupActionLabel(action, contentWidth(m.width))
+		label := popupActionLabelLocalized(action, contentWidth(m.width), m.localizer)
 		for position, line := range lines {
 			plain := ansi.Strip(line)
 			start := strings.Index(plain, label)
-			if start < 0 || bodyIndex != position {
+			if start < 0 || bodyIndex < position-1 || bodyIndex > position+1 {
 				continue
 			}
 			first := utf8.RuneCountInString(plain[:start])
@@ -308,18 +358,18 @@ func (m Model) popupActionAt(lines []string, bodyIndex, x int) (int, bool) {
 	return 0, false
 }
 
-func popupConfirmationMouseAction(lines []string, bodyIndex, x int) string {
+func (m Model) popupConfirmationMouseAction(lines []string, bodyIndex, x int) string {
 	for _, candidate := range []struct {
 		label  string
 		action string
 	}{
-		{label: "[ Y ] Sim", action: "y"},
-		{label: "[ N ] Não", action: "n"},
+		{label: m.text(i18n.TUIConfirmationYes, nil), action: "y"},
+		{label: m.text(i18n.TUIConfirmationNo, nil), action: "n"},
 	} {
 		for position, line := range lines {
 			plain := ansi.Strip(line)
 			start := strings.Index(plain, candidate.label)
-			if start < 0 || position != bodyIndex {
+			if start < 0 || bodyIndex < position-1 || bodyIndex > position+1 {
 				continue
 			}
 			first := utf8.RuneCountInString(plain[:start])

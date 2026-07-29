@@ -16,7 +16,7 @@ func newTUICmd(state *commandState) *cobra.Command {
 		localizer := commandLocalizer(state, cmd)
 		model := tui.NewWithLocale(localizer.Locale, p)
 		if mock {
-			model = tui.NewWithBackendLocale(tui.NewMockBackend(scenario), localizer.Locale, p)
+			model = tui.NewWithBackendLocale(tui.NewMockBackendLocale(scenario, localizer.Locale), localizer.Locale, p)
 		}
 		_, err := model.Run()
 		return err

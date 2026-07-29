@@ -4,53 +4,54 @@ import (
 	"strings"
 
 	"charm.land/lipgloss/v2"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
 
 func (m Model) renderSystem() string {
 	if !m.canManageHost() {
-		return renderPage("SISTEMA", "Atualizações disponíveis no Termux", "A atualização do Mobdesk altera o binário do host. Saia da sessão SSH e execute mobdesk update no Termux.")
+		return renderPage(m.text(i18n.TUISystemTag, nil), m.text(i18n.TUIHostOnlyTitle, nil), m.text(i18n.TUIHostOnlySystem, nil))
 	}
 	width := contentWidth(m.width)
 	versionValue := valueOr(m.version.Version, "dev")
 	channelValue := valueOr(m.version.Channel, "dev")
-	osValue := valueOr(m.version.OS, "desconhecido")
-	architectureValue := valueOr(m.version.Architecture, "desconhecida")
+	osValue := valueOr(m.version.OS, m.text(i18n.TUIStatusUnknownArchitecture, nil))
+	architectureValue := valueOr(m.version.Architecture, m.text(i18n.TUIStatusUnknownArchitecture, nil))
 
-	check := m.systemAction(0, "Verificar", "[V]")
-	update := m.systemAction(1, "Atualizar", "[A]")
+	check := m.systemAction(0, m.text(i18n.TUISystemCheck, nil), "[V]")
+	update := m.systemAction(1, m.text(i18n.TUISystemUpdate, nil), "[A]")
 	actions := lipgloss.JoinHorizontal(lipgloss.Top, check, "  ", update)
 	if width < 44 {
 		actions = lipgloss.JoinVertical(lipgloss.Left, check, update)
 	}
 
 	details := []string{
-		systemCard(width, "VERSÃO", versionValue),
-		systemCard(width, "CANAL", channelValue),
-		systemCard(width, "PLATAFORMA", osValue+"/"+architectureValue),
+		systemCard(width, m.text(i18n.TUISystemVersion, nil), versionValue),
+		systemCard(width, m.text(i18n.TUISystemChannel, nil), channelValue),
+		systemCard(width, m.text(i18n.TUISystemPlatform, nil), osValue+"/"+architectureValue),
 	}
 	advanced := cardStyle.Width(max(1, width-4)).Render(
-		tagStyle.Render("ÁREA AVANÇADA") + "\n" +
-			titleStyle.Render("Operações protegidas") + "\n" +
-			mutedStyle.Render(wrapText("Ações destrutivas não fazem parte do MVP. O reset do Ubuntu exigirá confirmação explícita.", width-6)),
+		tagStyle.Render(m.text(i18n.TUISystemAdvanced, nil)) + "\n" +
+			titleStyle.Render(m.text(i18n.TUISystemAdvancedTitle, nil)) + "\n" +
+			mutedStyle.Render(wrapText(m.text(i18n.TUISystemAdvancedBody, nil), width-6)),
 	)
 	feedback := ""
 	if m.systemMessage != "" {
 		feedback = cardStyle.Width(max(1, width-4)).Render(
-			tagStyle.Render("RESULTADO") + "\n" +
-				statusColor(m.systemState).Render("● "+systemResultLabel(m.systemState)) + "\n" +
+			tagStyle.Render(m.text(i18n.TUISystemResult, nil)) + "\n" +
+				statusColor(m.systemState).Render("● "+systemResultLabel(m.systemState, m.localizer)) + "\n" +
 				bodyStyle.Render(wrapText(m.systemMessage, width-6)),
 		)
 	}
-	back := m.systemAction(2, "Voltar", "[Esc]")
+	back := m.systemAction(2, m.text(i18n.TUIStatusBack, nil), "[Esc]")
 
 	sections := []string{
-		tagStyle.Render("SISTEMA"),
-		titleStyle.Render("Mobdesk"),
-		mutedStyle.Render(wrapText("Atualizações, versão e informações do aplicativo.", width)),
+		tagStyle.Render(m.text(i18n.TUISystemTag, nil)),
+		titleStyle.Render(m.text(i18n.TUISystemTitle, nil)),
+		mutedStyle.Render(wrapText(m.text(i18n.TUISystemBody, nil), width)),
 		cardStyle.Width(max(1, width-4)).Render(
-			tagStyle.Render("ATUALIZAÇÃO") + "\n" +
-				titleStyle.Render("Mobdesk "+versionValue) + "\n" +
-				mutedStyle.Render("Verifique se há uma versão mais recente.") + "\n\n" +
+			tagStyle.Render(m.text(i18n.TUISystemUpdate, nil)) + "\n" +
+				titleStyle.Render(m.text(i18n.TUISystemTitle, nil)+" "+versionValue) + "\n" +
+				mutedStyle.Render(m.text(i18n.TUISystemUpdateHint, nil)) + "\n\n" +
 				actions,
 		),
 	}
@@ -58,7 +59,7 @@ func (m Model) renderSystem() string {
 		sections = append(sections, feedback)
 	}
 	sections = append(sections,
-		tagStyle.Render("DETALHES DA VERSÃO"),
+		tagStyle.Render(m.text(i18n.TUISystemVersion, nil)),
 		joinCards(details, width),
 		advanced,
 		back,
@@ -66,16 +67,20 @@ func (m Model) renderSystem() string {
 	return strings.Join(sections, "\n\n")
 }
 
-func systemResultLabel(state string) string {
+func systemResultLabel(state string, localizers ...i18n.Localizer) string {
+	localizer := i18n.New(i18n.LocaleENUS)
+	if len(localizers) > 0 {
+		localizer = localizers[0]
+	}
 	switch state {
 	case "current":
-		return "Versão atual"
+		return localizer.Text(i18n.TUISystemCurrent, nil)
 	case "available":
-		return "Atualização disponível"
+		return localizer.Text(i18n.TUISystemAvailable, nil)
 	case "updated":
-		return "Atualização concluída"
+		return localizer.Text(i18n.TUISystemUpdated, nil)
 	default:
-		return "Falha na atualização"
+		return localizer.Text(i18n.TUISystemFailed, nil)
 	}
 }
 

@@ -29,6 +29,7 @@ const (
 // no estado central para que Update e View continuem leves.
 type Model struct {
 	backend           Backend
+	localizer         i18n.Localizer
 	screen            screen
 	status            status.SystemStatus
 	version           version.Info
@@ -73,7 +74,7 @@ func New(values ...paths.Paths) Model {
 
 // NewWithLocale forwards the selected CLI locale to child Mobdesk commands.
 func NewWithLocale(locale i18n.Locale, values ...paths.Paths) Model {
-	return newModel(newRealBackend(locale), tuiPaths(values))
+	return newLocalizedModel(newRealBackend(locale), i18n.New(locale), tuiPaths(values))
 }
 
 // NewWithBackend builds the TUI with an explicit communication backend. It is
@@ -86,7 +87,7 @@ func NewWithBackendLocale(backend Backend, locale i18n.Locale, values ...paths.P
 	if backend == nil {
 		backend = newRealBackend(locale)
 	}
-	return newModel(backend, tuiPaths(values))
+	return newLocalizedModel(backend, i18n.New(locale), tuiPaths(values))
 }
 
 func tuiPaths(values []paths.Paths) paths.Paths {
@@ -97,9 +98,13 @@ func tuiPaths(values []paths.Paths) paths.Paths {
 }
 
 func newModel(backend Backend, p paths.Paths) Model {
+	return newLocalizedModel(backend, i18n.New(i18n.LocaleENUS), p)
+}
+
+func newLocalizedModel(backend Backend, localizer i18n.Localizer, p paths.Paths) Model {
 	setupActions := selector{count: 2}
-	toolsList := selector{count: len(toolEntries(""))}
-	columns := statusTableColumns(40)
+	toolsList := selector{count: len(toolEntriesLocalized("", localizer))}
+	columns := statusTableColumns(40, localizer)
 	statusTable := table.New(table.WithColumns(columns), table.WithRows(nil))
 	tableStyles := table.DefaultStyles()
 	tableStyles.Header = tagStyle.Padding(0, 1)
@@ -111,6 +116,7 @@ func newModel(backend Backend, p paths.Paths) Model {
 	initialStatus := status.SystemStatus{Installations: status.ReadInstallations(p)}
 	return Model{
 		backend:      backend,
+		localizer:    localizer,
 		screen:       homeScreen,
 		status:       initialStatus,
 		statusID:     1,
@@ -145,8 +151,12 @@ func toolAppLabel(entry toolEntry) string {
 }
 
 func toolEntries(kind string) []toolEntry {
+	return toolEntriesLocalized(kind, i18n.New(i18n.LocaleENUS))
+}
+
+func toolEntriesLocalized(kind string, localizer i18n.Localizer) []toolEntry {
 	entries := make([]toolEntry, 0)
-	for _, item := range install.Tools() {
+	for _, item := range install.Tools(localizer) {
 		entry := toolEntry{profile: item, kind: item.Kind}
 		if kind == "" || entry.kind == kind {
 			entries = append(entries, entry)
@@ -156,7 +166,11 @@ func toolEntries(kind string) []toolEntry {
 }
 
 func toolListItems(value status.SystemStatus, installing string) []toolListItem {
-	entries := toolEntries("")
+	return toolListItemsLocalized(value, installing, i18n.New(i18n.LocaleENUS))
+}
+
+func toolListItemsLocalized(value status.SystemStatus, installing string, localizer i18n.Localizer) []toolListItem {
+	entries := toolEntriesLocalized("", localizer)
 	items := make([]toolListItem, 0, len(entries))
 	for _, entry := range entries {
 		items = append(items, toolListItem{

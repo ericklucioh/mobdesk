@@ -213,6 +213,214 @@ const (
 	StatusAppState          MessageID = "status.app_state"
 	StatusConfigState       MessageID = "status.config_state"
 	StatusAlertCounts       MessageID = "status.alert_counts"
+
+	TUIBrand                       MessageID = "tui.brand"
+	TUIStateStopped                MessageID = "tui.state.stopped"
+	TUIStateRunning                MessageID = "tui.state.running"
+	TUIStateOn                     MessageID = "tui.state.on"
+	TUIStateOff                    MessageID = "tui.state.off"
+	TUIHeaderHome                  MessageID = "tui.header.home"
+	TUIHeaderClose                 MessageID = "tui.header.close"
+	TUIFooterScroll                MessageID = "tui.footer.scroll"
+	TUIFooterFocus                 MessageID = "tui.footer.focus"
+	TUIFooterAct                   MessageID = "tui.footer.act"
+	TUIFooterRefresh               MessageID = "tui.footer.refresh"
+	TUIFooterQuit                  MessageID = "tui.footer.quit"
+	TUIHomeTag                     MessageID = "tui.home.tag"
+	TUIHomeRemoteTitle             MessageID = "tui.home.remote_title"
+	TUIHomeRemoteBody              MessageID = "tui.home.remote_body"
+	TUIHomeStatusTitle             MessageID = "tui.home.status_title"
+	TUIHomeStatusDetail            MessageID = "tui.home.status_detail"
+	TUIHomeShellTitle              MessageID = "tui.home.shell_title"
+	TUIHomeShellDetail             MessageID = "tui.home.shell_detail"
+	TUIHomeWorkstationTitle        MessageID = "tui.home.workstation_title"
+	TUIHomeStatusLabel             MessageID = "tui.home.status_label"
+	TUIHomeStart                   MessageID = "tui.home.start"
+	TUIHomeStop                    MessageID = "tui.home.stop"
+	TUIHomeSSHAccess               MessageID = "tui.home.ssh_access"
+	TUIHomeSetupTitle              MessageID = "tui.home.setup_title"
+	TUIHomeSetupDetail             MessageID = "tui.home.setup_detail"
+	TUIHomeAppsTitle               MessageID = "tui.home.apps_title"
+	TUIHomeAppsDetail              MessageID = "tui.home.apps_detail"
+	TUIHomeShellCardTitle          MessageID = "tui.home.shell_card_title"
+	TUIHomeShellCardDetail         MessageID = "tui.home.shell_card_detail"
+	TUIHomeSystemTitle             MessageID = "tui.home.system_title"
+	TUIHomeSystemDetail            MessageID = "tui.home.system_detail"
+	TUIStatusTag                   MessageID = "tui.status.tag"
+	TUIStatusTitle                 MessageID = "tui.status.title"
+	TUIStatusLoading               MessageID = "tui.status.loading"
+	TUIStatusLoadingDetail         MessageID = "tui.status.loading_detail"
+	TUIStatusHost                  MessageID = "tui.status.host"
+	TUIStatusRuntime               MessageID = "tui.status.runtime"
+	TUIStatusAndroidHost           MessageID = "tui.status.android_host"
+	TUIStatusUnknownArchitecture   MessageID = "tui.status.unknown_architecture"
+	TUIStatusRemoteHost            MessageID = "tui.status.remote_host"
+	TUIStatusUbuntuDetail          MessageID = "tui.status.ubuntu_detail"
+	TUIStatusRemoteUbuntuDetail    MessageID = "tui.status.remote_ubuntu_detail"
+	TUIStatusSSHHost               MessageID = "tui.status.ssh_host"
+	TUIStatusResources             MessageID = "tui.status.resources"
+	TUIStatusFreeBattery           MessageID = "tui.status.free_battery"
+	TUIStatusInstallations         MessageID = "tui.status.installations"
+	TUIStatusAlerts                MessageID = "tui.status.alerts"
+	TUIStatusAlertsShort           MessageID = "tui.status.alerts_short"
+	TUIStatusRefresh               MessageID = "tui.status.refresh"
+	TUIStatusRefreshShort          MessageID = "tui.status.refresh_short"
+	TUIStatusBack                  MessageID = "tui.status.back"
+	TUIStatusEnvironment           MessageID = "tui.status.environment"
+	TUIStatusOverall               MessageID = "tui.status.overall"
+	TUIStatusVerified              MessageID = "tui.status.verified"
+	TUIStatusDetails               MessageID = "tui.status.details"
+	TUIStatusItem                  MessageID = "tui.status.item"
+	TUIStatusTableState            MessageID = "tui.status.table_state"
+	TUIStatusArchitecture          MessageID = "tui.status.architecture"
+	TUIStatusWorkspace             MessageID = "tui.status.workspace"
+	TUIStatusSSHPort               MessageID = "tui.status.ssh_port"
+	TUIStatusWakeLock              MessageID = "tui.status.wake_lock"
+	TUIStatusBattery               MessageID = "tui.status.battery"
+	TUIStatusWiFi                  MessageID = "tui.status.wifi"
+	TUIStatusAvailable             MessageID = "tui.status.available"
+	TUIStatusInactive              MessageID = "tui.status.inactive"
+	TUIStatusYes                   MessageID = "tui.status.yes"
+	TUIStatusNo                    MessageID = "tui.status.no"
+	TUIStatusConnected             MessageID = "tui.status.connected"
+	TUIStatusDisconnected          MessageID = "tui.status.disconnected"
+	TUIStatusSSHRunning            MessageID = "tui.status.ssh_running"
+	TUIStatusSSHStopped            MessageID = "tui.status.ssh_stopped"
+	TUIStatusNetworkUnavailable    MessageID = "tui.status.network_unavailable"
+	TUIStatusInstallationsCount    MessageID = "tui.status.installations_count"
+	TUIStatusAlertsCount           MessageID = "tui.status.alerts_count"
+	TUIStatusBatteryNormal         MessageID = "tui.status.battery_normal"
+	TUIStatusBatteryLow            MessageID = "tui.status.battery_low"
+	TUISetupTag                    MessageID = "tui.setup.tag"
+	TUISetupTitle                  MessageID = "tui.setup.title"
+	TUISetupBody                   MessageID = "tui.setup.body"
+	TUISetupContinue               MessageID = "tui.setup.continue"
+	TUISetupUpgrade                MessageID = "tui.setup.upgrade"
+	TUISetupDirectories            MessageID = "tui.setup.directories"
+	TUISetupDirectoriesDetail      MessageID = "tui.setup.directories_detail"
+	TUISetupPackages               MessageID = "tui.setup.packages"
+	TUISetupPackagesDetail         MessageID = "tui.setup.packages_detail"
+	TUISetupUbuntu                 MessageID = "tui.setup.ubuntu"
+	TUISetupUbuntuDetail           MessageID = "tui.setup.ubuntu_detail"
+	TUISetupWorkspace              MessageID = "tui.setup.workspace"
+	TUISetupWorkspaceDetail        MessageID = "tui.setup.workspace_detail"
+	TUISetupAdvanced               MessageID = "tui.setup.advanced"
+	TUISetupAdvancedTitle          MessageID = "tui.setup.advanced_title"
+	TUISetupAdvancedBody           MessageID = "tui.setup.advanced_body"
+	TUISetupAdvancedHint           MessageID = "tui.setup.advanced_hint"
+	TUIToolsTag                    MessageID = "tui.tools.tag"
+	TUIToolsTitle                  MessageID = "tui.tools.title"
+	TUIToolsBody                   MessageID = "tui.tools.body"
+	TUIToolsRemoteTitle            MessageID = "tui.tools.remote_title"
+	TUIToolsRemoteBody             MessageID = "tui.tools.remote_body"
+	TUIToolStateInstalled          MessageID = "tui.tool.state.installed"
+	TUIToolStateInstalling         MessageID = "tui.tool.state.installing"
+	TUIToolStateInstall            MessageID = "tui.tool.state.install"
+	TUIShellTag                    MessageID = "tui.shell.tag"
+	TUIShellTitle                  MessageID = "tui.shell.title"
+	TUIShellBody                   MessageID = "tui.shell.body"
+	TUIShellOpen                   MessageID = "tui.shell.open"
+	TUIShellOpenDetail             MessageID = "tui.shell.open_detail"
+	TUIShellBack                   MessageID = "tui.shell.back"
+	TUIShellBackDetail             MessageID = "tui.shell.back_detail"
+	TUISystemTag                   MessageID = "tui.system.tag"
+	TUISystemTitle                 MessageID = "tui.system.title"
+	TUISystemBody                  MessageID = "tui.system.body"
+	TUISystemUpdate                MessageID = "tui.system.update"
+	TUISystemCheck                 MessageID = "tui.system.check"
+	TUISystemAdvanced              MessageID = "tui.system.advanced"
+	TUISystemAdvancedTitle         MessageID = "tui.system.advanced_title"
+	TUISystemAdvancedBody          MessageID = "tui.system.advanced_body"
+	TUISystemResult                MessageID = "tui.system.result"
+	TUISystemUpdateHint            MessageID = "tui.system.update_hint"
+	TUISystemVersion               MessageID = "tui.system.version"
+	TUISystemChannel               MessageID = "tui.system.channel"
+	TUISystemPlatform              MessageID = "tui.system.platform"
+	TUISystemCurrent               MessageID = "tui.system.current"
+	TUISystemAvailable             MessageID = "tui.system.available"
+	TUISystemUpdated               MessageID = "tui.system.updated"
+	TUISystemFailed                MessageID = "tui.system.failed"
+	TUIOperationStart              MessageID = "tui.operation.start"
+	TUIOperationStop               MessageID = "tui.operation.stop"
+	TUIOperationSetup              MessageID = "tui.operation.setup"
+	TUIOperationSetupUpgrade       MessageID = "tui.operation.setup_upgrade"
+	TUIOperationUpdateCheck        MessageID = "tui.operation.update_check"
+	TUIOperationUpdate             MessageID = "tui.operation.update"
+	TUIOperationUninstall          MessageID = "tui.operation.uninstall"
+	TUIOperationConfigApply        MessageID = "tui.operation.config_apply"
+	TUIOperationConfigRemove       MessageID = "tui.operation.config_remove"
+	TUIOperationInstall            MessageID = "tui.operation.install"
+	TUIOperationRunning            MessageID = "tui.operation.running"
+	TUIOperationWait               MessageID = "tui.operation.wait"
+	TUIOperationPreparingInstall   MessageID = "tui.operation.preparing_install"
+	TUIOperationCompleted          MessageID = "tui.operation.completed"
+	TUIOperationVerified           MessageID = "tui.operation.verified"
+	TUIOperationInstalled          MessageID = "tui.operation.installed"
+	TUIConfirmationExit            MessageID = "tui.confirmation.exit"
+	TUIConfirmationStop            MessageID = "tui.confirmation.stop"
+	TUIConfirmationDestructive     MessageID = "tui.confirmation.destructive"
+	TUIConfirmationYes             MessageID = "tui.confirmation.yes"
+	TUIConfirmationNo              MessageID = "tui.confirmation.no"
+	TUIActionCancelled             MessageID = "tui.action.cancelled"
+	TUIHostRestriction             MessageID = "tui.host.restriction"
+	TUIHostOnlyTitle               MessageID = "tui.host_only.title"
+	TUIHostOnlySetup               MessageID = "tui.host_only.setup"
+	TUIHostOnlyTools               MessageID = "tui.host_only.tools"
+	TUIHostOnlySystem              MessageID = "tui.host_only.system"
+	TUIHostOnlyHomeStatus          MessageID = "tui.host_only.home_status"
+	TUIHostOnlyHomeShell           MessageID = "tui.host_only.home_shell"
+	TUIPopupTag                    MessageID = "tui.popup.tag"
+	TUIPopupState                  MessageID = "tui.popup.state"
+	TUIPopupSource                 MessageID = "tui.popup.source"
+	TUIPopupVersion                MessageID = "tui.popup.version"
+	TUIPopupDependencies           MessageID = "tui.popup.dependencies"
+	TUIPopupConfig                 MessageID = "tui.popup.config"
+	TUIPopupPaths                  MessageID = "tui.popup.paths"
+	TUIPopupPlugins                MessageID = "tui.popup.plugins"
+	TUIPopupConfigUnavailable      MessageID = "tui.popup.config_unavailable"
+	TUIPopupStorage                MessageID = "tui.popup.storage"
+	TUIPopupStorageTotal           MessageID = "tui.popup.storage_total"
+	TUIPopupActions                MessageID = "tui.popup.actions"
+	TUIPopupInstall                MessageID = "tui.popup.install"
+	TUIPopupUninstall              MessageID = "tui.popup.uninstall"
+	TUIPopupApplyConfig            MessageID = "tui.popup.apply_config"
+	TUIPopupRemoveConfig           MessageID = "tui.popup.remove_config"
+	TUIPopupClose                  MessageID = "tui.popup.close"
+	TUIPopupInstallShort           MessageID = "tui.popup.install_short"
+	TUIPopupUninstallShort         MessageID = "tui.popup.uninstall_short"
+	TUIPopupApplyConfigShort       MessageID = "tui.popup.apply_config_short"
+	TUIPopupRemoveConfigShort      MessageID = "tui.popup.remove_config_short"
+	TUIPopupAlreadyInstalled       MessageID = "tui.popup.already_installed"
+	TUIPopupDetectedReason         MessageID = "tui.popup.detected_reason"
+	TUIPopupInstallFirst           MessageID = "tui.popup.install_first"
+	TUIPopupConflict               MessageID = "tui.popup.conflict"
+	TUIPopupNotApplied             MessageID = "tui.popup.not_applied"
+	TUIPopupConfirm                MessageID = "tui.popup.confirm"
+	TUIPopupDetected               MessageID = "tui.popup.detected"
+	TUIPopupMobdesk                MessageID = "tui.popup.mobdesk"
+	TUIPopupNotInstalled           MessageID = "tui.popup.not_installed"
+	TUIPopupNotDetected            MessageID = "tui.popup.not_detected"
+	TUIPopupAppAvailable           MessageID = "tui.popup.app_available"
+	TUIPopupConfigState            MessageID = "tui.popup.config_state"
+	TUIPopupAppStateAvailable      MessageID = "tui.popup.app_state_available"
+	TUIPopupAppStateInstalling     MessageID = "tui.popup.app_state_installing"
+	TUIPopupAppStateInstalled      MessageID = "tui.popup.app_state_installed"
+	TUIPopupAppStateUninstalling   MessageID = "tui.popup.app_state_uninstalling"
+	TUIPopupAppStateUninstalled    MessageID = "tui.popup.app_state_uninstalled"
+	TUIPopupAppStatePartial        MessageID = "tui.popup.app_state_partial"
+	TUIPopupAppStateFailed         MessageID = "tui.popup.app_state_failed"
+	TUIPopupConfigUnavailableState MessageID = "tui.popup.config_state_unavailable"
+	TUIPopupConfigNotApplied       MessageID = "tui.popup.config_state_not_applied"
+	TUIPopupConfigApplying         MessageID = "tui.popup.config_state_applying"
+	TUIPopupConfigApplied          MessageID = "tui.popup.config_state_applied"
+	TUIPopupConfigRemoving         MessageID = "tui.popup.config_state_removing"
+	TUIPopupConfigRemoved          MessageID = "tui.popup.config_state_removed"
+	TUIPopupConfigModified         MessageID = "tui.popup.config_state_modified"
+	TUIPopupConfigConflict         MessageID = "tui.popup.config_state_conflict"
+	TUIPopupConfigFailed           MessageID = "tui.popup.config_state_failed"
+	TUIErrorUnexpectedOperation    MessageID = "tui.error.unexpected_operation"
+	TUIErrorUnexpectedStatus       MessageID = "tui.error.unexpected_status"
+	TUIErrorInvalidResponse        MessageID = "tui.error.invalid_response"
 )
 
 var requiredMessageIDs = []MessageID{
@@ -332,6 +540,56 @@ var requiredMessageIDs = []MessageID{
 	StatusConnected, StatusDisconnected, StatusOverallHealthy, StatusOverallDegraded,
 	StatusOverallError, StatusOverallUnknown, StatusCheckOK, StatusCheckWarning, StatusCheckError,
 	StatusCheckMissing, StatusCheckUnknown, StatusAppState, StatusConfigState, StatusAlertCounts,
+}
+
+var tuiMessageIDs = []MessageID{
+	TUIBrand, TUIStateStopped, TUIStateRunning, TUIStateOn, TUIStateOff, TUIHeaderHome, TUIHeaderClose,
+	TUIFooterScroll, TUIFooterFocus, TUIFooterAct, TUIFooterRefresh, TUIFooterQuit,
+	TUIHomeTag, TUIHomeRemoteTitle, TUIHomeRemoteBody, TUIHomeStatusTitle, TUIHomeStatusDetail,
+	TUIHomeShellTitle, TUIHomeShellDetail, TUIHomeWorkstationTitle, TUIHomeStatusLabel, TUIHomeStart,
+	TUIHomeStop, TUIHomeSSHAccess, TUIHomeSetupTitle, TUIHomeSetupDetail, TUIHomeAppsTitle,
+	TUIHomeAppsDetail, TUIHomeShellCardTitle, TUIHomeShellCardDetail, TUIHomeSystemTitle, TUIHomeSystemDetail,
+	TUIStatusTag, TUIStatusTitle, TUIStatusLoading, TUIStatusLoadingDetail, TUIStatusHost, TUIStatusRuntime,
+	TUIStatusAndroidHost, TUIStatusUnknownArchitecture, TUIStatusRemoteHost, TUIStatusUbuntuDetail,
+	TUIStatusRemoteUbuntuDetail, TUIStatusSSHHost, TUIStatusResources, TUIStatusFreeBattery,
+	TUIStatusInstallations, TUIStatusAlerts, TUIStatusAlertsShort, TUIStatusRefresh, TUIStatusBack,
+	TUIStatusEnvironment, TUIStatusOverall, TUIStatusVerified, TUIStatusDetails, TUIStatusItem, TUIStatusRefreshShort,
+	TUIStatusTableState, TUIStatusArchitecture, TUIStatusWorkspace, TUIStatusSSHPort, TUIStatusWakeLock,
+	TUIStatusBattery, TUIStatusWiFi, TUIStatusAvailable, TUIStatusInactive, TUIStatusYes, TUIStatusNo,
+	TUIStatusConnected, TUIStatusDisconnected, TUIStatusSSHRunning, TUIStatusSSHStopped,
+	TUIStatusNetworkUnavailable, TUIStatusInstallationsCount, TUIStatusAlertsCount,
+	TUIStatusBatteryNormal, TUIStatusBatteryLow,
+	TUISetupTag, TUISetupTitle, TUISetupBody, TUISetupContinue, TUISetupUpgrade, TUISetupDirectories,
+	TUISetupDirectoriesDetail, TUISetupPackages, TUISetupPackagesDetail, TUISetupUbuntu, TUISetupUbuntuDetail,
+	TUISetupWorkspace, TUISetupWorkspaceDetail, TUISetupAdvanced, TUISetupAdvancedTitle, TUISetupAdvancedBody,
+	TUISetupAdvancedHint, TUIToolsTag, TUIToolsTitle, TUIToolsBody, TUIToolsRemoteTitle, TUIToolsRemoteBody,
+	TUIToolStateInstalled, TUIToolStateInstalling, TUIToolStateInstall, TUIShellTag, TUIShellTitle, TUIShellBody,
+	TUIShellOpen, TUIShellOpenDetail, TUIShellBack, TUIShellBackDetail, TUISystemTag, TUISystemTitle,
+	TUISystemBody, TUISystemUpdate, TUISystemCheck, TUISystemAdvanced, TUISystemAdvancedTitle,
+	TUISystemAdvancedBody, TUISystemResult, TUISystemUpdateHint, TUISystemVersion, TUISystemChannel,
+	TUISystemPlatform, TUISystemCurrent, TUISystemAvailable, TUISystemUpdated, TUISystemFailed,
+	TUIOperationStart, TUIOperationStop, TUIOperationSetup, TUIOperationSetupUpgrade, TUIOperationUpdateCheck,
+	TUIOperationUpdate, TUIOperationUninstall, TUIOperationConfigApply, TUIOperationConfigRemove,
+	TUIOperationInstall, TUIOperationRunning, TUIOperationWait, TUIOperationPreparingInstall,
+	TUIOperationCompleted, TUIOperationVerified, TUIOperationInstalled, TUIConfirmationExit,
+	TUIConfirmationStop, TUIConfirmationDestructive, TUIConfirmationYes, TUIConfirmationNo, TUIActionCancelled,
+	TUIHostRestriction, TUIHostOnlyTitle, TUIHostOnlySetup, TUIHostOnlyTools, TUIHostOnlySystem,
+	TUIHostOnlyHomeStatus, TUIHostOnlyHomeShell, TUIPopupTag, TUIPopupState, TUIPopupSource, TUIPopupVersion,
+	TUIPopupDependencies, TUIPopupConfig, TUIPopupPaths, TUIPopupPlugins, TUIPopupConfigUnavailable,
+	TUIPopupStorage, TUIPopupStorageTotal, TUIPopupActions, TUIPopupInstall, TUIPopupUninstall,
+	TUIPopupApplyConfig, TUIPopupRemoveConfig, TUIPopupClose, TUIPopupInstallShort, TUIPopupUninstallShort,
+	TUIPopupApplyConfigShort, TUIPopupRemoveConfigShort, TUIPopupAlreadyInstalled, TUIPopupDetectedReason,
+	TUIPopupInstallFirst, TUIPopupConflict, TUIPopupNotApplied, TUIPopupConfirm, TUIPopupDetected, TUIPopupMobdesk,
+	TUIPopupNotInstalled, TUIPopupNotDetected, TUIPopupAppAvailable, TUIPopupConfigState,
+	TUIPopupAppStateAvailable, TUIPopupAppStateInstalling, TUIPopupAppStateInstalled,
+	TUIPopupAppStateUninstalling, TUIPopupAppStateUninstalled, TUIPopupAppStatePartial, TUIPopupAppStateFailed,
+	TUIPopupConfigUnavailableState, TUIPopupConfigNotApplied, TUIPopupConfigApplying, TUIPopupConfigApplied,
+	TUIPopupConfigRemoving, TUIPopupConfigRemoved, TUIPopupConfigModified, TUIPopupConfigConflict, TUIPopupConfigFailed,
+	TUIErrorUnexpectedOperation, TUIErrorUnexpectedStatus, TUIErrorInvalidResponse,
+}
+
+func init() {
+	requiredMessageIDs = append(requiredMessageIDs, tuiMessageIDs...)
 }
 
 // MessageError carries a stable code and translatable presentation data across

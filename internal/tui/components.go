@@ -6,22 +6,41 @@ import (
 	"unicode/utf8"
 
 	"github.com/charmbracelet/x/ansi"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
+
+func (m Model) text(id i18n.MessageID, data any) string { return m.localizer.Text(id, data) }
+
+func (m Model) localizedError(err error) string {
+	if err == nil {
+		return ""
+	}
+	if i18n.ErrorMessageID(err) != "" {
+		return m.localizer.Error(err)
+	}
+	return m.text(i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()})
+}
 
 func renderPage(tag, title, body string) string {
 	return tagStyle.Render(tag) + "\n" + titleStyle.Render(title) + "\n" + bodyStyle.Render(body)
 }
 func available(value bool) string {
+	return availableLocalized(value, i18n.New(i18n.LocaleENUS))
+}
+func availableLocalized(value bool, localizer i18n.Localizer) string {
 	if value {
-		return "disponível"
+		return localizer.Text(i18n.TUIStatusAvailable, nil)
 	}
-	return "inativo"
+	return localizer.Text(i18n.TUIStatusInactive, nil)
 }
 func yesNo(value bool) string {
+	return yesNoLocalized(value, i18n.New(i18n.LocaleENUS))
+}
+func yesNoLocalized(value bool, localizer i18n.Localizer) string {
 	if value {
-		return "sim"
+		return localizer.Text(i18n.TUIStatusYes, nil)
 	}
-	return "não"
+	return localizer.Text(i18n.TUIStatusNo, nil)
 }
 func formatBytes(value int64) string {
 	if value < 1024*1024*1024 {
@@ -43,12 +62,14 @@ func touchBlockContainsAt(lines []string, index, x int, text string) bool {
 func blockContainsAtVertical(lines []string, index, x int, text string, verticalPadding int) bool {
 	for position, line := range lines {
 		plain := ansi.Strip(line)
-		start := strings.Index(strings.ToLower(plain), strings.ToLower(text))
+		plainRunes := []rune(strings.ToLower(plain))
+		textRunes := []rune(strings.ToLower(text))
+		start := runeSliceIndex(plainRunes, textRunes)
 		if start < 0 || index < position-verticalPadding || index > position+verticalPadding {
 			continue
 		}
-		first := utf8.RuneCountInString(plain[:start])
-		last := first + utf8.RuneCountInString(text) - 1
+		first := start
+		last := first + len(textRunes) - 1
 		if verticalPadding > 1 {
 			// Large actions on mobile use the full rendered row as the touch target.
 			lineWidth := utf8.RuneCountInString(plain)
@@ -57,6 +78,25 @@ func blockContainsAtVertical(lines []string, index, x int, text string, vertical
 		return x >= first-2 && x <= last+2
 	}
 	return false
+}
+
+func runeSliceIndex(value, needle []rune) int {
+	if len(needle) == 0 || len(needle) > len(value) {
+		return -1
+	}
+	for index := 0; index <= len(value)-len(needle); index++ {
+		match := true
+		for offset := range needle {
+			if value[index+offset] != needle[offset] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return index
+		}
+	}
+	return -1
 }
 
 // blockContainsAtAny é usado quando uma tela repete um rótulo, como "Status"
@@ -78,10 +118,33 @@ func blockContainsAtAny(lines []string, index, x int, text string) bool {
 	return false
 }
 
+func renderedLabelAt(lines []string, index, x int, text string, verticalPadding int) bool {
+	return blockContainsAtVertical(lines, index, x, text, verticalPadding)
+}
+
+func renderedHeaderLabelAt(lines []string, index, x int, text string) bool {
+	if renderedLabelAt(lines, index, x, text, 1) {
+		return true
+	}
+	for position, line := range lines {
+		if position < index-1 || position > index+1 {
+			continue
+		}
+		plain := []rune(ansi.Strip(line))
+		needle := []rune(strings.ToLower(text))
+		lower := []rune(strings.ToLower(string(plain)))
+		start := runeSliceIndex(lower, needle)
+		if start >= 0 && x >= start-2 && x < len(plain) {
+			return true
+		}
+	}
+	return false
+}
+
 func toolRowContainsAt(lines []string, index, x int, label string, width int) bool {
 	for position, line := range lines {
 		plain := ansi.Strip(line)
-		if !containsToolLabel(plain, label) {
+		if !toolAppLineContains(plain, label) {
 			continue
 		}
 		if index >= position && index <= position+1 && x >= 0 && x < width {
@@ -91,27 +154,15 @@ func toolRowContainsAt(lines []string, index, x int, label string, width int) bo
 	return false
 }
 
-func containsToolLabel(line, label string) bool {
-	line = strings.ToLower(line)
-	label = strings.ToLower(label)
-	start := 0
-	for start < len(line) {
-		match := strings.Index(line[start:], label)
-		if match < 0 {
-			return false
+func toolAppLineContains(line, label string) bool {
+	for _, field := range strings.Fields(strings.ToLower(line)) {
+		field = strings.Trim(field, "│")
+		if field == "" {
+			continue
 		}
-		match += start
-		end := match + len(label)
-		if (match == 0 || !toolLabelChar(line[match-1])) && (end == len(line) || !toolLabelChar(line[end])) {
-			return true
-		}
-		start = end
+		return field == strings.ToLower(label)
 	}
 	return false
-}
-
-func toolLabelChar(value byte) bool {
-	return value >= 'a' && value <= 'z' || value >= '0' && value <= '9' || value == '_'
 }
 
 func max(a, b int) int {

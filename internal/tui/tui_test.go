@@ -11,6 +11,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/status"
 )
 
@@ -20,7 +21,7 @@ func TestHomeRendersWorkstationCard(t *testing.T) {
 	model.height = 50
 	model.height = 30
 	view := model.renderScreen()
-	for _, expected := range []string{"INÍCIO", "Workstation SSH", "Status:", "desativado", "Apps e linguagens"} {
+	for _, expected := range []string{model.text(i18n.TUIHomeTag, nil), model.text(i18n.TUIHomeWorkstationTitle, nil), model.text(i18n.TUIHomeStatusLabel, nil), model.text(i18n.TUIStateStopped, nil), model.text(i18n.TUIHomeAppsTitle, nil)} {
 		if !strings.Contains(view, expected) {
 			t.Fatalf("home view does not contain %q: %s", expected, view)
 		}
@@ -55,7 +56,7 @@ func TestToolsUseBorderedTwoLineItemsAndInstallationState(t *testing.T) {
 	model.width = 80
 	model.height = 40
 	view := ansi.Strip(model.renderTools())
-	if !strings.Contains(view, "┌") || !strings.Contains(view, "instalar") {
+	if !strings.Contains(view, "┌") || !strings.Contains(view, model.text(i18n.TUIToolStateInstall, nil)) {
 		t.Fatalf("tools view does not render bordered install items: %s", view)
 	}
 	lines := strings.Split(view, "\n")
@@ -63,13 +64,13 @@ func TestToolsUseBorderedTwoLineItemsAndInstallationState(t *testing.T) {
 	for index, line := range lines {
 		if strings.Contains(line, "go") {
 			goLine = index
-			if !strings.Contains(line, "instalar") {
+			if !strings.Contains(line, model.text(i18n.TUIToolStateInstall, nil)) {
 				t.Fatalf("tool state is not on the App line: %q", line)
 			}
 			break
 		}
 	}
-	if goLine < 0 || goLine+1 >= len(lines) || !strings.Contains(lines[goLine+1], "Linguagem compilada") {
+	if goLine < 0 || goLine+1 >= len(lines) || !strings.Contains(lines[goLine+1], model.localizer.Text(i18n.AppGoDescription, nil)) {
 		t.Fatalf("tool phrase is not directly below App: %q", lines)
 	}
 	model.statusLoaded = true
@@ -79,7 +80,7 @@ func TestToolsUseBorderedTwoLineItemsAndInstallationState(t *testing.T) {
 		t.Fatal("installed go was not recognized")
 	}
 	view = ansi.Strip(model.renderTools())
-	if !strings.Contains(view, "instalado") {
+	if !strings.Contains(view, model.text(i18n.TUIToolStateInstalled, nil)) {
 		t.Fatalf("tools view does not render installed state: %s", view)
 	}
 }
@@ -96,7 +97,7 @@ func TestToolsShowInstallingUntilFinalStatus(t *testing.T) {
 	if model.installingTool != "go" || !model.busy {
 		t.Fatalf("install did not enter transient state: installing=%q busy=%v", model.installingTool, model.busy)
 	}
-	if view := ansi.Strip(model.renderTools()); !strings.Contains(view, "Instalando") {
+	if view := ansi.Strip(model.renderTools()); !strings.Contains(view, model.text(i18n.TUIToolStateInstalling, nil)) {
 		t.Fatalf("tools view does not show transient installation state: %s", view)
 	}
 
@@ -112,7 +113,7 @@ func TestToolsShowInstallingUntilFinalStatus(t *testing.T) {
 	}
 	updated, _ = model.Update(statusMessage{value: value})
 	model = updated.(Model)
-	if model.installingTool != "" || !strings.Contains(ansi.Strip(model.renderTools()), "instalado") {
+	if model.installingTool != "" || !strings.Contains(ansi.Strip(model.renderTools()), model.text(i18n.TUIToolStateInstalled, nil)) {
 		t.Fatalf("final status did not settle installation state: installing=%q view=%s", model.installingTool, model.renderTools())
 	}
 }
@@ -130,7 +131,7 @@ func TestOperationViewHasNoFakeProgress(t *testing.T) {
 			t.Fatalf("operation view still contains fake progress %q: %s", unexpected, view)
 		}
 	}
-	for _, expected := range []string{"Iniciando workstation", "Operação em andamento", "Aguarde a conclusão"} {
+	for _, expected := range []string{model.text(i18n.TUIOperationStart, nil), model.text(i18n.TUIOperationRunning, nil), model.text(i18n.TUIOperationWait, nil)} {
 		if !strings.Contains(view, expected) {
 			t.Fatalf("operation view does not contain %q: %s", expected, view)
 		}
@@ -250,7 +251,7 @@ func TestReleaseToolRowsOpenDetailsBeforeInstall(t *testing.T) {
 			popupLines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
 			installLine := -1
 			for candidate, line := range popupLines {
-				if strings.Contains(line, "[ Instalar ]") {
+				if strings.Contains(line, "[ "+model.text(i18n.TUIPopupInstall, nil)+" ]") {
 					installLine = candidate
 					break
 				}
@@ -258,7 +259,8 @@ func TestReleaseToolRowsOpenDetailsBeforeInstall(t *testing.T) {
 			if installLine < 0 {
 				t.Fatalf("install action was not rendered for %s: %s", name, model.renderScreen())
 			}
-			actionX := utf8.RuneCountInString(popupLines[installLine][:strings.Index(popupLines[installLine], "[ Instalar ]")]) + 1
+			actionLabel := "[ " + model.text(i18n.TUIPopupInstall, nil) + " ]"
+			actionX := utf8.RuneCountInString(popupLines[installLine][:strings.Index(popupLines[installLine], actionLabel)]) + 1
 			updated, _ = model.Update(tea.MouseClickMsg{X: actionX, Y: installLine + 4, Button: tea.MouseLeft})
 			model = updated.(Model)
 			updated, command = model.Update(tea.MouseReleaseMsg{X: actionX, Y: installLine + 4, Button: tea.MouseLeft})
@@ -289,7 +291,7 @@ func TestSetupRendersResponsiveSections(t *testing.T) {
 	model.width = 40
 	model.height = 40
 	view := model.renderSetup()
-	for _, expected := range []string{"PRIMEIRO ACESSO", "Configurar Mobdesk", "Diretórios do Mobdesk", "Workspace e SSH", "OPÇÃO AVANÇADA"} {
+	for _, expected := range []string{model.text(i18n.TUISetupTag, nil), model.text(i18n.TUISetupTitle, nil), model.text(i18n.TUISetupDirectories, nil), model.text(i18n.TUISetupWorkspace, nil), model.text(i18n.TUISetupAdvanced, nil)} {
 		if !strings.Contains(view, expected) {
 			t.Fatalf("setup view does not contain %q: %s", expected, view)
 		}
@@ -306,8 +308,8 @@ func TestShellRendersLargeTouchActions(t *testing.T) {
 	model.width = 40
 	model.height = 30
 	view := model.renderShell()
-	for _, expected := range []string{"Abrir shell Ubuntu", "Suspender a TUI", "Voltar para início", "Retornar à tela principal"} {
-		if !strings.Contains(view, expected) {
+	for _, expected := range []string{model.text(i18n.TUIShellOpen, nil), "Suspend the TUI", model.text(i18n.TUIShellBack, nil), "Return to the main"} {
+		if !strings.Contains(ansi.Strip(view), expected) {
 			t.Fatalf("shell view does not contain %q: %s", expected, view)
 		}
 	}
@@ -337,7 +339,11 @@ func TestStatusRendersResponsiveSections(t *testing.T) {
 	}
 	model.resize(model.width, model.height)
 	view := model.renderStatus()
-	for _, expected := range []string{"STATUS", "Estado do ambiente", "TERMUX", "DETALHES DO AMBIENTE", "Atualizar"} {
+	refreshLabel := model.text(i18n.TUIStatusRefresh, nil)
+	if contentWidth(model.width) < 28 {
+		refreshLabel = model.text(i18n.TUIStatusRefreshShort, nil)
+	}
+	for _, expected := range []string{model.text(i18n.TUIStatusTag, nil), model.text(i18n.TUIStatusTitle, nil), model.text(i18n.TUIStatusHost, nil), model.text(i18n.TUIStatusDetails, nil), refreshLabel} {
 		if !strings.Contains(view, expected) {
 			t.Fatalf("status view does not contain %q: %s", expected, view)
 		}
@@ -357,12 +363,12 @@ func TestRemoteRuntimeHidesHostActions(t *testing.T) {
 	model.height = 30
 
 	home := ansi.Strip(model.renderHome())
-	for _, expected := range []string{"Sessão Ubuntu remota", "Status", "Shell Ubuntu"} {
+	for _, expected := range []string{model.text(i18n.TUIHomeRemoteTitle, nil), model.text(i18n.TUIHomeStatusTitle, nil), model.text(i18n.TUIHomeShellTitle, nil)} {
 		if !strings.Contains(home, expected) {
 			t.Fatalf("remote home does not contain %q: %s", expected, home)
 		}
 	}
-	if strings.Contains(home, "Iniciar") || strings.Contains(home, "Configurar") {
+	if strings.Contains(home, model.text(i18n.TUIHomeStart, nil)) || strings.Contains(home, model.text(i18n.TUIHomeSetupTitle, nil)) {
 		t.Fatalf("remote home still exposes host actions: %s", home)
 	}
 
@@ -425,7 +431,7 @@ func TestSystemRendersFigmaSections(t *testing.T) {
 	model.version.OS = "linux"
 	model.version.Architecture = "arm64"
 	view := ansi.Strip(model.renderSystem())
-	for _, expected := range []string{"SISTEMA", "Mobdesk", "ATUALIZAÇÃO", "Verificar", "Atualizar", "DETALHES DA VERSÃO", "VERSÃO", "CANAL", "PLATAFORMA", "ÁREA AVANÇADA", "Voltar"} {
+	for _, expected := range []string{model.text(i18n.TUISystemTag, nil), model.text(i18n.TUISystemTitle, nil), model.text(i18n.TUISystemUpdate, nil), model.text(i18n.TUISystemCheck, nil), model.text(i18n.TUISystemUpdate, nil), model.text(i18n.TUISystemVersion, nil), model.text(i18n.TUISystemVersion, nil), model.text(i18n.TUISystemChannel, nil), model.text(i18n.TUISystemPlatform, nil), model.text(i18n.TUISystemAdvanced, nil), model.text(i18n.TUIStatusBack, nil)} {
 		if !strings.Contains(view, expected) {
 			t.Fatalf("system view does not contain %q: %s", expected, view)
 		}
@@ -455,7 +461,7 @@ func TestSystemRendersPersistentUpdateResult(t *testing.T) {
 		updated, _ := model.Update(operationMessage{command: "update", result: result})
 		model = updated.(Model)
 		view := ansi.Strip(model.renderSystem())
-		for _, expected := range []string{"RESULTADO", result.Message} {
+		for _, expected := range []string{model.text(i18n.TUISystemResult, nil), result.Message} {
 			if !strings.Contains(view, expected) {
 				t.Fatalf("system result does not contain %q: %s", expected, view)
 			}
@@ -469,7 +475,7 @@ func TestSystemUpdateResultUsesFailureForProcessError(t *testing.T) {
 	updated, _ := model.Update(operationMessage{command: "update", err: errors.New("falha de rede")})
 	model = updated.(Model)
 
-	if model.systemState != "failed" || model.systemMessage != "falha de rede" {
+	if model.systemState != "failed" || model.systemMessage != model.text(i18n.ErrorOperationFailed, map[string]any{"Detail": "falha de rede"}) {
 		t.Fatalf("system failure = state %q, message %q", model.systemState, model.systemMessage)
 	}
 }
@@ -495,9 +501,14 @@ func TestMouseClickOnCloseOpensConfirmation(t *testing.T) {
 	model := New()
 	model.width = 44
 	model.height = 30
-	updatedClick, _ := model.Update(tea.MouseClickMsg{X: 43, Y: 0, Button: tea.MouseLeft})
+	header := ansi.Strip(model.renderHeader())
+	closeLabel := "[ " + model.text(i18n.TUIHeaderClose, nil) + " ]"
+	closeLine := strings.Split(header, "\n")[1]
+	closeStart := strings.Index(closeLine, closeLabel)
+	closeX := utf8.RuneCountInString(closeLine[:closeStart]) + 1
+	updatedClick, _ := model.Update(tea.MouseClickMsg{X: closeX, Y: 1, Button: tea.MouseLeft})
 	model = updatedClick.(Model)
-	updated, _ := model.Update(tea.MouseReleaseMsg{X: 43, Y: 0, Button: tea.MouseLeft})
+	updated, _ := model.Update(tea.MouseReleaseMsg{X: closeX, Y: 1, Button: tea.MouseLeft})
 	if !updated.(Model).confirmExit {
 		t.Fatal("clicking the header close button did not open confirmation")
 	}
@@ -534,7 +545,7 @@ func TestMouseClickOnHomeRightColumnOpensShell(t *testing.T) {
 	targetLine, targetX := -1, -1
 	for index, line := range lines {
 		plain := ansi.Strip(line)
-		if position := strings.Index(plain, "Shell Ubuntu"); position >= 0 {
+		if position := strings.Index(plain, model.text(i18n.TUIHomeShellTitle, nil)); position >= 0 {
 			targetLine, targetX = index, utf8.RuneCountInString(plain[:position])+2
 			break
 		}
@@ -560,7 +571,7 @@ func TestMouseClickOnHomeStartButtonStartsWorkstation(t *testing.T) {
 	lines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
 	targetLine, targetX := -1, -1
 	for index, line := range lines {
-		if position := strings.Index(line, "Iniciar"); position >= 0 {
+		if position := strings.Index(line, model.text(i18n.TUIHomeStart, nil)); position >= 0 {
 			targetLine, targetX = index, position+1
 			break
 		}
@@ -586,7 +597,7 @@ func TestMouseClickOnHomeStopButtonOpensConfirmation(t *testing.T) {
 	lines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
 	targetLine, targetX := -1, -1
 	for index, line := range lines {
-		if position := strings.Index(line, "Parar"); position >= 0 {
+		if position := strings.Index(line, model.text(i18n.TUIHomeStop, nil)); position >= 0 {
 			targetLine, targetX = index, position+1
 			break
 		}
@@ -612,7 +623,7 @@ func TestMouseClickOnSetupContinueDispatchesSetup(t *testing.T) {
 	lines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
 	targetLine, targetX := -1, -1
 	for index, line := range lines {
-		if position := strings.Index(line, "Continuar configuração"); position >= 0 {
+		if position := strings.Index(line, model.text(i18n.TUISetupContinue, nil)); position >= 0 {
 			targetLine, targetX = index, position+1
 			break
 		}
@@ -642,14 +653,17 @@ func TestMouseClickOnStatusBackButtonOnWideScreen(t *testing.T) {
 	targetLine, targetX := -1, -1
 	for index, line := range lines {
 		plain := ansi.Strip(line)
-		if position := strings.Index(plain, "Voltar"); position >= 0 {
-			targetLine, targetX = index, position+2
+		if position := strings.Index(plain, model.text(i18n.TUIStatusBack, nil)); position >= 0 {
+			targetLine, targetX = index, utf8.RuneCountInString(plain[:position])+2
 			break
 		}
 	}
 	if targetLine < 0 {
 		t.Fatal("status back button was not rendered")
 	}
+	plainBack := ansi.Strip(lines[targetLine])
+	byteStart := strings.Index(strings.ToLower(plainBack), strings.ToLower(model.text(i18n.TUIStatusBack, nil)))
+	targetX = utf8.RuneCountInString(plainBack[:byteStart]) + 2
 	updatedClick, _ := model.Update(tea.MouseClickMsg{X: targetX - 2, Y: targetLine + 3, Button: tea.MouseLeft})
 	model = updatedClick.(Model)
 	updated, _ := model.Update(tea.MouseReleaseMsg{X: targetX - 2, Y: targetLine + 3, Button: tea.MouseLeft})
@@ -670,8 +684,8 @@ func TestMouseReleaseWithNoneCompletesTouchClick(t *testing.T) {
 	targetLine, targetX := -1, -1
 	for index, line := range lines {
 		plain := ansi.Strip(line)
-		if position := strings.Index(plain, "Voltar"); position >= 0 {
-			targetLine, targetX = index, position+2
+		if position := strings.Index(plain, model.text(i18n.TUIStatusBack, nil)); position >= 0 {
+			targetLine, targetX = index, utf8.RuneCountInString(plain[:position])+2
 			break
 		}
 	}
@@ -968,7 +982,7 @@ func TestPopupUninstallRequiresKeyboardAndMouseConfirmation(t *testing.T) {
 	lines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
 	actionLine := -1
 	for index, line := range lines {
-		if strings.Contains(line, "[ Desinstalar ]") {
+		if strings.Contains(line, "[ "+model.text(i18n.TUIPopupUninstall, nil)+" ]") {
 			actionLine = index
 			break
 		}
@@ -976,7 +990,8 @@ func TestPopupUninstallRequiresKeyboardAndMouseConfirmation(t *testing.T) {
 	if actionLine < 0 {
 		t.Fatalf("uninstall action missing from popup: %s", model.renderScreen())
 	}
-	actionX := utf8.RuneCountInString(lines[actionLine][:strings.Index(lines[actionLine], "[ Desinstalar ]")]) + 1
+	actionLabel := "[ " + model.text(i18n.TUIPopupUninstall, nil) + " ]"
+	actionX := utf8.RuneCountInString(lines[actionLine][:strings.Index(lines[actionLine], actionLabel)]) + 1
 	updated, _ = model.Update(tea.MouseClickMsg{X: actionX, Y: actionLine + 4, Button: tea.MouseLeft})
 	model = updated.(Model)
 	updated, command = model.Update(tea.MouseReleaseMsg{X: actionX, Y: actionLine + 4, Button: tea.MouseLeft})
@@ -987,7 +1002,7 @@ func TestPopupUninstallRequiresKeyboardAndMouseConfirmation(t *testing.T) {
 	lines = strings.Split(ansi.Strip(model.renderScreen()), "\n")
 	confirmLine := -1
 	for index, line := range lines {
-		if strings.Contains(line, "[ Y ] Sim") {
+		if strings.Contains(line, model.text(i18n.TUIConfirmationYes, nil)) {
 			confirmLine = index
 			break
 		}
@@ -995,7 +1010,8 @@ func TestPopupUninstallRequiresKeyboardAndMouseConfirmation(t *testing.T) {
 	if confirmLine < 0 {
 		t.Fatalf("confirmation buttons missing from popup: %s", model.renderScreen())
 	}
-	confirmX := utf8.RuneCountInString(lines[confirmLine][:strings.Index(lines[confirmLine], "[ Y ] Sim")]) + 1
+	confirmLabel := model.text(i18n.TUIConfirmationYes, nil)
+	confirmX := utf8.RuneCountInString(lines[confirmLine][:strings.Index(lines[confirmLine], confirmLabel)]) + 1
 	updated, _ = model.Update(tea.MouseClickMsg{X: confirmX, Y: confirmLine + 4, Button: tea.MouseLeft})
 	model = updated.(Model)
 	updated, command = model.Update(tea.MouseReleaseMsg{X: confirmX, Y: confirmLine + 4, Button: tea.MouseLeft})
@@ -1010,7 +1026,7 @@ func TestPopupBlocksDetectedAppAndRemoteRuntime(t *testing.T) {
 	detected.popupFocus = 1
 	updated, command := detected.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
 	detected = updated.(Model)
-	if command != nil || !strings.Contains(detected.popupMessage, "proveniência") {
+	if command != nil || !strings.Contains(detected.popupMessage, detected.text(i18n.TUIPopupDetectedReason, nil)) {
 		t.Fatalf("detected app was not blocked: command=%v message=%q", command != nil, detected.popupMessage)
 	}
 
@@ -1019,7 +1035,7 @@ func TestPopupBlocksDetectedAppAndRemoteRuntime(t *testing.T) {
 	remote.popupFocus = 0
 	updated, command = remote.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
 	remote = updated.(Model)
-	if command != nil || !strings.Contains(remote.popupMessage, "Termux host") {
+	if command != nil || !strings.Contains(remote.popupMessage, remote.text(i18n.TUIHostRestriction, nil)) {
 		t.Fatalf("remote popup did not explain restriction: command=%v message=%q", command != nil, remote.popupMessage)
 	}
 }

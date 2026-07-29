@@ -1,40 +1,45 @@
 package tui
 
 import "strings"
+import "github.com/ericklucioh/mobdesk/internal/i18n"
 
 func (m Model) renderOperation() string {
-	title := operationTitle(m.operation)
+	title := operationTitleLocalized(m.operation, m.localizer)
 	var builder strings.Builder
-	builder.WriteString(tagStyle.Render("MOBDESK") + "\n" + titleStyle.Render(title) + "\n\n")
-	builder.WriteString(operationWaitStyle.Render("Operação em andamento"))
+	builder.WriteString(tagStyle.Render(m.text(i18n.TUIBrand, nil)) + "\n" + titleStyle.Render(title) + "\n\n")
+	builder.WriteString(operationWaitStyle.Render(m.text(i18n.TUIOperationRunning, nil)))
 	if m.operationProgress != "" {
 		builder.WriteString("\n" + bodyStyle.Render(m.operationProgress))
 	}
-	builder.WriteString("\n" + mutedStyle.Render("Aguarde a conclusão do comando."))
+	builder.WriteString("\n" + mutedStyle.Render(m.text(i18n.TUIOperationWait, nil)))
 	return builder.String()
 }
 
 func operationTitle(operation string) string {
+	return operationTitleLocalized(operation, i18n.New(i18n.LocaleENUS))
+}
+
+func operationTitleLocalized(operation string, localizer i18n.Localizer) string {
 	switch operation {
 	case "start":
-		return "Iniciando workstation"
+		return localizer.Text(i18n.TUIOperationStart, nil)
 	case "stop":
-		return "Parando workstation"
+		return localizer.Text(i18n.TUIOperationStop, nil)
 	case "setup":
-		return "Preparando o ambiente"
+		return localizer.Text(i18n.TUIOperationSetup, nil)
 	case "setup-upgrade":
-		return "Atualizando o Termux"
+		return localizer.Text(i18n.TUIOperationSetupUpgrade, nil)
 	case "update-check":
-		return "Verificando atualização"
+		return localizer.Text(i18n.TUIOperationUpdateCheck, nil)
 	case "update":
-		return "Atualizando Mobdesk"
+		return localizer.Text(i18n.TUIOperationUpdate, nil)
 	case "uninstall":
-		return "Desinstalando app"
+		return localizer.Text(i18n.TUIOperationUninstall, nil)
 	case "config-apply":
-		return "Aplicando configuração"
+		return localizer.Text(i18n.TUIOperationConfigApply, nil)
 	case "config-remove":
-		return "Removendo configuração"
+		return localizer.Text(i18n.TUIOperationConfigRemove, nil)
 	default:
-		return "Instalando ferramenta"
+		return localizer.Text(i18n.TUIOperationInstall, nil)
 	}
 }

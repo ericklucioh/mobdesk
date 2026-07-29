@@ -6,12 +6,14 @@ import (
 
 	"charm.land/bubbles/v2/table"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/status"
 )
 
 func (m Model) renderStatus() string {
 	if !m.statusLoaded {
-		return renderPage("STATUS", "Carregando", "Coletando estado do ambiente...")
+		return renderPage(m.text(i18n.TUIStatusTag, nil), m.text(i18n.TUIStatusLoading, nil), m.text(i18n.TUIStatusLoadingDetail, nil))
 	}
 
 	generated := ""
@@ -19,49 +21,49 @@ func (m Model) renderStatus() string {
 		generated = " · " + m.status.GeneratedAt.Format("15:04")
 	}
 
-	hostTitle := "TERMUX"
-	hostDetail := fmt.Sprintf("%s · %s", valueOr(m.status.Host.OS, "host Android"), valueOr(m.status.Host.Architecture, "arquitetura desconhecida"))
-	ubuntuDetail := fmt.Sprintf("PRoot · workspace %s", yesNo(m.status.Ubuntu.Workspace))
+	hostTitle := m.text(i18n.TUIStatusHost, nil)
+	hostDetail := fmt.Sprintf("%s · %s", valueOr(m.status.Host.OS, m.text(i18n.TUIStatusAndroidHost, nil)), valueOr(m.status.Host.Architecture, m.text(i18n.TUIStatusUnknownArchitecture, nil)))
+	ubuntuDetail := m.text(i18n.TUIStatusUbuntuDetail, map[string]any{"Value": yesNoLocalized(m.status.Ubuntu.Workspace, m.localizer)})
 	sshTitle := "SSH"
 	if !m.status.Host.Termux {
-		hostTitle = "RUNTIME"
-		hostDetail = fmt.Sprintf("%s · fora do Termux", valueOr(m.status.Host.OS, "Linux"))
-		ubuntuDetail = fmt.Sprintf("workspace %s · sessão remota", yesNo(m.status.Ubuntu.Workspace))
-		sshTitle = "SSH HOST"
+		hostTitle = m.text(i18n.TUIStatusRuntime, nil)
+		hostDetail = fmt.Sprintf("%s · %s", valueOr(m.status.Host.OS, "Linux"), m.text(i18n.TUIStatusRemoteHost, nil))
+		ubuntuDetail = m.text(i18n.TUIStatusRemoteUbuntuDetail, map[string]any{"Value": yesNoLocalized(m.status.Ubuntu.Workspace, m.localizer)})
+		sshTitle = m.text(i18n.TUIStatusSSHHost, nil)
 	}
 	cards := []string{
 		statusCard(m.width, hostTitle, m.status.Host.State, hostDetail),
-		statusCard(m.width, "UBUNTU", m.status.Ubuntu.State, ubuntuDetail),
-		statusCard(m.width, sshTitle, sshState(m.status.SSH), sshDetail(m.status.SSH)),
-		statusCard(m.width, "RECURSOS", m.status.Storage.State, fmt.Sprintf("%s livres · bateria %s", formatBytes(m.status.Storage.DeviceFree), batterySummary(m.status.Battery))),
+		statusCard(m.width, m.text(i18n.StatusUbuntu, nil), m.status.Ubuntu.State, ubuntuDetail),
+		statusCard(m.width, sshTitle, sshState(m.status.SSH), m.sshDetail(m.status.SSH)),
+		statusCard(m.width, m.text(i18n.TUIStatusResources, nil), m.status.Storage.State, m.text(i18n.TUIStatusFreeBattery, map[string]any{"Free": formatBytes(m.status.Storage.DeviceFree), "Battery": batterySummaryLocalized(m.status.Battery, m.localizer)})),
 	}
 
-	network := statusNetworkSummary(m.width, m.status.Network)
-	installations := fmt.Sprintf("%d instalação(ões)", len(m.status.Installations))
-	alerts := fmt.Sprintf("%d OK · %d avisos · %d erros", m.status.Alerts.OK, m.status.Alerts.Warnings, m.status.Alerts.Errors)
+	network := statusNetworkSummary(m.width, m.status.Network, m.localizer)
+	installations := m.text(i18n.TUIStatusInstallationsCount, map[string]any{"Count": len(m.status.Installations)})
+	alerts := m.text(i18n.TUIStatusAlertsCount, map[string]any{"OK": m.status.Alerts.OK, "Warnings": m.status.Alerts.Warnings, "Errors": m.status.Alerts.Errors})
 	if contentWidth(m.width) < 32 {
-		alerts = fmt.Sprintf("Alertas %d/%d/%d", m.status.Alerts.OK, m.status.Alerts.Warnings, m.status.Alerts.Errors)
+		alerts = m.text(i18n.TUIStatusAlertsShort, map[string]any{"OK": m.status.Alerts.OK, "Warnings": m.status.Alerts.Warnings, "Errors": m.status.Alerts.Errors})
 	}
 
-	refreshAction := m.statusAction(0, "Atualizar status", "[R]")
-	backAction := m.statusAction(1, "Voltar", "[Esc]")
+	refreshAction := m.statusAction(0, m.text(i18n.TUIStatusRefresh, nil), "[R]")
+	backAction := m.statusAction(1, m.text(i18n.TUIStatusBack, nil), "[Esc]")
 	actions := lipgloss.JoinHorizontal(lipgloss.Top, refreshAction, "  ", backAction)
 	if contentWidth(m.width) < 44 {
-		refreshLabel := "Atualizar status"
+		refreshLabel := m.text(i18n.TUIStatusRefresh, nil)
 		if contentWidth(m.width) < 28 {
-			refreshLabel = "Atualizar"
+			refreshLabel = m.text(i18n.TUIStatusRefreshShort, nil)
 		}
-		actions = lipgloss.JoinVertical(lipgloss.Left, m.statusAction(0, refreshLabel, "[R]"), m.statusAction(1, "Voltar", "[Esc]"))
+		actions = lipgloss.JoinVertical(lipgloss.Left, m.statusAction(0, refreshLabel, "[R]"), m.statusAction(1, m.text(i18n.TUIStatusBack, nil), "[Esc]"))
 	}
-	meta := fmt.Sprintf("Rede: %s\n%s\n%s", network, installations, alerts)
+	meta := fmt.Sprintf("%s: %s\n%s\n%s", m.text(i18n.StatusNetwork, nil), network, installations, alerts)
 
 	view := strings.Join([]string{
-		tagStyle.Render("STATUS"),
-		titleStyle.Render("Estado do ambiente"),
-		statusColor(string(m.status.Overall)).Render("● Ambiente " + overallStateLabel(m.status.Overall)),
-		mutedStyle.Render("Verificado agora" + generated),
+		tagStyle.Render(m.text(i18n.TUIStatusTag, nil)),
+		titleStyle.Render(m.text(i18n.TUIStatusTitle, nil)),
+		statusColor(string(m.status.Overall)).Render(ansi.Truncate("● "+m.text(i18n.TUIStatusOverall, map[string]any{"Value": overallStateLabel(m.status.Overall, m.localizer)}), contentWidth(m.width), "…")),
+		mutedStyle.Render(m.text(i18n.TUIStatusVerified, map[string]any{"Generated": generated})),
 		joinCards(cards, m.width),
-		tagStyle.Render("DETALHES DO AMBIENTE"),
+		tagStyle.Render(m.text(i18n.TUIStatusDetails, nil)),
 		m.statusTable.View(),
 		bodyStyle.Render(meta),
 		actions,
@@ -76,9 +78,9 @@ func (m Model) renderStatus() string {
 func statusCard(width int, title string, state status.CheckState, detail string) string {
 	stateText := checkStateLabel(state)
 	content := tagStyle.Render(title) + "\n" + statusColor(string(state)).Render("● "+stateText) + "\n" + mutedStyle.Render(detail)
-	cardWidth := contentWidth(width)
+	cardWidth := max(1, contentWidth(width)-4)
 	if contentColumns(width) == 2 {
-		cardWidth = (cardWidth - 2) / 2
+		cardWidth = max(1, (contentWidth(width)-4)/2)
 	}
 	return cardStyle.Width(cardWidth).Render(content)
 }
@@ -91,31 +93,39 @@ func (m Model) statusAction(index int, label, shortcut string) string {
 	return buttonStyle.Render(text)
 }
 
-func checkStateLabel(value status.CheckState) string {
+func checkStateLabel(value status.CheckState, localizers ...i18n.Localizer) string {
+	localizer := i18n.New(i18n.LocaleENUS)
+	if len(localizers) > 0 {
+		localizer = localizers[0]
+	}
 	switch value {
 	case status.CheckOK:
-		return "ok"
+		return localizer.Text(i18n.StatusCheckOK, nil)
 	case status.CheckWarning:
-		return "atenção"
+		return localizer.Text(i18n.StatusCheckWarning, nil)
 	case status.CheckError:
-		return "erro"
+		return localizer.Text(i18n.StatusCheckError, nil)
 	case status.CheckMissing:
-		return "ausente"
+		return localizer.Text(i18n.StatusCheckMissing, nil)
 	default:
-		return "desconhecido"
+		return localizer.Text(i18n.StatusCheckUnknown, nil)
 	}
 }
 
-func overallStateLabel(value status.OverallState) string {
+func overallStateLabel(value status.OverallState, localizers ...i18n.Localizer) string {
+	localizer := i18n.New(i18n.LocaleENUS)
+	if len(localizers) > 0 {
+		localizer = localizers[0]
+	}
 	switch value {
 	case status.StateHealthy:
-		return "saudável"
+		return localizer.Text(i18n.StatusOverallHealthy, nil)
 	case status.StateDegraded:
-		return "atenção"
+		return localizer.Text(i18n.StatusOverallDegraded, nil)
 	case status.StateError:
-		return "erro"
+		return localizer.Text(i18n.StatusOverallError, nil)
 	default:
-		return "desconhecido"
+		return localizer.Text(i18n.StatusOverallUnknown, nil)
 	}
 }
 
@@ -129,11 +139,11 @@ func sshState(value status.SSHStatus) status.CheckState {
 	return value.State
 }
 
-func sshDetail(value status.SSHStatus) string {
+func (m Model) sshDetail(value status.SSHStatus) string {
 	if value.Running {
-		return fmt.Sprintf("porta %d · servidor ativo", value.Port)
+		return m.text(i18n.TUIStatusSSHRunning, map[string]any{"Port": value.Port})
 	}
-	return fmt.Sprintf("porta %d · servidor parado", value.Port)
+	return m.text(i18n.TUIStatusSSHStopped, map[string]any{"Port": value.Port})
 }
 
 func valueOr(value, fallback string) string {
@@ -143,13 +153,17 @@ func valueOr(value, fallback string) string {
 	return value
 }
 
-func statusNetworkSummary(width int, value status.NetworkStatus) string {
+func statusNetworkSummary(width int, value status.NetworkStatus, localizers ...i18n.Localizer) string {
+	localizer := i18n.New(i18n.LocaleENUS)
+	if len(localizers) > 0 {
+		localizer = localizers[0]
+	}
 	network := value.Preferred
 	if network == "" && len(value.Addresses) > 0 {
 		network = value.Addresses[0]
 	}
 	if network == "" {
-		network = valueOr(string(value.State), "indisponível")
+		network = valueOr("", localizer.Text(i18n.TUIStatusNetworkUnavailable, nil))
 	}
 	limit := max(8, contentWidth(width)-6)
 	runes := []rune(network)
@@ -159,42 +173,62 @@ func statusNetworkSummary(width int, value status.NetworkStatus) string {
 	return network
 }
 
-func statusRows(value status.SystemStatus, width int) []table.Row {
-	columns := statusTableColumns(width)
+func statusRows(value status.SystemStatus, width int, localizers ...i18n.Localizer) []table.Row {
+	localizer := i18n.New(i18n.LocaleENUS)
+	if len(localizers) > 0 {
+		localizer = localizers[0]
+	}
+	columns := statusTableColumns(width, localizer)
 	stateWidth := max(1, columns[1].Width-2)
 	right := func(text string) string {
 		return lipgloss.NewStyle().Width(stateWidth).Align(lipgloss.Right).Render(text)
 	}
-	runtimeLabel := "Termux"
+	runtimeLabel := localizer.Text(i18n.TUIStatusHost, nil)
 	if !value.Host.Termux {
-		runtimeLabel = "Runtime"
+		runtimeLabel = localizer.Text(i18n.TUIStatusRuntime, nil)
 	}
-	return []table.Row{{runtimeLabel, right(checkStateLabel(value.Host.State))}, {"Arquitetura", right(valueOr(value.Host.Architecture, "desconhecida"))}, {"Ubuntu", right(checkStateLabel(value.Ubuntu.State))}, {"Workspace", right(yesNo(value.Ubuntu.Workspace))}, {"SSH", right(checkStateLabel(value.SSH.State))}, {"Porta SSH", right(fmt.Sprintf("%d", value.SSH.Port))}, {"Wake-lock", right(available(value.Host.WakeLockAvailable))}, {"Bateria", right(batterySummary(value.Battery))}, {"Wi-Fi", right(wifiSummary(value.WiFi))}}
+	return []table.Row{{runtimeLabel, right(checkStateLabel(value.Host.State, localizer))}, {localizer.Text(i18n.TUIStatusArchitecture, nil), right(valueOr(value.Host.Architecture, localizer.Text(i18n.TUIStatusUnknownArchitecture, nil)))}, {localizer.Text(i18n.StatusUbuntu, nil), right(checkStateLabel(value.Ubuntu.State, localizer))}, {localizer.Text(i18n.TUIStatusWorkspace, nil), right(yesNoLocalized(value.Ubuntu.Workspace, localizer))}, {localizer.Text(i18n.StatusSSH, nil), right(checkStateLabel(value.SSH.State, localizer))}, {localizer.Text(i18n.TUIStatusSSHPort, nil), right(fmt.Sprintf("%d", value.SSH.Port))}, {localizer.Text(i18n.TUIStatusWakeLock, nil), right(availableLocalized(value.Host.WakeLockAvailable, localizer))}, {localizer.Text(i18n.TUIStatusBattery, nil), right(batterySummaryLocalized(value.Battery, localizer))}, {localizer.Text(i18n.TUIStatusWiFi, nil), right(wifiSummaryLocalized(value.WiFi, localizer))}}
 }
 
-func statusTableColumns(width int) []table.Column {
+func statusTableColumns(width int, localizers ...i18n.Localizer) []table.Column {
+	localizer := i18n.New(i18n.LocaleENUS)
+	if len(localizers) > 0 {
+		localizer = localizers[0]
+	}
 	width = contentWidth(width)
 	if width < 32 {
-		return []table.Column{{Title: "Item", Width: 8}, {Title: "Estado", Width: 7}}
+		return []table.Column{{Title: localizer.Text(i18n.TUIStatusItem, nil), Width: 8}, {Title: localizer.Text(i18n.TUIStatusTableState, nil), Width: 7}}
 	}
 	itemWidth := min(18, (width-4)/2)
 	stateWidth := max(10, width-4-itemWidth)
-	stateTitle := lipgloss.NewStyle().Width(max(1, stateWidth-2)).Align(lipgloss.Right).Render("Estado")
-	return []table.Column{{Title: "Item", Width: itemWidth}, {Title: stateTitle, Width: stateWidth}}
+	stateTitle := lipgloss.NewStyle().Width(max(1, stateWidth-2)).Align(lipgloss.Right).Render(localizer.Text(i18n.TUIStatusTableState, nil))
+	return []table.Column{{Title: localizer.Text(i18n.TUIStatusItem, nil), Width: itemWidth}, {Title: stateTitle, Width: stateWidth}}
 }
 
 func batterySummary(value status.BatteryStatus) string {
+	return batterySummaryLocalized(value, i18n.New(i18n.LocaleENUS))
+}
+func batterySummaryLocalized(value status.BatteryStatus, localizer i18n.Localizer) string {
 	if value.Percentage == nil {
-		return string(value.State)
+		return checkStateLabel(value.State, localizer)
 	}
-	return fmt.Sprintf("%d%% %s", *value.Percentage, value.Status)
+	statusText := value.Status
+	if value.Status == "normal" {
+		statusText = localizer.Text(i18n.TUIStatusBatteryNormal, nil)
+	} else if value.Status == "low" {
+		statusText = localizer.Text(i18n.TUIStatusBatteryLow, nil)
+	}
+	return fmt.Sprintf("%d%% %s", *value.Percentage, statusText)
 }
 func wifiSummary(value status.WiFiStatus) string {
+	return wifiSummaryLocalized(value, i18n.New(i18n.LocaleENUS))
+}
+func wifiSummaryLocalized(value status.WiFiStatus, localizer i18n.Localizer) string {
 	if value.IP != "" {
 		return value.IP
 	}
 	if value.Connected {
-		return "conectado"
+		return localizer.Text(i18n.TUIStatusConnected, nil)
 	}
 	return string(value.State)
 }

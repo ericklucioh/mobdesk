@@ -7,6 +7,8 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/status"
 )
@@ -67,7 +69,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.err != nil {
 			if !m.busy {
 				m.installingTool = ""
-				m.message = msg.err.Error()
+				m.message = m.localizedError(msg.err)
 			}
 			return m, nil
 		}
@@ -75,7 +77,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.version = msg.info
 		m.statusLoaded = true
 		m.installingTool = ""
-		m.statusTable.SetRows(statusRows(msg.value, m.width))
+		m.statusTable.SetRows(statusRows(msg.value, m.width, m.localizer))
 	case operationMessage:
 		if msg.id != 0 && msg.id != m.operationID {
 			return m, nil
@@ -84,15 +86,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.operation = ""
 		m.operationProgress = ""
 		if msg.command == "update" || msg.command == "update-check" {
-			m.systemMessage = operationMessageText(msg)
+			m.systemMessage = m.operationMessageText(msg)
 			m.systemState = operationState(msg)
 			m.message = ""
 		} else {
-			m.message = operationMessageText(msg)
+			m.message = m.operationMessageText(msg)
 		}
 		m.applyOperationState(msg)
 		if m.appPopupOpen {
-			m.popupMessage = operationMessageText(msg)
+			m.popupMessage = m.operationMessageText(msg)
 		}
 		return m.requestStatus()
 	case operationProgressMessage:
@@ -129,8 +131,6 @@ func (m *Model) applyOperationState(msg operationMessage) {
 	}
 }
 
-const hostActionUnavailableMessage = "Esta ação exige o Termux host. Saia da sessão SSH e execute-a no Termux."
-
 func (m Model) canManageHost() bool {
 	// Enquanto o status inicial ainda carrega, preserve as ações do host em vez
 	// de tratá-las como indisponíveis por causa do valor zero do modelo.
@@ -138,7 +138,7 @@ func (m Model) canManageHost() bool {
 }
 
 func (m Model) hostActionUnavailable() (tea.Model, tea.Cmd) {
-	m.message = hostActionUnavailableMessage
+	m.message = m.text(i18n.TUIHostRestriction, nil)
 	return m, nil
 }
 
@@ -154,7 +154,7 @@ func (m Model) runHostOperation(operation string, args ...string) (tea.Model, te
 	m.busy, m.operation = true, operation
 	m.operationProgress = ""
 	if operation == "install" && len(args) > 1 {
-		m.operationProgress = "Preparando instalação de " + args[1]
+		m.operationProgress = m.text(i18n.TUIOperationPreparingInstall, map[string]any{"Name": args[1]})
 	}
 	if operation == "update" || operation == "update-check" {
 		m.systemMessage, m.systemState = "", ""
@@ -223,7 +223,7 @@ func (m *Model) resize(width, height int) {
 	height = max(6, height-8)
 	m.toolsList.SetSize(contentWidth(width), height)
 	m.setupActions.SetSize(max(1, contentWidth(width)-4), max(3, min(5, height)))
-	m.statusTable.SetColumns(statusTableColumns(width))
+	m.statusTable.SetColumns(statusTableColumns(width, m.localizer))
 	m.statusTable.SetWidth(contentWidth(width))
 	// As linhas seguintes pertencem ao resumo da tela, não à tabela. Limitar a
 	// altura evita que o componente reserve um painel vazio até o rodapé.
@@ -232,24 +232,24 @@ func (m *Model) resize(width, height int) {
 	m.viewport.SetHeight(max(1, m.height-3))
 }
 
-func operationMessageText(msg operationMessage) string {
+func (m Model) operationMessageText(msg operationMessage) string {
 	if msg.err != nil {
-		return msg.err.Error()
+		return m.localizedError(msg.err)
 	}
 	if msg.result.Message != "" {
 		message := msg.result.Message
 		if !msg.result.Success && msg.result.LogPath != "" {
-			message += "\nLog: " + msg.result.LogPath
+			message += "\n" + m.text(i18n.OutputLogsLabel, map[string]any{"Path": msg.result.LogPath})
 		}
 		return message
 	}
 	switch msg.command {
 	case "update":
-		return "Atualização concluída"
+		return m.text(i18n.TUIOperationCompleted, nil)
 	case "update-check":
-		return "Verificação concluída"
+		return m.text(i18n.TUIOperationVerified, nil)
 	case "install":
-		message := msg.result.Language + " instalado"
+		message := m.text(i18n.TUIOperationInstalled, map[string]any{"Name": msg.result.Language})
 		if msg.result.Version != "" {
 			message += " (" + msg.result.Version + ")"
 		}
@@ -257,6 +257,10 @@ func operationMessageText(msg operationMessage) string {
 	default:
 		return ""
 	}
+}
+
+func operationMessageText(msg operationMessage) string {
+	return New().operationMessageText(msg)
 }
 
 func operationState(msg operationMessage) string {
@@ -401,7 +405,7 @@ func (m Model) installSelectedTool() (tea.Model, tea.Cmd) {
 	if m.busy {
 		return m, nil
 	}
-	entries := toolEntries("")
+	entries := toolEntriesLocalized("", m.localizer)
 	index := m.toolsList.Index()
 	if index < 0 || index >= len(entries) {
 		return m, nil
@@ -547,6 +551,8 @@ func (m Model) View() tea.View {
 
 type quitAfterMouseResetMsg struct{}
 
+var hostActionUnavailableMessage = i18n.New(i18n.LocaleENUS).Text(i18n.TUIHostRestriction, nil)
+
 func (m Model) render() string {
 	header := m.renderHeader()
 	bodyModel := m
@@ -564,26 +570,27 @@ func (m Model) render() string {
 		body += "\n\n" + statusColor("warning").Render(m.message)
 	}
 	if m.confirmExit || m.confirmStop {
-		body = confirmationModal(m.confirmStop, m.width)
+		body = m.confirmationModal(m.confirmStop, m.width)
 	}
-	footer := footerStyle.Width(max(1, terminalWidth(m.width)-2)).Render("↑↓ rolar  Tab foco  Enter agir  R atualizar  Q sair\n" + m.help.View(tuiHelpKeyMap{}))
+	footerText := strings.Join([]string{m.text(i18n.TUIFooterScroll, nil), m.text(i18n.TUIFooterFocus, nil), m.text(i18n.TUIFooterAct, nil), m.text(i18n.TUIFooterRefresh, nil), m.text(i18n.TUIFooterQuit, nil)}, "  ")
+	footer := footerStyle.Width(max(1, terminalWidth(m.width)-2)).Render(footerText + "\n" + m.help.View(tuiHelpKeyMap{localizer: m.localizer}))
 	return header + "\n" + body + "\n" + footer
 }
 
 func (m Model) renderHeader() string {
 	headerWidth := max(1, terminalWidth(m.width)-2)
-	brand := headerBrandStyle.Render("M/ MOBDESK")
-	stateText := "● workstation parada"
+	brand := headerBrandStyle.Render(m.text(i18n.TUIBrand, nil))
+	stateText := "● " + m.text(i18n.TUIStateStopped, nil)
 	stateStyle := statusColor("stopped")
 	if m.status.SSH.Running {
-		stateText = "● workstation ativa"
+		stateText = "● " + m.text(i18n.TUIStateRunning, nil)
 		stateStyle = statusColor("running")
 	}
 	state := stateStyle.Render(stateText)
-	close := headerCloseStyle.Render("[ X ]")
+	close := headerCloseStyle.Render("[ " + m.text(i18n.TUIHeaderClose, nil) + " ]")
 	home := ""
 	if m.screen != homeScreen {
-		home = headerLinkStyle.Render("[ HOME ]")
+		home = headerLinkStyle.Render("[ " + m.text(i18n.TUIHeaderHome, nil) + " ]")
 	}
 	right := home
 	if right != "" {
@@ -596,14 +603,14 @@ func (m Model) renderHeader() string {
 	if available < 2 {
 		// O celular vertical prioriza os quatro elementos do app-bar e encurta
 		// somente o texto de estado, nunca quebrando a linha.
-		state = stateStyle.Render("● ON")
+		state = stateStyle.Render("● " + m.text(i18n.TUIStateOn, nil))
 		if !m.status.SSH.Running {
-			state = stateStyle.Render("● OFF")
+			state = stateStyle.Render("● " + m.text(i18n.TUIStateOff, nil))
 		}
 		if m.screen != homeScreen {
-			home = headerLinkStyle.Render("[H]")
+			home = headerLinkStyle.Render("[" + firstRune(m.text(i18n.TUIHeaderHome, nil)) + "]")
 		}
-		close = headerCloseStyle.Render("[X]")
+		close = headerCloseStyle.Render("[" + m.text(i18n.TUIHeaderClose, nil) + "]")
 		right = home
 		if right != "" {
 			right += " "
@@ -622,6 +629,10 @@ func (m Model) renderHeader() string {
 	rightGap := available - leftGap
 	line := brand + strings.Repeat(" ", leftGap) + state + strings.Repeat(" ", rightGap) + right
 	return headerStyle.Width(headerWidth).Render(line)
+}
+
+func (m Model) bodyTop() int {
+	return len(strings.Split(ansi.Strip(m.renderHeader()), "\n"))
 }
 
 func (m Model) renderScreen() string {
@@ -647,12 +658,23 @@ func (m Model) renderScreen() string {
 	}
 }
 
-func confirmationModal(stop bool, width int) string {
-	text := "Fechar TUI?\n\n[ S ] Sim     [ N ] Não"
+func (m Model) confirmationModal(stop bool, width int) string {
+	text := m.text(i18n.TUIConfirmationExit, nil) + "\n\n" + m.text(i18n.TUIConfirmationYes, nil) + "     " + m.text(i18n.TUIConfirmationNo, nil)
 	if stop {
-		text = "Parar workstation?\n\n[ S ] Sim     [ N ] Não"
+		text = m.text(i18n.TUIConfirmationStop, nil) + "\n\n" + m.text(i18n.TUIConfirmationYes, nil) + "     " + m.text(i18n.TUIConfirmationNo, nil)
 	}
 	style := modalStyle.Width(max(10, contentWidth(width)-6))
 	dialog := style.Render(text)
 	return lipgloss.PlaceHorizontal(contentWidth(width), lipgloss.Center, dialog)
+}
+
+func confirmationModal(stop bool, width int) string {
+	return New().confirmationModal(stop, width)
+}
+
+func firstRune(value string) string {
+	for _, r := range value {
+		return string(r)
+	}
+	return ""
 }
