@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 8 concluida; Fase 9 pendente
+**Status:** Fase 9 concluida; Fase 10 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -943,6 +943,20 @@ ConfigurationStatus
 - Status não oferece desinstalação de app sem proveniência.
 - Estado antigo continua sendo lido.
 - TUI recebe os campos sem lógica duplicada.
+
+### Resultado da Fase 9
+
+- `status --json` agora separa `installations` de `configurations` e associa os
+  dois por nome canônico.
+- Apps configuráveis sem registro aparecem como `not_applied`; caminhos
+  existentes sem registro aparecem como `conflict`.
+- Registros aplicados são reconciliados por hash quando a inspeção Ubuntu
+  retorna um hash válido, produzindo `modified` e `modified_paths` sem apagar
+  arquivos ou tratar falha de inspeção como conflito.
+- A fonte `detected` continua não gerenciada e não habilita desinstalação; os
+  estados de conflito, modificação e falha entram nos alertas do status.
+- Testes cobrem associação app/configuração, estado ausente, hash divergente e
+  serialização JSON compatível.
 
 ## 17. Fase 10: Popup da TUI
 

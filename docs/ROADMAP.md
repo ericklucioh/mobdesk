@@ -58,6 +58,8 @@ Oferecer uma interface textual organizada para trabalhar no Ubuntu pelo celular 
 - perfis opcionais de configuração para apps, começando por Neovim/LazyVim.
 - comandos CLI para instalar, desinstalar e aplicar/remover configurações com
   contrato JSON versionado.
+- status distingue apps detectados, apps gerenciados e configuração aplicada,
+  modificada ou em conflito.
 
 ### Critério
 

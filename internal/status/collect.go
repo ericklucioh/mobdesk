@@ -68,6 +68,8 @@ func Collect(ctx context.Context, options Options) SystemStatus {
 	}
 	result.Battery, result.WiFi = collectTermuxAPIs(ctx, o)
 	result.Installations = collectInstallations(o)
+	result.Configurations = collectConfigurations(ctx, o)
+	reconcileInstallationConfigurations(result.Installations, result.Configurations)
 	result.Alerts = summarize(result)
 	result.Overall = overallState(result)
 	return result
@@ -77,7 +79,10 @@ func Collect(ctx context.Context, options Options) SystemStatus {
 // running external commands. The TUI uses it as an immediate snapshot while
 // the more expensive runtime status collection is still in progress.
 func ReadInstallations(p paths.Paths) []InstallationStatus {
-	return collectInstallations(Options{Paths: p}.withDefaults())
+	o := Options{Paths: p}.withDefaults()
+	installations := collectInstallations(o)
+	reconcileInstallationConfigurations(installations, collectConfigurations(context.Background(), o))
+	return installations
 }
 
 // IsTermuxRuntime reports whether the current process can control the Termux host.
@@ -391,6 +396,162 @@ func collectInstallations(o Options) []InstallationStatus {
 	return collectCatalogInstallations(o, result)
 }
 
+func collectConfigurations(ctx context.Context, o Options) []ConfigurationStatus {
+	profiles := install.DefaultConfigProfiles()
+	byApp := make(map[string]ConfigurationStatus)
+	for _, app := range install.Tools() {
+		if app.ConfigProfile == "" {
+			continue
+		}
+		profile, ok := profiles[app.ConfigProfile]
+		if !ok {
+			continue
+		}
+		byApp[app.Name] = ConfigurationStatus{
+			App:          app.Name,
+			Profile:      profile.ID,
+			State:        ConfigStateNotApplied,
+			ManagedPaths: append([]string(nil), profile.ManagedPaths...),
+		}
+	}
+
+	entries, err := os.ReadDir(o.Paths.ConfigurationsDir())
+	if err == nil {
+		for _, entry := range entries {
+			if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+				continue
+			}
+			payload, readErr := os.ReadFile(filepath.Join(o.Paths.ConfigurationsDir(), entry.Name()))
+			if readErr != nil {
+				continue
+			}
+			var record install.ConfigurationRecord
+			if json.Unmarshal(payload, &record) != nil || record.App == "" {
+				continue
+			}
+			state, modified := reconcileConfiguration(ctx, o, record)
+			byApp[record.App] = ConfigurationStatus{
+				App:           record.App,
+				Profile:       record.Profile,
+				State:         state,
+				ManagedPaths:  append([]string(nil), record.ManagedPaths...),
+				ModifiedPaths: modified,
+				Conflicts:     append([]string(nil), record.Conflicts...),
+			}
+		}
+	}
+	for app, value := range byApp {
+		if value.State != ConfigStateNotApplied {
+			continue
+		}
+		for _, path := range value.ManagedPaths {
+			if configurationPathExists(ctx, o, path) {
+				value.State = ConfigStateConflict
+				value.Conflicts = []string{path}
+				byApp[app] = value
+				break
+			}
+		}
+	}
+
+	result := make([]ConfigurationStatus, 0, len(byApp))
+	for _, value := range byApp {
+		result = append(result, value)
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].App < result[j].App })
+	return result
+}
+
+func reconciledConfigurationState(ctx context.Context, o Options, record install.ConfigurationRecord) ConfigState {
+	state, _ := reconcileConfiguration(ctx, o, record)
+	return state
+}
+
+func reconcileConfiguration(ctx context.Context, o Options, record install.ConfigurationRecord) (ConfigState, []string) {
+	state := record.State
+	if state == "" {
+		state = ConfigStateNotApplied
+	}
+	if len(record.Conflicts) > 0 {
+		return ConfigStateConflict, append([]string(nil), record.ModifiedPaths...)
+	}
+	if len(record.ModifiedPaths) > 0 {
+		return ConfigStateModified, append([]string(nil), record.ModifiedPaths...)
+	}
+	if state != ConfigStateApplied {
+		return state, nil
+	}
+	modified := configurationModifiedPaths(ctx, o, record)
+	if len(modified) > 0 {
+		return ConfigStateModified, modified
+	}
+	return state, nil
+}
+
+func configurationModifiedPaths(ctx context.Context, o Options, record install.ConfigurationRecord) []string {
+	modified := make([]string, 0)
+	for path, expected := range record.FileHashes {
+		if !validConfigurationPath(path) || expected == "" {
+			continue
+		}
+		current, ok := configurationHash(ctx, o, path)
+		if ok && current != expected {
+			modified = append(modified, path)
+		}
+	}
+	return modified
+}
+
+func configurationPathExists(ctx context.Context, o Options, path string) bool {
+	if !validConfigurationPath(path) {
+		return false
+	}
+	if o.termux {
+		return runWithTimeout(ctx, o, "proot-distro", "login", "ubuntu", "--", "test", "-e", path).Err == nil
+	}
+	return runWithTimeout(ctx, o, "test", "-e", path).Err == nil
+}
+
+func configurationHash(ctx context.Context, o Options, path string) (string, bool) {
+	var result CommandResult
+	if o.termux {
+		result = runWithTimeout(ctx, o, "proot-distro", "login", "ubuntu", "--", "sha256sum", "--", path)
+	} else {
+		result = runWithTimeout(ctx, o, "sha256sum", "--", path)
+	}
+	if result.Err != nil {
+		return "", false
+	}
+	fields := strings.Fields(string(result.Stdout))
+	if len(fields) == 0 {
+		return "", false
+	}
+	return fields[0], true
+}
+
+func validConfigurationPath(path string) bool {
+	clean := filepath.Clean(path)
+	return path != "" && clean == path && strings.HasPrefix(path, "/root/")
+}
+
+func reconcileInstallationConfigurations(installations []InstallationStatus, configurations []ConfigurationStatus) {
+	states := make(map[string]ConfigState, len(configurations))
+	for _, configuration := range configurations {
+		states[configuration.App] = configuration.State
+	}
+	for index := range installations {
+		if state, ok := states[installations[index].Name]; ok {
+			installations[index].ConfigState = state
+			continue
+		}
+		if profile, ok := install.Resolve(installations[index].Name); ok && profile.ConfigProfile != "" {
+			installations[index].ConfigState = ConfigStateNotApplied
+		} else {
+			installations[index].ConfigState = ConfigStateUnavailable
+		}
+	}
+}
+
 func collectCatalogInstallations(o Options, persisted []InstallationStatus) []InstallationStatus {
 	persisted = normalizeInstallationProvenance(persisted)
 	persisted = enrichInstallationMetadata(persisted)
@@ -592,6 +753,12 @@ func summarize(status SystemStatus) AlertSummary {
 			result.Warnings++
 		default:
 			result.Unknown++
+		}
+	}
+	for _, configuration := range status.Configurations {
+		switch configuration.State {
+		case ConfigStateConflict, ConfigStateModified, ConfigStateFailed:
+			result.Warnings++
 		}
 	}
 	return result

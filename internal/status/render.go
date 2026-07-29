@@ -53,6 +53,12 @@ func RenderText(w io.Writer, value SystemStatus) error {
 			}
 		}
 	}
+	if len(value.Configurations) > 0 {
+		text.WriteString("\nConfigurações\n")
+		for _, configuration := range value.Configurations {
+			appendStatusf(&text, "  %s: %s (%s)\n", configuration.App, configuration.State, configuration.Profile)
+		}
+	}
 
 	appendStatusf(&text, "\nAlertas\n  OK: %d | avisos: %d | erros: %d | ausentes: %d | desconhecidos: %d\n",
 		value.Alerts.OK, value.Alerts.Warnings, value.Alerts.Errors, value.Alerts.Missing, value.Alerts.Unknown)

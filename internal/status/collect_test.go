@@ -291,3 +291,57 @@ func TestCatalogStatusUsesUbuntuOnlyPath(t *testing.T) {
 		t.Fatalf("catalog status args = %v", args)
 	}
 }
+
+func TestCollectReconcilesLazyVimStateWithInstallations(t *testing.T) {
+	home := t.TempDir()
+	p := paths.New(home, t.TempDir())
+	if err := os.MkdirAll(p.InstallationsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(p.InstallationsDir(), "neovim.json"), []byte(`{"name":"neovim","kind":"editor","package":"neovim","executable":"nvim","state":"installed","source":"mobdesk"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := install.SaveConfigurationRecord(p, install.ConfigurationRecord{
+		App: "neovim", Profile: "lazyvim", State: install.ConfigStateModified,
+		ManagedPaths: []string{"/root/.config/nvim"}, ModifiedPaths: []string{"/root/.config/nvim/init.lua"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	value := Collect(context.Background(), Options{
+		Paths:         p,
+		CommandRunner: &fakeRunner{outputs: map[string]CommandResult{}},
+		LookPath:      availableCommands(),
+	})
+	if len(value.Configurations) != 1 || value.Configurations[0].State != ConfigStateModified {
+		t.Fatalf("unexpected configuration reconciliation: %+v", value.Configurations)
+	}
+	if len(value.Installations) != 1 || value.Installations[0].ConfigState != ConfigStateModified {
+		t.Fatalf("installation was not associated with configuration: %+v", value.Installations)
+	}
+	if value.Alerts.Warnings == 0 {
+		t.Fatalf("modified configuration did not produce a warning: %+v", value.Alerts)
+	}
+}
+
+func TestCollectShowsAvailableConfigurationWithoutRecord(t *testing.T) {
+	p := paths.New(t.TempDir(), t.TempDir())
+	value := collectConfigurations(context.Background(), Options{Paths: p}.withDefaults())
+	if len(value) != 1 || value[0].App != "neovim" || value[0].State != ConfigStateNotApplied {
+		t.Fatalf("missing configuration was not reconciled as not_applied: %+v", value)
+	}
+}
+
+func TestReconcileConfigurationMarksHashMismatchModified(t *testing.T) {
+	path := "/root/.config/nvim/init.lua"
+	runner := &fakeRunner{outputs: map[string]CommandResult{
+		"sha256sum -- " + path: {Stdout: []byte("actual  " + path + "\n")},
+	}}
+	state := reconciledConfigurationState(context.Background(), Options{CommandRunner: runner}, install.ConfigurationRecord{
+		State:      install.ConfigStateApplied,
+		FileHashes: map[string]string{path: "expected"},
+	})
+	if state != ConfigStateModified {
+		t.Fatalf("hash mismatch state = %s, want modified", state)
+	}
+}

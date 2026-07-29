@@ -94,7 +94,8 @@ ferramentas e atualização do binário.
 ### Serviços internos
 
 - `internal/status`: coleta uma fotografia do ambiente e produz o modelo de
-  estado compartilhado pelo CLI e pela TUI;
+  estado compartilhado pelo CLI e pela TUI, reconciliando instalações e
+  configurações em coleções separadas;
 - `internal/install`: resolve perfis, executa instalações idempotentes, aplica
   configurações embutidas e grava seus registros;
 - `internal/update`: consulta e aplica atualizações do Mobdesk;

@@ -11,6 +11,18 @@ import (
 type AppState = install.AppState
 type ConfigState = install.ConfigState
 
+const (
+	ConfigStateUnavailable = install.ConfigStateUnavailable
+	ConfigStateNotApplied  = install.ConfigStateNotApplied
+	ConfigStateApplying    = install.ConfigStateApplying
+	ConfigStateApplied     = install.ConfigStateApplied
+	ConfigStateRemoving    = install.ConfigStateRemoving
+	ConfigStateRemoved     = install.ConfigStateRemoved
+	ConfigStateModified    = install.ConfigStateModified
+	ConfigStateConflict    = install.ConfigStateConflict
+	ConfigStateFailed      = install.ConfigStateFailed
+)
+
 type OverallState string
 
 const (
@@ -31,19 +43,20 @@ const (
 )
 
 type SystemStatus struct {
-	SchemaVersion int                  `json:"schema_version"`
-	GeneratedAt   time.Time            `json:"generated_at"`
-	Overall       OverallState         `json:"overall"`
-	Host          HostStatus           `json:"host"`
-	Setup         SetupStatus          `json:"setup"`
-	Storage       StorageStatus        `json:"storage"`
-	Ubuntu        UbuntuStatus         `json:"ubuntu"`
-	SSH           SSHStatus            `json:"ssh"`
-	Network       NetworkStatus        `json:"network"`
-	Battery       BatteryStatus        `json:"battery"`
-	WiFi          WiFiStatus           `json:"wifi"`
-	Installations []InstallationStatus `json:"installations"`
-	Alerts        AlertSummary         `json:"alerts"`
+	SchemaVersion  int                   `json:"schema_version"`
+	GeneratedAt    time.Time             `json:"generated_at"`
+	Overall        OverallState          `json:"overall"`
+	Host           HostStatus            `json:"host"`
+	Setup          SetupStatus           `json:"setup"`
+	Storage        StorageStatus         `json:"storage"`
+	Ubuntu         UbuntuStatus          `json:"ubuntu"`
+	SSH            SSHStatus             `json:"ssh"`
+	Network        NetworkStatus         `json:"network"`
+	Battery        BatteryStatus         `json:"battery"`
+	WiFi           WiFiStatus            `json:"wifi"`
+	Installations  []InstallationStatus  `json:"installations"`
+	Configurations []ConfigurationStatus `json:"configurations"`
+	Alerts         AlertSummary          `json:"alerts"`
 }
 
 type HostStatus struct {
@@ -146,6 +159,16 @@ type InstallationStatus struct {
 	LastError         string                   `json:"last_error,omitempty"`
 	LogPath           string                   `json:"log_path"`
 	StorageEstimate   *install.StorageEstimate `json:"storage_estimate,omitempty"`
+	ConfigState       ConfigState              `json:"config_state,omitempty"`
+}
+
+type ConfigurationStatus struct {
+	App           string      `json:"app"`
+	Profile       string      `json:"profile"`
+	State         ConfigState `json:"state"`
+	ManagedPaths  []string    `json:"managed_paths,omitempty"`
+	ModifiedPaths []string    `json:"modified_paths,omitempty"`
+	Conflicts     []string    `json:"conflicts,omitempty"`
 }
 
 type AlertSummary struct {
