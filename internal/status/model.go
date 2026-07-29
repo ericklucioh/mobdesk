@@ -1,6 +1,15 @@
 package status
 
-import "time"
+import (
+	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/install"
+)
+
+// AppState and ConfigState are aliases so status and installation use the
+// same canonical values without duplicating state definitions.
+type AppState = install.AppState
+type ConfigState = install.ConfigState
 
 type OverallState string
 

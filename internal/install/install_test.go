@@ -39,6 +39,57 @@ func testOptions(t *testing.T, runner CommandRunner) Options {
 	}
 }
 
+func TestAppProfileContract(t *testing.T) {
+	measuredAt := time.Date(2026, 7, 29, 12, 0, 0, 0, time.UTC)
+	profile := AppProfile{
+		Name:        "neovim",
+		Aliases:     []string{"nvim"},
+		Description: "editor modal",
+		Package:     "neovim",
+		Executable:  "nvim",
+		VersionArg:  []string{"--version"},
+		InstallKind: "apt",
+		StorageEstimate: &StorageEstimate{
+			AppMinMB:     20,
+			AppMaxMB:     40,
+			Source:       "fixture",
+			Version:      "0.11",
+			Architecture: "arm64",
+			MeasuredAt:   measuredAt,
+		},
+	}
+
+	if profile.Name != "neovim" || profile.StorageEstimate == nil || profile.StorageEstimate.MeasuredAt != measuredAt {
+		t.Fatalf("unexpected app profile: %+v", profile)
+	}
+}
+
+func TestCanonicalAppAndConfigStates(t *testing.T) {
+	appStates := []AppState{
+		AppStateAvailable,
+		AppStateInstalling,
+		AppStateInstalled,
+		AppStateUninstalling,
+		AppStateUninstalled,
+		AppStatePartial,
+		AppStateFailed,
+	}
+	configStates := []ConfigState{
+		ConfigStateUnavailable,
+		ConfigStateNotApplied,
+		ConfigStateApplying,
+		ConfigStateApplied,
+		ConfigStateRemoving,
+		ConfigStateRemoved,
+		ConfigStateModified,
+		ConfigStateConflict,
+		ConfigStateFailed,
+	}
+	if len(appStates) != 7 || len(configStates) != 9 {
+		t.Fatalf("canonical state set changed: app=%d config=%d", len(appStates), len(configStates))
+	}
+}
+
 func TestResolveLanguagesAndAliases(t *testing.T) {
 	for _, name := range []string{"go", "golang", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4"} {
 		if _, ok := Resolve(name); !ok {

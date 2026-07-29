@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** pronto para execução
+**Status:** Fase 0 concluida; Fase 1 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -191,6 +191,15 @@ os nomes, estados e caminhos estejam definidos de forma única.
 - Os nomes de estado são usados de forma consistente.
 - O schema 1 continua compatível com os campos atuais.
 - `go test ./...` continua passando antes das mudanças funcionais.
+
+### Resultado da Fase 0
+
+- `AppProfile`, `StorageEstimate`, estados canônicos de app e configuração
+  foram adicionados sem migrar o catálogo existente.
+- `storage_estimate` foi reservado como campo JSON opcional e aditivo.
+- `Language` e o fluxo de instalação atual permanecem compatíveis.
+- Testes cobrem a compilação dos novos contratos e a compatibilidade do campo
+  opcional no resultado JSON.
 
 ## 8. Fase 1: Modelo `AppProfile` e Catálogo
 

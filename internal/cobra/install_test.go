@@ -2,6 +2,7 @@ package cobra
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 	"testing"
@@ -23,6 +24,31 @@ func TestInstallOperationResultReportsSuccessAsJSON(t *testing.T) {
 
 	if !result.Success || result.State != "installed" || result.Language != "go" || result.Version != "go1.26" {
 		t.Fatalf("unexpected result: %+v", result)
+	}
+}
+
+func TestOperationResultKeepsStorageEstimateOptional(t *testing.T) {
+	withoutEstimate, err := json.Marshal(operationResult{SchemaVersion: 1, Command: "install", Success: true, State: "installed", Message: "ok"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(withoutEstimate), "storage_estimate") {
+		t.Fatalf("empty storage estimate changed the schema: %s", withoutEstimate)
+	}
+
+	withEstimate, err := json.Marshal(operationResult{
+		SchemaVersion:   1,
+		Command:         "install",
+		Success:         true,
+		State:           "installed",
+		Message:         "ok",
+		StorageEstimate: &install.StorageEstimate{AppMinMB: 20},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(withEstimate), "storage_estimate") {
+		t.Fatalf("storage estimate was not emitted: %s", withEstimate)
 	}
 }
 
