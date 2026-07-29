@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
@@ -189,6 +190,20 @@ func TestRenderTextAndJSON(t *testing.T) {
 	var decoded SystemStatus
 	if err := json.Unmarshal(document.Bytes(), &decoded); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRenderTextUsesSelectedLocale(t *testing.T) {
+	value := SystemStatus{Overall: StateHealthy, Host: HostStatus{State: CheckOK, Termux: true}, GeneratedAt: time.Unix(0, 0).UTC(), Storage: StorageStatus{DeviceFree: 1, DeviceTotal: 2}, Setup: SetupStatus{State: CheckOK}, Ubuntu: UbuntuStatus{State: CheckOK}, SSH: SSHStatus{State: CheckOK}, Network: NetworkStatus{State: CheckOK}, Battery: BatteryStatus{State: CheckMissing}, WiFi: WiFiStatus{State: CheckMissing}}
+	var english, portuguese bytes.Buffer
+	if err := RenderText(&english, value, i18n.New(i18n.LocaleENUS)); err != nil {
+		t.Fatal(err)
+	}
+	if err := RenderText(&portuguese, value, i18n.New(i18n.LocalePTBR)); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(english.String(), "Summary:") || !strings.Contains(portuguese.String(), "Resumo:") || english.String() == portuguese.String() {
+		t.Fatalf("status locales were not presented independently: %q / %q", english.String(), portuguese.String())
 	}
 }
 

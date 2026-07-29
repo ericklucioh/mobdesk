@@ -1,6 +1,6 @@
 # English-First Localization and Documentation Migration Plan
 
-**Status:** Phase 2 complete; Phase 3 pending.
+**Status:** Phase 3 complete; Phase 4 pending.
 
 **Primary locale:** `en-US`
 
@@ -276,6 +276,22 @@ Acceptance criteria:
 - Changing locale does not change state transitions or safety decisions.
 - Detected apps, shared packages, conflicts and modified files keep their stable
   machine states.
+
+#### Phase 3 Result
+
+- Service errors and progress messages now carry typed message IDs and stable
+  error codes, with locale selection passed explicitly through service options
+  or presentation boundaries.
+- Installation and configuration records preserve their existing fields and
+  remain readable; additive `last_error_code` fields identify new failures
+  without replacing historical `last_error` text.
+- App and configuration profile descriptions come from the embedded English and
+  Brazilian Portuguese catalogs.
+- Status text, workstation warnings/errors, update failures and log failures
+  render through the selected locale while JSON states, keys, paths, records
+  and external command output remain unchanged.
+- Focused tests cover English and Brazilian Portuguese service/status output and
+  compatibility with legacy installation records.
 
 ### Phase 4: Localize the Bubble Tea Interface
 

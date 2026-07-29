@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
@@ -117,6 +118,33 @@ func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
 				t.Fatalf("alias %q for %s is not normalized", alias, profile.Name)
 			}
 		}
+	}
+}
+
+func TestCatalogProfilesUseSelectedLocale(t *testing.T) {
+	english := Tools(i18n.New(i18n.LocaleENUS))[0].Description
+	portuguese := Tools(i18n.New(i18n.LocalePTBR))[0].Description
+	if english == portuguese || english != "compiled language" || portuguese != "Linguagem compilada" {
+		t.Fatalf("localized descriptions = %q / %q", english, portuguese)
+	}
+	profile := DefaultConfigProfiles(i18n.New(i18n.LocalePTBR))["lazyvim"]
+	if !strings.Contains(profile.Description, "LazyVim versionado") {
+		t.Fatalf("localized config profile description = %q", profile.Description)
+	}
+}
+
+func TestLegacyInstallationRecordRemainsReadable(t *testing.T) {
+	options := testOptions(t, &fakeRunner{})
+	if err := os.MkdirAll(options.Paths.InstallationsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	payload := `{"name":"go","kind":"language","package":"golang","state":"failed","last_error":"historical failure","log_path":"/safe/go.log"}`
+	if err := os.WriteFile(filepath.Join(options.Paths.InstallationsDir(), "go.json"), []byte(payload), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	record, err := loadInstallationRecord(options.Paths, "go")
+	if err != nil || record.LastError != "historical failure" || record.LastErrorCode != "" {
+		t.Fatalf("legacy record = %+v, error = %v", record, err)
 	}
 }
 
@@ -360,7 +388,7 @@ func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 	if len(runner.commands) != 4 {
 		t.Fatalf("commands = %v, want version, update, install, version", runner.commands)
 	}
-	wantUpdates := []string{"Verificando go", "Atualizando índices do Ubuntu", "Aguardando gerenciador de pacotes", "Instalando go", "Verificando go após a instalação"}
+	wantUpdates := []string{"verify go", "update Ubuntu indexes for go", "wait for the package manager", "install go", "verify go"}
 	if !slices.Equal(updates, wantUpdates) {
 		t.Fatalf("progress = %v, want %v", updates, wantUpdates)
 	}
@@ -439,10 +467,10 @@ func TestInstallWaitsForAnotherMobdeskInstallation(t *testing.T) {
 	var updates []string
 	options.Progress = func(message string) { updates = append(updates, message) }
 	_, err = Install(context.Background(), "go", options)
-	if err == nil || !strings.Contains(err.Error(), "aguardar outra instalação") {
+	if err == nil || i18n.ErrorCode(err) != "install_wait" {
 		t.Fatalf("unexpected lock error: %v", err)
 	}
-	if !slices.Equal(updates, []string{"Aguardando outra instalação do Mobdesk"}) {
+	if !slices.Equal(updates, []string{"wait for another Mobdesk installation"}) {
 		t.Fatalf("progress = %v", updates)
 	}
 	if _, statErr := os.Stat(options.Paths.InstallationsDir()); !os.IsNotExist(statErr) {
@@ -452,7 +480,7 @@ func TestInstallWaitsForAnotherMobdeskInstallation(t *testing.T) {
 
 func TestInstallRejectsUnsupportedLanguage(t *testing.T) {
 	_, err := Install(context.Background(), "rust", Options{Runner: &fakeRunner{}})
-	if err == nil || !strings.Contains(err.Error(), "não suportada") {
+	if err == nil || i18n.ErrorCode(err) != "install_unsupported" {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

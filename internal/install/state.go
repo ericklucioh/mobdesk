@@ -2,11 +2,11 @@ package install
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
@@ -27,7 +27,7 @@ func LoadConfigurationRecord(p paths.Paths, app string) (ConfigurationRecord, er
 	}
 	var record ConfigurationRecord
 	if err := json.Unmarshal(payload, &record); err != nil {
-		return ConfigurationRecord{}, fmt.Errorf("ler estado da configuração %q: %w", app, err)
+		return ConfigurationRecord{}, i18n.NewError(i18n.ServiceConfigError, "config_read_state", map[string]any{"Detail": app}, err)
 	}
 	return record, nil
 }
@@ -42,7 +42,7 @@ func loadInstallationRecord(p paths.Paths, app string) (InstallationRecord, erro
 	}
 	var record InstallationRecord
 	if err := json.Unmarshal(payload, &record); err != nil {
-		return InstallationRecord{}, fmt.Errorf("ler estado da instalação %q: %w", app, err)
+		return InstallationRecord{}, i18n.NewError(i18n.ServiceInstallState, "install_read_state", map[string]any{"Detail": app}, err)
 	}
 	return record, nil
 }
@@ -78,7 +78,7 @@ func writePrivateJSON(path string, value any) error {
 
 func validateStateName(name string) error {
 	if name == "" || name == "." || name == ".." || filepath.Base(name) != name || strings.ContainsAny(name, `/\\`) {
-		return fmt.Errorf("nome de estado inválido %q", name)
+		return i18n.NewError(i18n.ServiceInstallState, "state_name_invalid", map[string]any{"Detail": name}, nil)
 	}
 	return nil
 }

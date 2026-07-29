@@ -2,6 +2,7 @@ package i18n
 
 import (
 	"bytes"
+	"errors"
 	"text/template"
 )
 
@@ -108,6 +109,110 @@ const (
 	LocaleEnglishName      MessageID = "locale.english_name"
 	LocalePortugueseBRName MessageID = "locale.portuguese_br_name"
 	ErrorMissingMessage    MessageID = "error.missing_message"
+
+	AppGoDescription          MessageID = "app.go.description"
+	AppPythonDescription      MessageID = "app.python.description"
+	AppNodeDescription        MessageID = "app.node.description"
+	AppCDescription           MessageID = "app.c.description"
+	AppCPPDescription         MessageID = "app.cpp.description"
+	AppLuaDescription         MessageID = "app.lua.description"
+	AppGitDescription         MessageID = "app.git.description"
+	AppGHDescription          MessageID = "app.gh.description"
+	AppTmuxDescription        MessageID = "app.tmux.description"
+	AppZellijDescription      MessageID = "app.zellij.description"
+	AppMicroDescription       MessageID = "app.micro.description"
+	AppLazygitDescription     MessageID = "app.lazygit.description"
+	AppTreeDescription        MessageID = "app.tree.description"
+	AppTTTDescription         MessageID = "app.ttt.description"
+	AppHtopDescription        MessageID = "app.htop.description"
+	AppNcduDescription        MessageID = "app.ncdu.description"
+	AppInxiDescription        MessageID = "app.inxi.description"
+	AppSpeedtestDescription   MessageID = "app.speedtest_cli.description"
+	AppPostingDescription     MessageID = "app.posting.description"
+	AppYaziDescription        MessageID = "app.yazi.description"
+	AppTuifiDescription       MessageID = "app.tuifi.description"
+	AppNeovimDescription      MessageID = "app.neovim.description"
+	AppOpencodeDescription    MessageID = "app.opencode_cli.description"
+	AppCodexDescription       MessageID = "app.codex_cli.description"
+	AppClaudeDescription      MessageID = "app.claudecode_cli.description"
+	AppLeetgoDescription      MessageID = "app.leetgo.description"
+	ProfileLazyVimDescription MessageID = "profile.lazyvim.description"
+
+	ServiceInstallUnsupported MessageID = "service.install.unsupported"
+	ServiceInstallDependency  MessageID = "service.install.dependency"
+	ServiceInstallState       MessageID = "service.install.state"
+	ServiceInstallLogs        MessageID = "service.install.logs"
+	ServiceInstallRecord      MessageID = "service.install.record"
+	ServiceInstallVerify      MessageID = "service.install.verify"
+	ServiceInstallUpdate      MessageID = "service.install.update"
+	ServiceInstallTool        MessageID = "service.install.tool"
+	ServiceInstallHash        MessageID = "service.install.hash"
+	ServiceInstallLock        MessageID = "service.install.lock"
+	ServiceInstallWait        MessageID = "service.install.wait"
+	ServiceConfigError        MessageID = "service.config.error"
+	ServiceConfigProgress     MessageID = "service.config.progress"
+	ServiceConfigPlugin       MessageID = "service.config.plugin"
+	ServiceUninstallError     MessageID = "service.uninstall.error"
+	ServiceUninstallProgress  MessageID = "service.uninstall.progress"
+	ServiceUninstallDetected  MessageID = "service.uninstall.detected"
+	ServiceUninstallState     MessageID = "service.uninstall.state"
+	ServiceUninstallShared    MessageID = "service.uninstall.shared"
+	ServiceWorkstationError   MessageID = "service.workstation.error"
+	ServiceWorkstationWarning MessageID = "service.workstation.warning"
+	ServiceWorkstationPID     MessageID = "service.workstation.pid"
+	ServiceUpdateError        MessageID = "service.update.error"
+	ServiceLogsError          MessageID = "service.logs.error"
+	ServiceExecError          MessageID = "service.exec.error"
+
+	StatusTitle             MessageID = "status.title"
+	StatusSummary           MessageID = "status.summary"
+	StatusUpdated           MessageID = "status.updated"
+	StatusHost              MessageID = "status.host"
+	StatusRuntime           MessageID = "status.runtime"
+	StatusArchitecture      MessageID = "status.architecture"
+	StatusWakeLock          MessageID = "status.wake_lock"
+	StatusTermuxAPI         MessageID = "status.termux_api"
+	StatusStorage           MessageID = "status.storage"
+	StatusDeviceStorage     MessageID = "status.device_storage"
+	StatusSetup             MessageID = "status.setup"
+	StatusComplete          MessageID = "status.complete"
+	StatusUbuntu            MessageID = "status.ubuntu"
+	StatusAccessible        MessageID = "status.accessible"
+	StatusWorkspace         MessageID = "status.workspace"
+	StatusSSH               MessageID = "status.ssh"
+	StatusPort              MessageID = "status.port"
+	StatusRunning           MessageID = "status.running"
+	StatusNetwork           MessageID = "status.network"
+	StatusAddresses         MessageID = "status.addresses"
+	StatusDevice            MessageID = "status.device"
+	StatusBattery           MessageID = "status.battery"
+	StatusWiFi              MessageID = "status.wifi"
+	StatusInstallations     MessageID = "status.installations"
+	StatusConfiguration     MessageID = "status.configurations"
+	StatusAlerts            MessageID = "status.alerts"
+	StatusState             MessageID = "status.state"
+	StatusError             MessageID = "status.error"
+	StatusLog               MessageID = "status.log"
+	StatusAvailable         MessageID = "status.available"
+	StatusMissing           MessageID = "status.missing"
+	StatusYes               MessageID = "status.yes"
+	StatusNo                MessageID = "status.no"
+	StatusNone              MessageID = "status.none"
+	StatusBatteryAPIMissing MessageID = "status.battery_api_missing"
+	StatusConnected         MessageID = "status.connected"
+	StatusDisconnected      MessageID = "status.disconnected"
+	StatusOverallHealthy    MessageID = "status.overall.healthy"
+	StatusOverallDegraded   MessageID = "status.overall.degraded"
+	StatusOverallError      MessageID = "status.overall.error"
+	StatusOverallUnknown    MessageID = "status.overall.unknown"
+	StatusCheckOK           MessageID = "status.check.ok"
+	StatusCheckWarning      MessageID = "status.check.warning"
+	StatusCheckError        MessageID = "status.check.error"
+	StatusCheckMissing      MessageID = "status.check.missing"
+	StatusCheckUnknown      MessageID = "status.check.unknown"
+	StatusAppState          MessageID = "status.app_state"
+	StatusConfigState       MessageID = "status.config_state"
+	StatusAlertCounts       MessageID = "status.alert_counts"
 )
 
 var requiredMessageIDs = []MessageID{
@@ -205,6 +310,93 @@ var requiredMessageIDs = []MessageID{
 	LocaleEnglishName,
 	LocalePortugueseBRName,
 	ErrorMissingMessage,
+	AppGoDescription, AppPythonDescription, AppNodeDescription, AppCDescription,
+	AppCPPDescription, AppLuaDescription, AppGitDescription, AppGHDescription,
+	AppTmuxDescription, AppZellijDescription, AppMicroDescription, AppLazygitDescription,
+	AppTreeDescription, AppTTTDescription, AppHtopDescription, AppNcduDescription,
+	AppInxiDescription, AppSpeedtestDescription, AppPostingDescription, AppYaziDescription,
+	AppTuifiDescription, AppNeovimDescription, AppOpencodeDescription, AppCodexDescription,
+	AppClaudeDescription, AppLeetgoDescription, ProfileLazyVimDescription,
+	ServiceInstallUnsupported, ServiceInstallDependency, ServiceInstallState, ServiceInstallLogs,
+	ServiceInstallRecord, ServiceInstallVerify, ServiceInstallUpdate, ServiceInstallTool,
+	ServiceInstallHash, ServiceInstallLock, ServiceInstallWait, ServiceConfigError,
+	ServiceConfigProgress, ServiceConfigPlugin, ServiceUninstallError, ServiceUninstallProgress,
+	ServiceWorkstationError, ServiceWorkstationWarning, ServiceWorkstationPID, ServiceUpdateError, ServiceLogsError,
+	ServiceUninstallDetected, ServiceUninstallState, ServiceUninstallShared, ServiceExecError,
+	StatusTitle, StatusSummary, StatusUpdated, StatusHost, StatusRuntime, StatusArchitecture,
+	StatusWakeLock, StatusTermuxAPI, StatusStorage, StatusDeviceStorage, StatusSetup,
+	StatusComplete, StatusUbuntu, StatusAccessible, StatusWorkspace, StatusSSH, StatusPort,
+	StatusRunning, StatusNetwork, StatusAddresses, StatusDevice, StatusBattery, StatusWiFi,
+	StatusInstallations, StatusConfiguration, StatusAlerts, StatusState, StatusError, StatusLog,
+	StatusAvailable, StatusMissing, StatusYes, StatusNo, StatusNone, StatusBatteryAPIMissing,
+	StatusConnected, StatusDisconnected, StatusOverallHealthy, StatusOverallDegraded,
+	StatusOverallError, StatusOverallUnknown, StatusCheckOK, StatusCheckWarning, StatusCheckError,
+	StatusCheckMissing, StatusCheckUnknown, StatusAppState, StatusConfigState, StatusAlertCounts,
+}
+
+// MessageError carries a stable code and translatable presentation data across
+// service boundaries. Its cause remains available for diagnostics and command
+// output while callers choose the locale at the presentation boundary.
+type MessageError struct {
+	ID    MessageID
+	Code  string
+	Data  map[string]any
+	Cause error
+}
+
+func NewError(id MessageID, code string, data map[string]any, cause error) error {
+	if data == nil {
+		data = map[string]any{}
+	}
+	if _, ok := data["Detail"]; !ok {
+		data["Detail"] = ""
+	}
+	if cause != nil {
+		if _, ok := data["Detail"]; !ok {
+			data["Detail"] = cause.Error()
+		}
+	}
+	return &MessageError{ID: id, Code: code, Data: data, Cause: cause}
+}
+
+func (e *MessageError) Error() string {
+	message := New(LocaleENUS).Text(e.ID, e.Data)
+	if e.Cause != nil && !bytes.Contains([]byte(message), []byte(e.Cause.Error())) {
+		message += ": " + e.Cause.Error()
+	}
+	return message
+}
+func (e *MessageError) Unwrap() error { return e.Cause }
+
+func ErrorCode(err error) string {
+	var target *MessageError
+	if errors.As(err, &target) {
+		return target.Code
+	}
+	return ""
+}
+
+func ErrorMessageID(err error) MessageID {
+	var target *MessageError
+	if errors.As(err, &target) {
+		return target.ID
+	}
+	return ""
+}
+
+func (l Localizer) Error(err error) string {
+	if err == nil {
+		return ""
+	}
+	var target *MessageError
+	if errors.As(err, &target) {
+		message := l.Text(target.ID, target.Data)
+		if target.Cause != nil && !bytes.Contains([]byte(message), []byte(target.Cause.Error())) {
+			message += ": " + target.Cause.Error()
+		}
+		return message
+	}
+	return err.Error()
 }
 
 // Localizer renders messages from one immutable locale catalog.

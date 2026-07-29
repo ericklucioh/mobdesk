@@ -18,6 +18,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
 
 const (
@@ -68,7 +70,12 @@ type Result struct {
 	Updated        bool   `json:"updated"`
 }
 
-func Check(ctx context.Context, options Options) (Result, error) {
+func Check(ctx context.Context, options Options) (result Result, err error) {
+	defer func() {
+		if err != nil && i18n.ErrorCode(err) == "" {
+			err = updateError(err)
+		}
+	}()
 	options = options.withDefaults()
 	if !supportsReleaseTarget(options.GOOS, options.GOARCH) {
 		return Result{}, fmt.Errorf("release não disponível para %s/%s", options.GOOS, options.GOARCH)
@@ -78,7 +85,7 @@ func Check(ctx context.Context, options Options) (Result, error) {
 		return Result{}, err
 	}
 	assetName := options.BinaryName
-	return Result{
+	result = Result{
 		SchemaVersion:  1,
 		CurrentVersion: options.CurrentVersion,
 		LatestVersion:  release.TagName,
@@ -86,15 +93,21 @@ func Check(ctx context.Context, options Options) (Result, error) {
 		Asset:          assetName,
 		InstallPath:    options.InstallPath,
 		Updated:        options.CurrentVersion != release.TagName,
-	}, nil
+	}
+	return result, nil
 }
 
-func Apply(ctx context.Context, options Options) (Result, error) {
+func Apply(ctx context.Context, options Options) (result Result, err error) {
+	defer func() {
+		if err != nil && i18n.ErrorCode(err) == "" {
+			err = updateError(err)
+		}
+	}()
 	options = options.withDefaults()
 	if err := recoverInterruptedUpdate(options.InstallPath); err != nil {
 		return Result{}, err
 	}
-	result, err := Check(ctx, options)
+	result, err = Check(ctx, options)
 	if err != nil {
 		return Result{}, err
 	}
@@ -114,7 +127,15 @@ func Apply(ctx context.Context, options Options) (Result, error) {
 // Recover restores the last working binary when an interrupted update left
 // only its backup. It is safe to call before checking for updates.
 func Recover(options Options) error {
-	return recoverInterruptedUpdate(options.withDefaults().InstallPath)
+	err := recoverInterruptedUpdate(options.withDefaults().InstallPath)
+	if err != nil && i18n.ErrorCode(err) == "" {
+		return updateError(err)
+	}
+	return err
+}
+
+func updateError(cause error) error {
+	return i18n.NewError(i18n.ServiceUpdateError, "update_operation_failed", map[string]any{"Detail": cause.Error()}, cause)
 }
 
 func (o Options) withDefaults() Options {

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
@@ -18,8 +19,13 @@ type SetupResult struct {
 	Phases []string
 }
 
-func (s Service) Setup(ctx context.Context, options SetupOptions) (SetupResult, error) {
-	result := SetupResult{}
+func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupResult, err error) {
+	defer func() {
+		if err != nil && i18n.ErrorCode(err) == "" {
+			err = workstationError("setup workstation", err)
+		}
+	}()
+	result = SetupResult{}
 	release, err := s.Deps.AcquireLock(s.Paths.SetupLock())
 	if err != nil {
 		return result, fmt.Errorf("iniciar setup: %w", err)

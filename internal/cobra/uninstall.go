@@ -44,6 +44,9 @@ func runUninstallOptions(ctx context.Context, name string, jsonOutput, progressO
 	var result install.Result
 	var err error
 	options := install.Options{Paths: paths.Current()}
+	if len(localizers) > 0 {
+		options.Localizer = localizers[0]
+	}
 	if progressOutput {
 		options.Progress = emitInstallProgress
 	}

@@ -2,13 +2,13 @@ package logs
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/ericklucioh/mobdesk/internal/status"
@@ -33,6 +33,7 @@ type Record struct {
 	LastAttemptAt time.Time `json:"last_attempt_at,omitempty"`
 	InstalledAt   time.Time `json:"installed_at,omitempty"`
 	LastError     string    `json:"last_error,omitempty"`
+	LastErrorCode string    `json:"last_error_code,omitempty"`
 	LogPath       string    `json:"log_path"`
 	Content       string    `json:"content,omitempty"`
 	Missing       bool      `json:"missing,omitempty"`
@@ -52,7 +53,7 @@ func Read(options Options) (Snapshot, error) {
 	directory := options.Paths.InstallationsDir()
 	entries, err := os.ReadDir(directory)
 	if err != nil && !os.IsNotExist(err) {
-		return Snapshot{}, fmt.Errorf("ler registros de instalação: %w", err)
+		return Snapshot{}, i18n.NewError(i18n.ServiceLogsError, "logs_read_records", nil, err)
 	}
 
 	result := Snapshot{SchemaVersion: SchemaVersion, GeneratedAt: time.Now().UTC(), Logs: []Record{}}
@@ -83,6 +84,7 @@ func Read(options Options) (Snapshot, error) {
 			LastAttemptAt: installation.LastAttemptAt,
 			InstalledAt:   installation.InstalledAt,
 			LastError:     installation.LastError,
+			LastErrorCode: installation.LastErrorCode,
 			LogPath:       logPath,
 		}
 		record.Content, record.Missing = readTail(record.LogPath, options.Lines)

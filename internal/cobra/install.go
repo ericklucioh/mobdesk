@@ -47,6 +47,9 @@ func runInstallOptions(ctx context.Context, name string, jsonOutput, progressOut
 		return err
 	}
 	options := install.Options{Paths: paths.Current()}
+	if len(localizers) > 0 {
+		options.Localizer = localizers[0]
+	}
 	if progressOutput {
 		options.Progress = func(message string) {
 			_ = json.NewEncoder(os.Stdout).Encode(installProgressEvent{Event: "progress", Message: message})

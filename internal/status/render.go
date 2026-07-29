@@ -6,6 +6,8 @@ import (
 	"io"
 	"strings"
 	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
 
 func EncodeJSON(w io.Writer, value SystemStatus) error {
@@ -14,61 +16,75 @@ func EncodeJSON(w io.Writer, value SystemStatus) error {
 	return encoder.Encode(value)
 }
 
-func RenderText(w io.Writer, value SystemStatus) error {
-	var text strings.Builder
-	text.WriteString("Mobdesk status\n")
-	summary := fmt.Sprintf("\nResumo:        %s\n", value.Overall)
-	text.WriteString(summary)
-	updated := fmt.Sprintf("Atualizado:    %s\n", value.GeneratedAt.Format(time.RFC3339))
-	text.WriteString(updated)
-
-	hostLabel := "Termux"
-	if !value.Host.Termux {
-		hostLabel = "Runtime"
+func RenderText(w io.Writer, value SystemStatus, localizers ...i18n.Localizer) error {
+	localizer := i18n.New(i18n.LocaleENUS)
+	if len(localizers) > 0 {
+		localizer = localizers[0]
 	}
-	text.WriteString("\nHost\n")
-	hostState := fmt.Sprintf("  %-12s%s\n", hostLabel+":", value.Host.State)
-	text.WriteString(hostState)
-	appendStatusf(&text, "  Arquitetura: %s\n  Wake-lock:   %s\n  Termux:API:  %s\n", value.Host.Architecture, availability(value.Host.WakeLockAvailable), availability(value.Host.TermuxAPIAvailable))
-	appendStatusf(&text, "\nArmazenamento\n  Dispositivo: %s livres de %s\n", formatBytes(value.Storage.DeviceFree), formatBytes(value.Storage.DeviceTotal))
-	appendStatusf(&text, "\nSetup\n  Estado:      %s\n  Completo:    %s\n", value.Setup.State, yesNo(value.Setup.Completed))
-	appendStatusf(&text, "\nUbuntu\n  Estado:      %s\n  Acessível:   %s\n  Workspace:   %s\n", value.Ubuntu.State, yesNo(value.Ubuntu.Accessible), yesNo(value.Ubuntu.Workspace))
-	appendStatusf(&text, "\nSSH\n  Estado:      %s\n  Porta:       %d\n  Rodando:     %s\n", value.SSH.State, value.SSH.Port, yesNo(value.SSH.Running))
-	appendStatusf(&text, "\nRede\n  Estado:      %s\n  Endereços:   %s\n", value.Network.State, joinOrUnknown(value.Network.Addresses))
-	appendStatusf(&text, "\nDispositivo\n  Bateria:     %s\n  Wi-Fi:       %s\n", batteryText(value.Battery), wifiText(value.WiFi))
+	var text strings.Builder
+	text.WriteString(localizer.Text(i18n.StatusTitle, nil) + "\n")
+	text.WriteString("\n" + localizer.Text(i18n.StatusSummary, map[string]any{"Value": localizedOverall(localizer, value.Overall)}) + "\n")
+	text.WriteString(localizer.Text(i18n.StatusUpdated, map[string]any{"Value": value.GeneratedAt.Format(time.RFC3339)}) + "\n")
+
+	hostLabel := localizer.Text(i18n.StatusRuntime, nil)
+	if value.Host.Termux {
+		hostLabel = "Termux"
+	}
+	text.WriteString("\n" + localizer.Text(i18n.StatusHost, nil) + "\n")
+	fmt.Fprintf(&text, "  %-12s%s\n", hostLabel+":", localizedCheck(localizer, value.Host.State))
+	fmt.Fprintf(&text, "  %s: %s\n  %s:   %s\n  %s:  %s\n", localizer.Text(i18n.StatusArchitecture, nil), value.Host.Architecture, localizer.Text(i18n.StatusWakeLock, nil), availability(localizer, value.Host.WakeLockAvailable), localizer.Text(i18n.StatusTermuxAPI, nil), availability(localizer, value.Host.TermuxAPIAvailable))
+	fmt.Fprintf(&text, "\n%s\n  %s\n", localizer.Text(i18n.StatusStorage, nil), localizer.Text(i18n.StatusDeviceStorage, map[string]any{"Free": formatBytes(value.Storage.DeviceFree), "Total": formatBytes(value.Storage.DeviceTotal)}))
+	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:    %s\n", localizer.Text(i18n.StatusSetup, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.Setup.State), localizer.Text(i18n.StatusComplete, nil), yesNo(localizer, value.Setup.Completed))
+	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:   %s\n  %s:   %s\n", localizer.Text(i18n.StatusUbuntu, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.Ubuntu.State), localizer.Text(i18n.StatusAccessible, nil), yesNo(localizer, value.Ubuntu.Accessible), localizer.Text(i18n.StatusWorkspace, nil), yesNo(localizer, value.Ubuntu.Workspace))
+	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:       %d\n  %s:    %s\n", localizer.Text(i18n.StatusSSH, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.SSH.State), localizer.Text(i18n.StatusPort, nil), value.SSH.Port, localizer.Text(i18n.StatusRunning, nil), yesNo(localizer, value.SSH.Running))
+	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:   %s\n", localizer.Text(i18n.StatusNetwork, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.Network.State), localizer.Text(i18n.StatusAddresses, nil), joinOrUnknown(localizer, value.Network.Addresses))
+	fmt.Fprintf(&text, "\n%s\n  %s:     %s\n  %s:       %s\n", localizer.Text(i18n.StatusDevice, nil), localizer.Text(i18n.StatusBattery, nil), batteryText(localizer, value.Battery), localizer.Text(i18n.StatusWiFi, nil), wifiText(localizer, value.WiFi))
 
 	if len(value.Installations) > 0 {
-		text.WriteString("\nInstalações\n")
+		text.WriteString("\n" + localizer.Text(i18n.StatusInstallations, nil) + "\n")
 		for _, installation := range value.Installations {
 			version := installation.Version
 			if version == "" {
 				version = installation.State
 			}
-			appendStatusf(&text, "  %s: %s (%s)\n", installation.Name, installation.State, version)
+			fmt.Fprintf(&text, "  %s: %s (%s)\n", installation.Name, localizeState(localizer, installation.State), version)
 			if installation.LastError != "" {
-				appendStatusf(&text, "    Erro: %s\n", installation.LastError)
+				fmt.Fprintf(&text, "    %s: %s\n", localizer.Text(i18n.StatusError, nil), installation.LastError)
 			}
 			if installation.LogPath != "" {
-				appendStatusf(&text, "    Log:  %s\n", installation.LogPath)
+				fmt.Fprintf(&text, "    %s:  %s\n", localizer.Text(i18n.StatusLog, nil), installation.LogPath)
 			}
 		}
 	}
 	if len(value.Configurations) > 0 {
-		text.WriteString("\nConfigurações\n")
+		text.WriteString("\n" + localizer.Text(i18n.StatusConfiguration, nil) + "\n")
 		for _, configuration := range value.Configurations {
-			appendStatusf(&text, "  %s: %s (%s)\n", configuration.App, configuration.State, configuration.Profile)
+			fmt.Fprintf(&text, "  %s: %s (%s)\n", configuration.App, localizeState(localizer, string(configuration.State)), configuration.Profile)
 		}
 	}
-
-	appendStatusf(&text, "\nAlertas\n  OK: %d | avisos: %d | erros: %d | ausentes: %d | desconhecidos: %d\n",
-		value.Alerts.OK, value.Alerts.Warnings, value.Alerts.Errors, value.Alerts.Missing, value.Alerts.Unknown)
+	fmt.Fprintf(&text, "\n%s\n  %s\n", localizer.Text(i18n.StatusAlerts, nil), localizer.Text(i18n.StatusAlertCounts, map[string]any{"OK": value.Alerts.OK, "Warnings": value.Alerts.Warnings, "Errors": value.Alerts.Errors, "Missing": value.Alerts.Missing, "Unknown": value.Alerts.Unknown}))
 	_, err := io.WriteString(w, text.String())
 	return err
 }
 
-func appendStatusf(builder *strings.Builder, format string, values ...any) {
-	formatted := fmt.Sprintf(format, values...)
-	builder.WriteString(formatted)
+func localizedOverall(l i18n.Localizer, state OverallState) string {
+	ids := map[OverallState]i18n.MessageID{StateHealthy: i18n.StatusOverallHealthy, StateDegraded: i18n.StatusOverallDegraded, StateError: i18n.StatusOverallError, StateUnknown: i18n.StatusOverallUnknown}
+	if id, ok := ids[state]; ok {
+		return l.Text(id, nil)
+	}
+	return string(state)
+}
+
+func localizedCheck(l i18n.Localizer, state CheckState) string {
+	ids := map[CheckState]i18n.MessageID{CheckOK: i18n.StatusCheckOK, CheckWarning: i18n.StatusCheckWarning, CheckError: i18n.StatusCheckError, CheckMissing: i18n.StatusCheckMissing, CheckUnknown: i18n.StatusCheckUnknown}
+	if id, ok := ids[state]; ok {
+		return l.Text(id, nil)
+	}
+	return string(state)
+}
+
+func localizeState(l i18n.Localizer, state string) string {
+	return l.Text(i18n.StatusAppState, map[string]any{"Value": state})
 }
 
 func formatBytes(value int64) string {
@@ -86,50 +102,46 @@ func formatBytes(value int64) string {
 	return fmt.Sprintf("%d B", value)
 }
 
-func availability(value bool) string {
+func availability(l i18n.Localizer, value bool) string {
 	if value {
-		return "disponível"
+		return l.Text(i18n.StatusAvailable, nil)
 	}
-	return "ausente"
+	return l.Text(i18n.StatusMissing, nil)
 }
 
-func yesNo(value bool) string {
+func yesNo(l i18n.Localizer, value bool) string {
 	if value {
-		return "sim"
+		return l.Text(i18n.StatusYes, nil)
 	}
-	return "não"
+	return l.Text(i18n.StatusNo, nil)
 }
 
-func joinOrUnknown(values []string) string {
+func joinOrUnknown(l i18n.Localizer, values []string) string {
 	if len(values) == 0 {
-		return "nenhum"
+		return l.Text(i18n.StatusNone, nil)
 	}
-	result := values[0]
-	for _, value := range values[1:] {
-		result += ", " + value
-	}
-	return result
+	return strings.Join(values, ", ")
 }
 
-func batteryText(value BatteryStatus) string {
+func batteryText(l i18n.Localizer, value BatteryStatus) string {
 	if value.State == CheckMissing {
-		return "Termux:API ausente"
+		return l.Text(i18n.StatusBatteryAPIMissing, nil)
 	}
 	if value.Percentage == nil {
-		return string(value.State)
+		return localizedCheck(l, value.State)
 	}
 	return fmt.Sprintf("%d%% (%s)", *value.Percentage, value.Status)
 }
 
-func wifiText(value WiFiStatus) string {
+func wifiText(l i18n.Localizer, value WiFiStatus) string {
 	if value.State == CheckMissing {
-		return "Termux:API ausente"
+		return l.Text(i18n.StatusBatteryAPIMissing, nil)
 	}
 	if !value.Connected {
-		return "desconectado"
+		return l.Text(i18n.StatusDisconnected, nil)
 	}
 	if value.IP != "" {
-		return fmt.Sprintf("conectado (%s)", value.IP)
+		return fmt.Sprintf("%s (%s)", l.Text(i18n.StatusConnected, nil), value.IP)
 	}
-	return "conectado"
+	return l.Text(i18n.StatusConnected, nil)
 }

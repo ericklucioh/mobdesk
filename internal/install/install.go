@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
@@ -21,32 +22,32 @@ const (
 )
 
 var catalog = []AppProfile{
-	{Name: "go", Aliases: []string{"golang"}, Description: "Linguagem compilada", Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(180, 300, 0, 50, 0, 5)},
-	{Name: "python", Aliases: []string{"python3"}, Description: "Scripts e automação", Package: "python3", Executable: "python3", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(35, 60, 0, 20, 0, 5)},
-	{Name: "node", Aliases: []string{"nodejs"}, Description: "JavaScript no servidor", Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "node", StorageEstimate: plannedStorage(70, 130, 20, 60, 0, 10)},
-	{Name: "c", Aliases: []string{"c-lang"}, Description: "Compilador C", Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(250, 450, 20, 80, 0, 10)},
-	{Name: "cpp", Aliases: []string{"c++", "cplusplus"}, Description: "Compilador C++", Package: "clang", Executable: "clang++", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(250, 450, 20, 80, 0, 10)},
-	{Name: "lua", Aliases: []string{"lua5.4"}, Description: "Scripts leves", Package: "lua5.4", Executable: "lua5.4", VersionArg: []string{"-v"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(2, 6, 0, 5, 0, 2)},
-	{Name: "git", Description: "Controle de versão", Package: "git", Executable: "git", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(35, 60, 0, 10, 0, 5)},
-	{Name: "gh", Aliases: []string{"github-cli"}, Description: "GitHub pelo terminal", Package: "gh", Executable: "gh", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "apt", StorageEstimate: plannedStorage(30, 50, 0, 10, 0, 5)},
-	{Name: "tmux", Description: "Sessões persistentes", Package: "tmux", Executable: "tmux", VersionArg: []string{"-V"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(2, 5, 0, 2, 0, 2)},
-	{Name: "zellij", Description: "Multiplexador moderno", Package: "zellij", Executable: "zellij", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "script", UserBin: true, Script: "apt-get install -y ca-certificates curl tar; mkdir -p \"$HOME/.local/bin\"; archive=$(mktemp); curl -fsSL https://github.com/zellij-org/zellij/releases/download/v0.44.3/zellij-aarch64-unknown-linux-musl.tar.gz -o \"$archive\"; printf '%s  %s\\n' '15e6534d42644d66973d136c590c49739dcfd6a1a2a0d3d917973f16c81b45fb' \"$archive\" | sha256sum -c -; tar -xzf \"$archive\" -C \"$HOME/.local/bin\" zellij; chmod 0755 \"$HOME/.local/bin/zellij\"; rm -f \"$archive\"", StorageEstimate: plannedStorage(20, 30, 0, 5, 0, 5)},
-	{Name: "micro", Description: "Editor de terminal", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(15, 25, 0, 5, 0, 5)},
-	{Name: "lazygit", Description: "Git interativo", Package: "github.com/jesseduffield/lazygit@v0.63.1", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "script", Script: githubReleaseScript("jesseduffield/lazygit", "v0.63.1", "lazygit_0.63.1_linux_arm64.tar.gz", "555dbc9a8efcf2e33bc24e7fbd9463e9fa375e3c5e23cc270763733c38eeae36", "lazygit_0.63.1_linux_x86_64.tar.gz", "8e033bc78c8e192dee9510e951f6c9e154289b7198d22c924ed1d0a951b0dac1", "lazygit"), StorageEstimate: plannedStorage(15, 25, 0, 5, 0, 5)},
-	{Name: "tree", Description: "Árvore de diretórios", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(1, 1, 0, 1, 0, 1)},
-	{Name: "ttt", Description: "Editor e IDE de terminal", Package: "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0", Executable: "ttt", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "ttt", Requires: []string{"go"}, StorageEstimate: plannedStorage(10, 20, 0, 10, 0, 2)},
-	{Name: "htop", Description: "Monitor do sistema", Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(1, 3, 0, 1, 0, 1)},
-	{Name: "ncdu", Description: "Uso de disco", Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(1, 3, 0, 1, 0, 1)},
-	{Name: "inxi", Description: "Informações do sistema", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(5, 15, 0, 5, 0, 2)},
-	{Name: "speedtest-cli", Description: "Teste de rede", Package: "speedtest-cli", Executable: "speedtest-cli", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(5, 15, 0, 10, 0, 2)},
-	{Name: "posting", Description: "Cliente HTTP no terminal", Package: "posting", Executable: "posting", VersionArg: []string{"--help"}, Kind: "terminal", InstallKind: "pipx", Requires: []string{"python"}, StorageEstimate: plannedStorage(20, 60, 10, 40, 0, 5)},
-	{Name: "yazi", Aliases: []string{"yazi-fm"}, Description: "Gerenciador de arquivos com previews", Package: "yazi@v26.5.6", Executable: "yazi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "script", UserBin: true, Script: yaziReleaseScript(), StorageEstimate: plannedStorage(25, 40, 300, 550, 1, 20)},
-	{Name: "tuifi", Aliases: []string{"tuifimanager"}, Description: "Explorador visual de arquivos", Package: "TUIFIManager==5.2.6", Executable: "tuifi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "script", Requires: []string{"python"}, Script: tuifiInstallScript(), StorageEstimate: plannedStorage(20, 40, 90, 180, 1, 5)},
-	{Name: "neovim", Aliases: []string{"nvim"}, Description: "Editor modal", Package: "neovim", Executable: "nvim", VersionArg: []string{"--version"}, Kind: "editor", InstallKind: "apt", ConfigProfile: "lazyvim", ConfigTarget: "/root/.config/nvim", MinimumVersion: "0.9.0", ProfileVersion: "1", StorageEstimate: plannedStorage(15, 30, 0, 20, 0, 2)},
-	{Name: "opencode-cli", Aliases: []string{"opencode"}, Description: "Assistente de IA", Package: "opencode-ai", Executable: "opencode", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(60, 150, 0, 100, 5, 30)},
-	{Name: "codex-cli", Aliases: []string{"codex"}, Description: "Assistente de IA", Package: "@openai/codex", Executable: "codex", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(60, 150, 0, 100, 5, 30)},
-	{Name: "claudecode-cli", Aliases: []string{"claude-code"}, Description: "Assistente de IA", Package: "@anthropic-ai/claude-code", Executable: "claude", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(80, 200, 0, 100, 5, 30)},
-	{Name: "leetgo", Description: "Exercícios LeetCode", Package: "github.com/j178/leetgo@v1.4.17", Executable: "leetgo", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "script", Script: githubReleaseScript("j178/leetgo", "v1.4.17", "leetgo_linux_arm64.tar.gz", "de77054553b61c1733f9b034e4a976630a3da585e414f93f0ce13ada5dd80ca4", "leetgo_linux_x86_64.tar.gz", "fe18dc54f2784aded76ef1e04e6917d6d9d8731520bbe232328ba942b5b3c47b", "leetgo"), StorageEstimate: plannedStorage(10, 20, 0, 20, 0, 5)},
+	{Name: "go", Aliases: []string{"golang"}, DescriptionID: i18n.AppGoDescription, Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(180, 300, 0, 50, 0, 5)},
+	{Name: "python", Aliases: []string{"python3"}, DescriptionID: i18n.AppPythonDescription, Package: "python3", Executable: "python3", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(35, 60, 0, 20, 0, 5)},
+	{Name: "node", Aliases: []string{"nodejs"}, DescriptionID: i18n.AppNodeDescription, Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "node", StorageEstimate: plannedStorage(70, 130, 20, 60, 0, 10)},
+	{Name: "c", Aliases: []string{"c-lang"}, DescriptionID: i18n.AppCDescription, Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(250, 450, 20, 80, 0, 10)},
+	{Name: "cpp", Aliases: []string{"c++", "cplusplus"}, DescriptionID: i18n.AppCPPDescription, Package: "clang", Executable: "clang++", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(250, 450, 20, 80, 0, 10)},
+	{Name: "lua", Aliases: []string{"lua5.4"}, DescriptionID: i18n.AppLuaDescription, Package: "lua5.4", Executable: "lua5.4", VersionArg: []string{"-v"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(2, 6, 0, 5, 0, 2)},
+	{Name: "git", DescriptionID: i18n.AppGitDescription, Package: "git", Executable: "git", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(35, 60, 0, 10, 0, 5)},
+	{Name: "gh", Aliases: []string{"github-cli"}, DescriptionID: i18n.AppGHDescription, Package: "gh", Executable: "gh", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "apt", StorageEstimate: plannedStorage(30, 50, 0, 10, 0, 5)},
+	{Name: "tmux", DescriptionID: i18n.AppTmuxDescription, Package: "tmux", Executable: "tmux", VersionArg: []string{"-V"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(2, 5, 0, 2, 0, 2)},
+	{Name: "zellij", DescriptionID: i18n.AppZellijDescription, Package: "zellij", Executable: "zellij", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "script", UserBin: true, Script: "apt-get install -y ca-certificates curl tar; mkdir -p \"$HOME/.local/bin\"; archive=$(mktemp); curl -fsSL https://github.com/zellij-org/zellij/releases/download/v0.44.3/zellij-aarch64-unknown-linux-musl.tar.gz -o \"$archive\"; printf '%s  %s\\n' '15e6534d42644d66973d136c590c49739dcfd6a1a2a0d3d917973f16c81b45fb' \"$archive\" | sha256sum -c -; tar -xzf \"$archive\" -C \"$HOME/.local/bin\" zellij; chmod 0755 \"$HOME/.local/bin/zellij\"; rm -f \"$archive\"", StorageEstimate: plannedStorage(20, 30, 0, 5, 0, 5)},
+	{Name: "micro", DescriptionID: i18n.AppMicroDescription, Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(15, 25, 0, 5, 0, 5)},
+	{Name: "lazygit", DescriptionID: i18n.AppLazygitDescription, Package: "github.com/jesseduffield/lazygit@v0.63.1", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "script", Script: githubReleaseScript("jesseduffield/lazygit", "v0.63.1", "lazygit_0.63.1_linux_arm64.tar.gz", "555dbc9a8efcf2e33bc24e7fbd9463e9fa375e3c5e23cc270763733c38eeae36", "lazygit_0.63.1_linux_x86_64.tar.gz", "8e033bc78c8e192dee9510e951f6c9e154289b7198d22c924ed1d0a951b0dac1", "lazygit"), StorageEstimate: plannedStorage(15, 25, 0, 5, 0, 5)},
+	{Name: "tree", DescriptionID: i18n.AppTreeDescription, Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(1, 1, 0, 1, 0, 1)},
+	{Name: "ttt", DescriptionID: i18n.AppTTTDescription, Package: "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0", Executable: "ttt", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "ttt", Requires: []string{"go"}, StorageEstimate: plannedStorage(10, 20, 0, 10, 0, 2)},
+	{Name: "htop", DescriptionID: i18n.AppHtopDescription, Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(1, 3, 0, 1, 0, 1)},
+	{Name: "ncdu", DescriptionID: i18n.AppNcduDescription, Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(1, 3, 0, 1, 0, 1)},
+	{Name: "inxi", DescriptionID: i18n.AppInxiDescription, Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(5, 15, 0, 5, 0, 2)},
+	{Name: "speedtest-cli", DescriptionID: i18n.AppSpeedtestDescription, Package: "speedtest-cli", Executable: "speedtest-cli", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(5, 15, 0, 10, 0, 2)},
+	{Name: "posting", DescriptionID: i18n.AppPostingDescription, Package: "posting", Executable: "posting", VersionArg: []string{"--help"}, Kind: "terminal", InstallKind: "pipx", Requires: []string{"python"}, StorageEstimate: plannedStorage(20, 60, 10, 40, 0, 5)},
+	{Name: "yazi", Aliases: []string{"yazi-fm"}, DescriptionID: i18n.AppYaziDescription, Package: "yazi@v26.5.6", Executable: "yazi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "script", UserBin: true, Script: yaziReleaseScript(), StorageEstimate: plannedStorage(25, 40, 300, 550, 1, 20)},
+	{Name: "tuifi", Aliases: []string{"tuifimanager"}, DescriptionID: i18n.AppTuifiDescription, Package: "TUIFIManager==5.2.6", Executable: "tuifi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "script", Requires: []string{"python"}, Script: tuifiInstallScript(), StorageEstimate: plannedStorage(20, 40, 90, 180, 1, 5)},
+	{Name: "neovim", Aliases: []string{"nvim"}, DescriptionID: i18n.AppNeovimDescription, Package: "neovim", Executable: "nvim", VersionArg: []string{"--version"}, Kind: "editor", InstallKind: "apt", ConfigProfile: "lazyvim", ConfigTarget: "/root/.config/nvim", MinimumVersion: "0.9.0", ProfileVersion: "1", StorageEstimate: plannedStorage(15, 30, 0, 20, 0, 2)},
+	{Name: "opencode-cli", Aliases: []string{"opencode"}, DescriptionID: i18n.AppOpencodeDescription, Package: "opencode-ai", Executable: "opencode", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(60, 150, 0, 100, 5, 30)},
+	{Name: "codex-cli", Aliases: []string{"codex"}, DescriptionID: i18n.AppCodexDescription, Package: "@openai/codex", Executable: "codex", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(60, 150, 0, 100, 5, 30)},
+	{Name: "claudecode-cli", Aliases: []string{"claude-code"}, DescriptionID: i18n.AppClaudeDescription, Package: "@anthropic-ai/claude-code", Executable: "claude", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(80, 200, 0, 100, 5, 30)},
+	{Name: "leetgo", DescriptionID: i18n.AppLeetgoDescription, Package: "github.com/j178/leetgo@v1.4.17", Executable: "leetgo", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "script", Script: githubReleaseScript("j178/leetgo", "v1.4.17", "leetgo_linux_arm64.tar.gz", "de77054553b61c1733f9b034e4a976630a3da585e414f93f0ce13ada5dd80ca4", "leetgo_linux_x86_64.tar.gz", "fe18dc54f2784aded76ef1e04e6917d6d9d8731520bbe232328ba942b5b3c47b", "leetgo"), StorageEstimate: plannedStorage(10, 20, 0, 20, 0, 5)},
 }
 
 var catalogEstimateMeasuredAt = time.Date(2026, 7, 29, 0, 0, 0, 0, time.UTC)
@@ -136,15 +137,24 @@ type Options struct {
 	LockTimeout    time.Duration
 	Progress       func(string)
 	ConfigProfiles map[string]ConfigProfile
+	Localizer      i18n.Localizer
 }
 
-func Languages() []AppProfile {
+func Languages(localizers ...i18n.Localizer) []AppProfile {
 	result := make([]AppProfile, len(catalog))
 	copy(result, catalog)
+	// Keep the existing TUI presentation until its dedicated localization phase.
+	localizer := i18n.New(i18n.LocalePTBR)
+	if len(localizers) > 0 {
+		localizer = localizers[0]
+	}
+	for index := range result {
+		result[index].Description = localizer.Text(result[index].DescriptionID, nil)
+	}
 	return result
 }
 
-func Tools() []AppProfile { return Languages() }
+func Tools(localizers ...i18n.Localizer) []AppProfile { return Languages(localizers...) }
 
 func Resolve(name string) (AppProfile, bool) {
 	name = strings.ToLower(strings.TrimSpace(name))
@@ -182,16 +192,16 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 func install(ctx context.Context, name string, options Options) (Result, error) {
 	language, ok := Resolve(name)
 	if !ok {
-		return Result{}, fmt.Errorf("linguagem não suportada %q", name)
+		return Result{}, i18n.NewError(i18n.ServiceInstallUnsupported, "install_unsupported", map[string]any{"Name": name}, nil)
 	}
 	runner := options.Runner
 	if runner == nil {
 		runner = ExecRunner{}
 	}
 	for _, prerequisite := range language.Requires {
-		progress(options, fmt.Sprintf("Preparando dependência %s", prerequisite))
+		progress(options, i18n.ServiceInstallDependency, map[string]any{"Dependency": prerequisite, "Name": language.Name})
 		if _, err := install(ctx, prerequisite, options); err != nil {
-			return Result{}, fmt.Errorf("preparar dependência %s para %s: %w", prerequisite, language.Name, err)
+			return Result{}, i18n.NewError(i18n.ServiceInstallDependency, "install_dependency", map[string]any{"Dependency": prerequisite, "Name": language.Name}, err)
 		}
 	}
 	now := options.Now().UTC()
@@ -223,35 +233,35 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		LogPath:           logPath,
 	}
 	if err := os.MkdirAll(installationsDir, 0o700); err != nil {
-		return result, fmt.Errorf("criar estado da instalação: %w", err)
+		return result, i18n.NewError(i18n.ServiceInstallState, "install_state", nil, err)
 	}
 	if err := os.MkdirAll(logsDir, 0o700); err != nil {
-		return result, fmt.Errorf("criar diretório de logs da instalação: %w", err)
+		return result, i18n.NewError(i18n.ServiceInstallLogs, "install_logs", nil, err)
 	}
 	if err := saveRecord(installationsDir, record); err != nil {
-		return result, fmt.Errorf("registrar tentativa de instalação: %w", err)
+		return result, i18n.NewError(i18n.ServiceInstallRecord, "install_record", nil, err)
 	}
 
-	progress(options, fmt.Sprintf("Verificando %s", language.Name))
+	progress(options, i18n.ServiceInstallVerify, map[string]any{"Name": language.Name})
 	version := runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
 	if version.Err != nil {
-		progress(options, "Atualizando índices do Ubuntu")
-		progress(options, "Aguardando gerenciador de pacotes")
+		progress(options, i18n.ServiceInstallUpdate, map[string]any{"Name": language.Name})
+		progress(options, i18n.ServiceInstallLock, nil)
 		if update := runAptLogged(ctx, runner, options.CommandTimeout, logPath, "update"); update.Err != nil {
-			err := fmt.Errorf("atualizar índices do Ubuntu para %s: %w", language.Name, update.Err)
+			err := i18n.NewError(i18n.ServiceInstallUpdate, "install_update", map[string]any{"Name": language.Name}, update.Err)
 			return failInstallation(installationsDir, record, result, err)
 		}
-		progress(options, fmt.Sprintf("Instalando %s", language.Name))
+		progress(options, i18n.ServiceInstallTool, map[string]any{"Name": language.Name})
 		if install := installTool(ctx, runner, options.CommandTimeout, logPath, language); install.Err != nil {
-			err := fmt.Errorf("instalar %s: %w", language.Name, install.Err)
+			err := i18n.NewError(i18n.ServiceInstallTool, "install_tool", map[string]any{"Name": language.Name}, install.Err)
 			return failInstallation(installationsDir, record, result, err)
 		}
 		result.Changed = true
-		progress(options, fmt.Sprintf("Verificando %s após a instalação", language.Name))
+		progress(options, i18n.ServiceInstallVerify, map[string]any{"Name": language.Name})
 		version = runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
 	}
 	if version.Err != nil {
-		err := fmt.Errorf("verificar %s após instalação: %w", language.Name, version.Err)
+		err := i18n.NewError(i18n.ServiceInstallVerify, "install_verify", map[string]any{"Name": language.Name}, version.Err)
 		return failInstallation(installationsDir, record, result, err)
 	}
 	result.Version = commandOutput(version)
@@ -266,14 +276,24 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		}
 	}
 	if err := saveRecord(installationsDir, record); err != nil {
-		return result, fmt.Errorf("registrar instalação concluída: %w", err)
+		return result, i18n.NewError(i18n.ServiceInstallRecord, "install_record", nil, err)
 	}
 	return result, nil
 }
 
-func progress(options Options, message string) {
+func progress(options Options, id i18n.MessageID, data map[string]any) {
 	if options.Progress != nil {
-		options.Progress(message)
+		if data == nil {
+			data = map[string]any{}
+		}
+		if _, ok := data["Detail"]; !ok {
+			data["Detail"] = ""
+		}
+		localizer := options.Localizer
+		if localizer.Locale == "" {
+			localizer = i18n.New(i18n.LocaleENUS)
+		}
+		options.Progress(localizer.Text(id, data))
 	}
 }
 
@@ -318,7 +338,7 @@ func hashInstalledFiles(ctx context.Context, runner CommandRunner, timeout time.
 		hashes[fields[1]] = fields[0]
 	}
 	if len(hashes) != len(files) {
-		return nil, fmt.Errorf("hash incompleto dos arquivos instalados")
+		return nil, i18n.NewError(i18n.ServiceInstallHash, "install_hash", nil, nil)
 	}
 	return hashes, nil
 }
@@ -326,11 +346,11 @@ func hashInstalledFiles(ctx context.Context, runner CommandRunner, timeout time.
 func acquireInstallLock(parent context.Context, options Options) (func(), error) {
 	path := options.Paths.InstallLock()
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return nil, fmt.Errorf("criar lock de instalação: %w", err)
+		return nil, i18n.NewError(i18n.ServiceInstallLock, "install_lock", nil, err)
 	}
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
-		return nil, fmt.Errorf("abrir lock de instalação: %w", err)
+		return nil, i18n.NewError(i18n.ServiceInstallLock, "install_lock", nil, err)
 	}
 	ctx, cancel := context.WithTimeout(parent, options.LockTimeout)
 	defer cancel()
@@ -345,16 +365,16 @@ func acquireInstallLock(parent context.Context, options Options) (func(), error)
 		}
 		if err != syscall.EWOULDBLOCK && err != syscall.EAGAIN {
 			_ = file.Close()
-			return nil, fmt.Errorf("bloquear instalação: %w", err)
+			return nil, i18n.NewError(i18n.ServiceInstallLock, "install_lock", nil, err)
 		}
 		if !waited {
-			progress(options, "Aguardando outra instalação do Mobdesk")
+			progress(options, i18n.ServiceInstallWait, nil)
 			waited = true
 		}
 		select {
 		case <-ctx.Done():
 			_ = file.Close()
-			return nil, fmt.Errorf("aguardar outra instalação do Mobdesk: %w", ctx.Err())
+			return nil, i18n.NewError(i18n.ServiceInstallWait, "install_wait", nil, ctx.Err())
 		case <-time.After(250 * time.Millisecond):
 		}
 	}
@@ -472,6 +492,7 @@ func failInstallation(directory string, record InstallationRecord, result Result
 	result.State = "failed"
 	record.State = result.State
 	record.LastError = installErr.Error()
+	record.LastErrorCode = i18n.ErrorCode(installErr)
 	if err := saveRecord(directory, record); err != nil {
 		return result, fmt.Errorf("%v; registrar falha da instalação: %w", installErr, err)
 	}

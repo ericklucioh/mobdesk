@@ -2,12 +2,13 @@ package executil
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
 
 // Resolve avoids os/exec.LookPath on Android. Go uses faccessat2 while
@@ -35,10 +36,10 @@ func termuxPath(name, prefix string) (string, error) {
 	path := filepath.Join(prefix, "bin", name)
 	info, err := os.Stat(path)
 	if err != nil {
-		return "", fmt.Errorf("resolver comando %q em %s: %w", name, path, err)
+		return "", i18n.NewError(i18n.ServiceExecError, "exec_resolve", map[string]any{"Name": name, "Detail": path}, err)
 	}
 	if info.IsDir() {
-		return "", fmt.Errorf("comando %q aponta para um diretório: %s", name, path)
+		return "", i18n.NewError(i18n.ServiceExecError, "exec_directory", map[string]any{"Name": name, "Detail": path}, nil)
 	}
 	return path, nil
 }

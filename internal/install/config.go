@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
 
 const configWriteScript = `umask 077; tmp=$(mktemp "$1.tmp.XXXXXX"); printf '%s' "$2" | base64 -d > "$tmp"; chmod "$3" "$tmp"; mv "$tmp" "$1"`
@@ -33,11 +35,11 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 	installation, err := loadInstallationRecord(options.Paths, appProfile.Name)
 	if err != nil {
 		result.State = ConfigStateFailed
-		return result, fmt.Errorf("carregar instalação de %s: %w", appProfile.Name, err)
+		return result, i18n.NewError(i18n.ServiceConfigError, "config_load_installation", map[string]any{"Detail": fmt.Sprintf("%s", err)}, err)
 	}
 	if installation.State != "installed" || installation.Source == "detected" {
 		result.State = ConfigStateFailed
-		return result, fmt.Errorf("%s precisa estar instalado pelo Mobdesk antes da configuração", appProfile.Name)
+		return result, i18n.NewError(i18n.ServiceConfigError, "config_installation_required", map[string]any{"Detail": fmt.Sprintf("%s must be installed by Mobdesk", appProfile.Name)}, nil)
 	}
 	if err := validateConfigProfile(profile); err != nil {
 		result.State = ConfigStateFailed
@@ -49,7 +51,7 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 		if existing.Profile != profile.ID || existing.ProfileVersion != profile.Version {
 			result.State = ConfigStateConflict
 			result.Conflicts = []string{appProfile.ConfigTarget}
-			return result, fmt.Errorf("configuração existente usa outro perfil")
+			return result, i18n.NewError(i18n.ServiceConfigError, "config_profile_conflict", map[string]any{"Detail": "existing configuration uses another profile"}, nil)
 		}
 		if existing.State == ConfigStateApplied {
 			for path, expected := range existing.FileHashes {
@@ -57,12 +59,13 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 				if hashErr != nil || current != expected {
 					result.State = ConfigStateConflict
 					result.Conflicts = append(result.Conflicts, path)
-					return result, fmt.Errorf("arquivo gerenciado foi alterado: %s", path)
+					return result, i18n.NewError(i18n.ServiceConfigError, "config_modified_file", map[string]any{"Detail": path}, nil)
 				}
 			}
 			result.State = ConfigStateApplied
 			result.Success = true
-			result.Message = "Configuração já aplicada"
+			result.Message = options.Localizer.Text(i18n.OutputConfigApplied, nil)
+			result.MessageID = string(i18n.OutputConfigApplied)
 			return result, nil
 		}
 	} else if !errors.Is(existingErr, os.ErrNotExist) {
@@ -79,7 +82,7 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 		}
 	}
 	if len(result.Conflicts) > 0 {
-		return result, fmt.Errorf("configuração existente gera conflito")
+		return result, i18n.NewError(i18n.ServiceConfigError, "config_path_conflict", map[string]any{"Detail": "existing configuration conflicts"}, nil)
 	}
 
 	record := ConfigurationRecord{
@@ -95,7 +98,7 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 		result.State = ConfigStateFailed
 		return result, err
 	}
-	progress(options, "Criando arquivos da configuração")
+	progress(options, i18n.ServiceConfigProgress, map[string]any{"Action": "creating configuration files"})
 
 	createdFiles := []string{}
 	createdPaths := []string{}
@@ -118,7 +121,7 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 		createdFiles = append(createdFiles, file.Path)
 	}
 	for _, plugin := range profile.Plugins {
-		progress(options, "Instalando plugin "+plugin.Name)
+		progress(options, i18n.ServiceConfigPlugin, map[string]any{"Name": plugin.Name})
 		clone := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "git", "clone", "--filter=blob:none", "--no-checkout", "--", plugin.Repository, plugin.Path)
 		if clone.Err != nil {
 			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, clone.Err)
@@ -134,7 +137,7 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 		}
 	}
 	for _, validation := range profile.Validation {
-		progress(options, "Validando configuração")
+		progress(options, i18n.ServiceConfigProgress, map[string]any{"Action": "validating configuration"})
 		if command := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", validation.Name, validation.Args...); command.Err != nil {
 			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, command.Err)
 		}
@@ -158,7 +161,8 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 	result.Success = true
 	result.Changed = true
 	result.Paths = append([]string(nil), record.ManagedPaths...)
-	result.Message = "Configuração aplicada"
+	result.Message = options.Localizer.Text(i18n.OutputConfigApplied, nil)
+	result.MessageID = string(i18n.OutputConfigApplied)
 	return result, nil
 }
 
@@ -172,14 +176,14 @@ func removeConfig(ctx context.Context, app string, options Options) (ConfigOpera
 	record, err := LoadConfigurationRecord(options.Paths, appProfile.Name)
 	if err != nil {
 		result.State = ConfigStateFailed
-		return result, fmt.Errorf("carregar configuração de %s: %w", appProfile.Name, err)
+		return result, i18n.NewError(i18n.ServiceConfigError, "config_load", map[string]any{"Detail": fmt.Sprintf("%s", err)}, err)
 	}
 	if record.Profile != profile.ID {
 		result.State = ConfigStateConflict
-		return result, fmt.Errorf("registro de configuração não pertence ao perfil %s", profile.ID)
+		return result, i18n.NewError(i18n.ServiceConfigError, "config_profile_owner", map[string]any{"Detail": profile.ID}, nil)
 	}
 	runner := runnerFor(options)
-	progress(options, "Removendo configuração")
+	progress(options, i18n.ServiceConfigProgress, map[string]any{"Action": "removing configuration"})
 	record.State = ConfigStateRemoving
 	if err := SaveConfigurationRecord(options.Paths, record); err != nil {
 		return result, err
@@ -242,7 +246,8 @@ func removeConfig(ctx context.Context, app string, options Options) (ConfigOpera
 	result.Changed = len(removed) > 0
 	result.Paths = append([]string(nil), removed...)
 	result.Conflicts = append([]string(nil), preserved...)
-	result.Message = "Configuração removida"
+	result.Message = options.Localizer.Text(i18n.OutputConfigRemoved, nil)
+	result.MessageID = string(i18n.OutputConfigRemoved)
 	return result, nil
 }
 
@@ -250,21 +255,21 @@ func resolveConfigProfile(app string, options Options) (ConfigProfile, AppProfil
 	appProfile, ok := Resolve(app)
 	result := ConfigOperationResult{SchemaVersion: 1, Command: "config", App: app, State: ConfigStateFailed}
 	if !ok {
-		return ConfigProfile{}, AppProfile{}, result, fmt.Errorf("app não suportado %q", app)
+		return ConfigProfile{}, AppProfile{}, result, i18n.NewError(i18n.ServiceConfigError, "config_unsupported", map[string]any{"Detail": app}, nil)
 	}
 	result.App = appProfile.Name
 	if appProfile.ConfigProfile == "" {
 		result.State = ConfigStateUnavailable
-		return ConfigProfile{}, appProfile, result, fmt.Errorf("%s não possui configuração Mobdesk", appProfile.Name)
+		return ConfigProfile{}, appProfile, result, i18n.NewError(i18n.ServiceConfigError, "config_unavailable", map[string]any{"Detail": appProfile.Name}, nil)
 	}
 	profile, ok := options.ConfigProfiles[appProfile.ConfigProfile]
 	if !ok {
 		result.State = ConfigStateUnavailable
-		return ConfigProfile{}, appProfile, result, fmt.Errorf("perfil de configuração %q indisponível", appProfile.ConfigProfile)
+		return ConfigProfile{}, appProfile, result, i18n.NewError(i18n.ServiceConfigError, "config_profile_missing", map[string]any{"Detail": appProfile.ConfigProfile}, nil)
 	}
 	if profile.App != appProfile.Name {
 		result.State = ConfigStateConflict
-		return ConfigProfile{}, appProfile, result, fmt.Errorf("perfil de configuração %q pertence a %s", profile.ID, profile.App)
+		return ConfigProfile{}, appProfile, result, i18n.NewError(i18n.ServiceConfigError, "config_profile_mismatch", map[string]any{"Detail": profile.ID}, nil)
 	}
 	result.StorageEstimate = profile.StorageEstimate
 	return profile, appProfile, result, nil
@@ -272,7 +277,7 @@ func resolveConfigProfile(app string, options Options) (ConfigProfile, AppProfil
 
 func validateConfigProfile(profile ConfigProfile) error {
 	if profile.ID == "" || profile.Version == "" || profile.App == "" {
-		return fmt.Errorf("perfil de configuração incompleto")
+		return i18n.NewError(i18n.ServiceConfigError, "config_profile_incomplete", nil, nil)
 	}
 	for _, path := range configPaths(profile) {
 		if err := validateConfigPath(path); err != nil {
@@ -281,22 +286,22 @@ func validateConfigProfile(profile ConfigProfile) error {
 	}
 	for _, file := range profile.Files {
 		if !configPathWithin(file.Path, profile.ManagedPaths) {
-			return fmt.Errorf("arquivo de configuração fora dos caminhos gerenciados: %s", file.Path)
+			return i18n.NewError(i18n.ServiceConfigError, "config_file_outside_paths", map[string]any{"Detail": file.Path}, nil)
 		}
 	}
 	for _, plugin := range profile.Plugins {
 		if plugin.Name == "" || plugin.Repository == "" || plugin.Commit == "" {
-			return fmt.Errorf("plugin de configuração incompleto")
+			return i18n.NewError(i18n.ServiceConfigError, "config_plugin_incomplete", nil, nil)
 		}
 		if !strings.HasPrefix(plugin.Repository, "https://") || len(plugin.Commit) != 40 {
-			return fmt.Errorf("plugin de configuração não está fixado: %s", plugin.Name)
+			return i18n.NewError(i18n.ServiceConfigError, "config_plugin_unpinned", map[string]any{"Detail": plugin.Name}, nil)
 		}
 		if err := validateConfigPath(plugin.Path); err != nil {
 			return err
 		}
 	}
 	if len(profile.ManagedPlugins) != len(profile.Plugins) {
-		return fmt.Errorf("manifesto de plugins inconsistente")
+		return i18n.NewError(i18n.ServiceConfigError, "config_plugin_manifest", nil, nil)
 	}
 	return nil
 }
@@ -333,7 +338,7 @@ func configPathWithin(path string, parents []string) bool {
 func validateConfigPath(path string) error {
 	clean := filepath.Clean(path)
 	if path == "" || clean != path || !filepath.IsAbs(path) || (path != "/root" && !strings.HasPrefix(path, "/root/")) {
-		return fmt.Errorf("caminho de configuração inválido %q", path)
+		return i18n.NewError(i18n.ServiceConfigError, "config_invalid_path", map[string]any{"Detail": path}, nil)
 	}
 	return nil
 }
@@ -354,6 +359,7 @@ func failConfigApply(ctx context.Context, options Options, record ConfigurationR
 	rollbackConfigAttempt(ctx, options, files, paths)
 	record.State = ConfigStateFailed
 	record.LastError = operationErr.Error()
+	record.LastErrorCode = i18n.ErrorCode(operationErr)
 	record.GeneratedFiles = files
 	record.ManagedPaths = paths
 	_ = SaveConfigurationRecord(options.Paths, record)
@@ -382,6 +388,7 @@ func failConfigRemove(options Options, record ConfigurationRecord, preserved []s
 	record.State = ConfigStateFailed
 	record.ModifiedPaths = preserved
 	record.LastError = operationErr.Error()
+	record.LastErrorCode = i18n.ErrorCode(operationErr)
 	_ = SaveConfigurationRecord(options.Paths, record)
 	result.State = ConfigStateFailed
 	return result, operationErr
@@ -410,6 +417,9 @@ func configDefaults(options Options) Options {
 	}
 	if options.ConfigProfiles == nil {
 		options.ConfigProfiles = DefaultConfigProfiles()
+	}
+	if options.Localizer.Locale == "" {
+		options.Localizer = i18n.New(i18n.LocaleENUS)
 	}
 	return options
 }

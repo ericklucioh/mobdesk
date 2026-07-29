@@ -1,6 +1,10 @@
 package install
 
-import "time"
+import (
+	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/i18n"
+)
 
 type AppState string
 
@@ -34,6 +38,7 @@ type AppProfile struct {
 	Name             string           `json:"name"`
 	Aliases          []string         `json:"aliases"`
 	Description      string           `json:"description,omitempty"`
+	DescriptionID    i18n.MessageID   `json:"-"`
 	Kind             string           `json:"kind,omitempty"`
 	Package          string           `json:"package"`
 	Executable       string           `json:"executable"`
@@ -108,6 +113,7 @@ type InstallationRecord struct {
 	InstalledAt         time.Time         `json:"installed_at,omitempty"`
 	LastAttemptAt       time.Time         `json:"last_attempt_at"`
 	LastError           string            `json:"last_error,omitempty"`
+	LastErrorCode       string            `json:"last_error_code,omitempty"`
 	LogPath             string            `json:"log_path"`
 }
 
@@ -125,6 +131,7 @@ type ConfigurationRecord struct {
 	ModifiedPaths  []string          `json:"modified_paths,omitempty"`
 	Conflicts      []string          `json:"conflicts,omitempty"`
 	LastError      string            `json:"last_error,omitempty"`
+	LastErrorCode  string            `json:"last_error_code,omitempty"`
 }
 
 type ConfigFile struct {
@@ -143,6 +150,7 @@ type ConfigProfile struct {
 	Version         string           `json:"version"`
 	App             string           `json:"app"`
 	Description     string           `json:"description"`
+	DescriptionID   i18n.MessageID   `json:"-"`
 	ManagedPaths    []string         `json:"managed_paths"`
 	Files           []ConfigFile     `json:"files"`
 	Plugins         []ConfigPlugin   `json:"plugins,omitempty"`
@@ -170,6 +178,8 @@ type ConfigOperationResult struct {
 	State           ConfigState      `json:"state"`
 	Changed         bool             `json:"changed"`
 	Message         string           `json:"message"`
+	MessageID       string           `json:"message_id,omitempty"`
+	ErrorCode       string           `json:"error_code,omitempty"`
 	Profile         string           `json:"profile,omitempty"`
 	StorageEstimate *StorageEstimate `json:"storage_estimate,omitempty"`
 	Conflicts       []string         `json:"conflicts,omitempty"`

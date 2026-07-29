@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
@@ -55,7 +56,7 @@ type StartInfo struct {
 	AlreadyRunning bool
 	Addresses      []string
 	Username       string
-	Warnings       []string
+	Warnings       []error
 }
 
 type StopInfo struct {
@@ -65,6 +66,15 @@ type StopInfo struct {
 
 func New(p paths.Paths) Service {
 	return Service{Paths: p, Deps: defaultDependencies()}
+}
+
+func workstationError(detail string, cause error) error {
+	data := map[string]any{"Detail": detail}
+	return i18n.NewError(i18n.ServiceWorkstationError, "workstation_operation_failed", data, cause)
+}
+
+func workstationWarning(detail string, cause error) error {
+	return i18n.NewError(i18n.ServiceWorkstationWarning, "workstation_warning", map[string]any{"Detail": detail}, cause)
 }
 
 func defaultDependencies() Dependencies {

@@ -157,6 +157,7 @@ type InstallationStatus struct {
 	InstalledAt       time.Time                `json:"installed_at,omitempty"`
 	LastAttemptAt     time.Time                `json:"last_attempt_at"`
 	LastError         string                   `json:"last_error,omitempty"`
+	LastErrorCode     string                   `json:"last_error_code,omitempty"`
 	LogPath           string                   `json:"log_path"`
 	StorageEstimate   *install.StorageEstimate `json:"storage_estimate,omitempty"`
 	ConfigState       ConfigState              `json:"config_state,omitempty"`

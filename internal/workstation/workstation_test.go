@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
@@ -62,7 +63,7 @@ func TestStopRejectsPIDThatIsNotMobdeskSSH(t *testing.T) {
 	service.Deps.PortOpen = func(context.Context, int) bool { return true }
 
 	_, err := service.Stop(context.Background())
-	if err == nil || !strings.Contains(err.Error(), "não pertence ao servidor SSH do Mobdesk") {
+	if err == nil || i18n.ErrorCode(err) != "workstation_pid_mismatch" {
 		t.Fatalf("erro inesperado: %v", err)
 	}
 }

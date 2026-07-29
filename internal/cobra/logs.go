@@ -43,6 +43,9 @@ func runLogsOptions(jsonOutput bool, name string, lines int, localizers ...i18n.
 	}
 	snapshot, err := logstore.Read(logstore.Options{Paths: paths.Current(), Name: name, Lines: lines})
 	if err != nil {
+		if len(localizers) > 0 {
+			return fmt.Errorf("%s", localizers[0].Error(err))
+		}
 		return err
 	}
 	if jsonOutput {

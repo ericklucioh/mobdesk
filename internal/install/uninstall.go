@@ -9,10 +9,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
-func Uninstall(ctx context.Context, name string, options Options) (Result, error) {
+func Uninstall(ctx context.Context, name string, options Options) (result Result, err error) {
+	defer func() {
+		if err != nil && i18n.ErrorCode(err) == "" {
+			err = i18n.NewError(i18n.ServiceUninstallError, "uninstall_operation_failed", map[string]any{"Detail": err.Error()}, err)
+		}
+	}()
+	if options.Localizer.Locale == "" {
+		options.Localizer = i18n.New(i18n.LocaleENUS)
+	}
 	if options.Now == nil {
 		options.Now = time.Now
 	}
@@ -30,9 +39,9 @@ func Uninstall(ctx context.Context, name string, options Options) (Result, error
 
 	profile, ok := Resolve(name)
 	if !ok {
-		return Result{}, fmt.Errorf("app não suportado %q", name)
+		return Result{}, i18n.NewError(i18n.ServiceUninstallError, "uninstall_unsupported", map[string]any{"Detail": name}, nil)
 	}
-	result := Result{
+	result = Result{
 		SchemaVersion:   1,
 		Language:        profile.Name,
 		Package:         profile.Package,
@@ -43,14 +52,14 @@ func Uninstall(ctx context.Context, name string, options Options) (Result, error
 	}
 	record, err := loadInstallationRecord(options.Paths, profile.Name)
 	if err != nil {
-		return result, fmt.Errorf("carregar proveniência de %s: %w", profile.Name, err)
+		return result, i18n.NewError(i18n.ServiceUninstallError, "uninstall_load", map[string]any{"Detail": profile.Name}, err)
 	}
 	if record.Source == "" {
 		record.Source = "mobdesk"
 	}
 	result.Source = record.Source
 	if record.Source != "mobdesk" {
-		return result, fmt.Errorf("não é seguro desinstalar %s: instalação apenas detectada", profile.Name)
+		return result, i18n.NewError(i18n.ServiceUninstallDetected, "uninstall_detected", map[string]any{"Name": profile.Name}, nil)
 	}
 	if record.State == "uninstalled" {
 		result.State = "uninstalled"
@@ -58,23 +67,23 @@ func Uninstall(ctx context.Context, name string, options Options) (Result, error
 		return result, nil
 	}
 	if record.State != "installed" && record.State != "partial" && record.State != "failed" {
-		return result, fmt.Errorf("não é seguro desinstalar %s no estado %q", profile.Name, record.State)
+		return result, i18n.NewError(i18n.ServiceUninstallState, "uninstall_invalid_state", map[string]any{"Name": profile.Name, "State": record.State}, nil)
 	}
 	if packageSharedByAnotherInstallation(options.Paths, record) {
-		return result, fmt.Errorf("não é seguro remover %s: pacote compartilhado", profile.Name)
+		return result, i18n.NewError(i18n.ServiceUninstallShared, "uninstall_shared_package", map[string]any{"Name": profile.Name}, nil)
 	}
 
 	record.State = "uninstalling"
 	record.LastAttemptAt = options.Now().UTC()
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
-		return result, fmt.Errorf("registrar tentativa de desinstalação: %w", err)
+		return result, i18n.NewError(i18n.ServiceUninstallError, "uninstall_record", nil, err)
 	}
 
 	strategy := record.Strategy
 	if strategy == "" {
 		strategy = profile.InstallKind
 	}
-	progress(options, fmt.Sprintf("Removendo %s", profile.Name))
+	progress(options, i18n.ServiceUninstallProgress, map[string]any{"Name": profile.Name, "Detail": ""})
 	runner := options.Runner
 	if runner == nil {
 		runner = ExecRunner{}
@@ -85,6 +94,7 @@ func Uninstall(ctx context.Context, name string, options Options) (Result, error
 	if removeErr != nil {
 		record.State = "failed"
 		record.LastError = removeErr.Error()
+		record.LastErrorCode = i18n.ErrorCode(removeErr)
 		record.RemovedFiles = append(record.RemovedFiles, removedFiles...)
 		record.PreservedFiles = append(record.PreservedFiles, preservedFiles...)
 		_ = saveRecord(options.Paths.InstallationsDir(), record)
@@ -101,9 +111,9 @@ func Uninstall(ctx context.Context, name string, options Options) (Result, error
 	if len(record.PreservedFiles) > 0 {
 		record.State = "modified"
 	}
-	progress(options, fmt.Sprintf("Desinstalação de %s concluída", profile.Name))
+	progress(options, i18n.ServiceUninstallProgress, map[string]any{"Name": profile.Name, "Detail": ""})
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
-		return result, fmt.Errorf("registrar desinstalação concluída: %w", err)
+		return result, i18n.NewError(i18n.ServiceUninstallError, "uninstall_record", nil, err)
 	}
 	result.State = record.State
 	result.Installed = false

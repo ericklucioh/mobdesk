@@ -41,7 +41,13 @@ func decorateResult(result operationResult, localizers []i18n.Localizer, message
 	result.Locale = string(localizers[0].Locale)
 	result.MessageID = string(messageID)
 	if operationErr != nil {
-		result.ErrorCode = "operation_failed"
+		if operationMessageID := i18n.ErrorMessageID(operationErr); operationMessageID != "" {
+			result.MessageID = string(operationMessageID)
+		}
+		result.ErrorCode = i18n.ErrorCode(operationErr)
+		if result.ErrorCode == "" {
+			result.ErrorCode = "operation_failed"
+		}
 	}
 	return result
 }

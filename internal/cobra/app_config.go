@@ -51,6 +51,9 @@ func runConfigOperationOptions(ctx context.Context, app, action string, jsonOutp
 	var result install.ConfigOperationResult
 	var err error
 	options := install.Options{Paths: paths.Current()}
+	if len(localizers) > 0 {
+		options.Localizer = localizers[0]
+	}
 	if progressOutput {
 		options.Progress = emitInstallProgress
 	}
@@ -117,7 +120,7 @@ func configOperationResult(result install.ConfigOperationResult, operationErr er
 			response.State = string(install.ConfigStateFailed)
 		}
 		response.ConfigState = response.State
-		response.Message = localized(localizers, i18n.OutputConfigFailed, map[string]any{"Detail": operationErr.Error()}, operationErr.Error())
+		response.Message = operationErrorMessage(localizers, operationErr)
 	}
 	response = decorateResult(response, localizers, configMessageID(response.Action, response.Success), operationErr)
 	return response

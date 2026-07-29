@@ -9,37 +9,44 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
 
-func (s Service) Start(ctx context.Context) (StartInfo, error) {
-	info := StartInfo{Username: s.Deps.Username()}
+func (s Service) Start(ctx context.Context) (info StartInfo, err error) {
+	defer func() {
+		if err != nil && i18n.ErrorCode(err) == "" {
+			err = workstationError("start workstation", err)
+		}
+	}()
+	info = StartInfo{Username: s.Deps.Username()}
 	if info.Username == "" {
 		info.Username = "usuario"
 	}
 	if _, err := s.Deps.Stat(s.Paths.SetupDone()); err != nil {
 		if os.IsNotExist(err) {
-			return info, fmt.Errorf("setup ainda não foi concluído; execute: mobdesk setup")
+			return info, workstationError("setup is incomplete; run mobdesk setup", nil)
 		}
-		return info, fmt.Errorf("verificar estado do setup: %w", err)
+		return info, workstationError("check setup state", err)
 	}
 	if _, err := s.Deps.Stat(s.Paths.PasswordDone()); err != nil {
 		if os.IsNotExist(err) {
-			return info, fmt.Errorf("senha SSH ainda não foi configurada; execute: mobdesk setup")
+			return info, workstationError("SSH password is not configured; run mobdesk setup", nil)
 		}
-		return info, fmt.Errorf("verificar configuração da senha SSH: %w", err)
+		return info, workstationError("check SSH password configuration", err)
 	}
 	if err := s.run(ctx, "proot-distro", "login", "ubuntu", "--", "true"); err != nil {
-		return info, fmt.Errorf("ubuntu não está disponível; execute mobdesk setup: %w", err)
+		return info, workstationError("Ubuntu is unavailable; run mobdesk setup", err)
 	}
 	if err := s.Deps.EnsureSSHConfigured(s.Paths); err != nil {
 		return info, err
 	}
 	if err := s.Deps.EnsureIfconfig(ctx, io.Discard, s.run); err != nil {
-		info.Warnings = append(info.Warnings, fmt.Sprintf("não foi possível preparar a detecção do IP local: %v", err))
+		info.Warnings = append(info.Warnings, workstationWarning("prepare local IP detection", err))
 	}
 	info.Addresses = s.Deps.Addresses()
 	if err := s.Deps.WakeLock(); err != nil {
-		info.Warnings = append(info.Warnings, fmt.Sprintf("não foi possível ativar o wake-lock: %v", err))
+		info.Warnings = append(info.Warnings, workstationWarning("enable wake-lock", err))
 	}
 	alreadyRunning, err := s.ensureSSHRunning(ctx)
 	if err != nil {
@@ -50,8 +57,13 @@ func (s Service) Start(ctx context.Context) (StartInfo, error) {
 	return info, nil
 }
 
-func (s Service) Stop(ctx context.Context) (StopInfo, error) {
-	info := StopInfo{}
+func (s Service) Stop(ctx context.Context) (info StopInfo, err error) {
+	defer func() {
+		if err != nil && i18n.ErrorCode(err) == "" {
+			err = workstationError("stop workstation", err)
+		}
+	}()
+	info = StopInfo{}
 	release, err := s.Deps.AcquireLock(s.Paths.SSHLock())
 	if err != nil {
 		return info, err
@@ -66,18 +78,18 @@ func (s Service) Stop(ctx context.Context) (StopInfo, error) {
 			info.AlreadyStopped = true
 			return info, nil
 		}
-		return info, fmt.Errorf("a porta %d está ocupada, mas o PID do Mobdesk não foi encontrado em %s", SSHPort, pidPath)
+		return info, workstationError(fmt.Sprintf("port %d is occupied and Mobdesk PID is missing at %s", SSHPort, pidPath), nil)
 	}
 	if err != nil {
-		return info, fmt.Errorf("ler PID do sshd: %w", err)
+		return info, workstationError("read sshd PID", err)
 	}
 	pid, err := strconv.Atoi(strings.TrimSpace(string(pidBytes)))
 	if err != nil {
-		return info, fmt.Errorf("PID do sshd inválido: %w", err)
+		return info, workstationError("invalid sshd PID", err)
 	}
 	process, err := s.Deps.FindProcess(pid)
 	if err != nil {
-		return info, fmt.Errorf("localizar processo do sshd: %w", err)
+		return info, workstationError("find sshd process", err)
 	}
 	if !s.Deps.ProcessIsMobdeskSSH(pid, s.Paths.SSHConfig()) {
 		if !s.Deps.PortOpen(ctx, SSHPort) {
@@ -86,7 +98,7 @@ func (s Service) Stop(ctx context.Context) (StopInfo, error) {
 			info.AlreadyStopped, info.StaleState = true, true
 			return info, nil
 		}
-		return info, fmt.Errorf("o PID %d não pertence ao servidor SSH do Mobdesk", pid)
+		return info, i18n.NewError(i18n.ServiceWorkstationPID, "workstation_pid_mismatch", map[string]any{"PID": pid}, nil)
 	}
 	if err := process.Signal(syscall.SIGTERM); err != nil {
 		if !s.Deps.PortOpen(ctx, SSHPort) {
@@ -95,10 +107,10 @@ func (s Service) Stop(ctx context.Context) (StopInfo, error) {
 			info.AlreadyStopped = true
 			return info, nil
 		}
-		return info, fmt.Errorf("parar sshd: %w", err)
+		return info, workstationError("stop sshd", err)
 	}
 	if !s.Deps.WaitForPortClosed(ctx, SSHPort, 3*time.Second) {
-		return info, fmt.Errorf("sshd recebeu o sinal de parada, mas a porta %d ainda está ativa", SSHPort)
+		return info, workstationError(fmt.Sprintf("sshd stopped but port %d is still active", SSHPort), nil)
 	}
 	_ = s.Deps.Remove(pidPath)
 	_ = s.Deps.WakeUnlock()
@@ -113,19 +125,19 @@ func (s Service) ensureSSHRunning(ctx context.Context) (bool, error) {
 	defer release()
 	if s.Deps.ProcessIsMobdeskSSHFromPID(s.Paths.SSHPID(), s.Paths.SSHConfig()) {
 		if !s.Deps.SSHResponds(ctx, SSHPort) {
-			return false, fmt.Errorf("o processo SSH do Mobdesk existe, mas a porta %d não responde como SSH", SSHPort)
+			return false, workstationError(fmt.Sprintf("Mobdesk SSH process exists but port %d does not respond as SSH", SSHPort), nil)
 		}
 		return true, nil
 	}
 	if s.Deps.PortOpen(ctx, SSHPort) {
-		return false, fmt.Errorf("a porta %d está ocupada por outro processo", SSHPort)
+		return false, workstationError(fmt.Sprintf("port %d is occupied by another process", SSHPort), nil)
 	}
 	_ = s.Deps.Remove(s.Paths.SSHPID())
 	if err := s.Deps.StartSSHD(ctx, s.Paths.SSHConfig(), s.Paths.SSHLog()); err != nil {
-		return false, fmt.Errorf("iniciar sshd: %w", err)
+		return false, workstationError("start sshd", err)
 	}
 	if !waitForSSH(ctx, s.Deps.SSHResponds, SSHPort, 3*time.Second) {
-		return false, fmt.Errorf("sshd não ficou disponível na porta %d", SSHPort)
+		return false, workstationError(fmt.Sprintf("sshd did not become available on port %d", SSHPort), nil)
 	}
 	return false, nil
 }

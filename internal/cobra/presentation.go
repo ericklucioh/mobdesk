@@ -25,6 +25,9 @@ func operationErrorMessage(localizers []i18n.Localizer, err error) string {
 	if err == nil {
 		return ""
 	}
+	if len(localizers) > 0 && i18n.ErrorMessageID(err) != "" {
+		return localizers[0].Error(err)
+	}
 	return localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}, err.Error())
 }
 

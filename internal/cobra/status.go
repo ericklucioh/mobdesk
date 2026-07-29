@@ -42,7 +42,7 @@ func runStatusOptions(ctx context.Context, jsonOutput, strict bool, localizers .
 			return fmt.Errorf("%s", localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}, "emitir status JSON: "+err.Error()))
 		}
 	} else {
-		if err := status.RenderText(os.Stdout, value); err != nil {
+		if err := status.RenderText(os.Stdout, value, localizers...); err != nil {
 			return fmt.Errorf("%s", localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}, "emitir status: "+err.Error()))
 		}
 	}

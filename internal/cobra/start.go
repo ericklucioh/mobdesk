@@ -53,7 +53,11 @@ func runStart(ctx context.Context, localizers ...i18n.Localizer) error {
 		return err
 	}
 	for _, warning := range info.Warnings {
-		if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartWarning, map[string]any{"Detail": warning}, "Aviso: "+warning)); err != nil {
+		message := warning.Error()
+		if len(localizers) > 0 {
+			message = localizers[0].Error(warning)
+		}
+		if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartWarning, map[string]any{"Detail": message}, "Warning: "+message)); err != nil {
 			return err
 		}
 	}

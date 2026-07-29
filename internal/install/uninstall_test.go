@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
 
 func writeInstallationRecord(t *testing.T, options Options, record InstallationRecord) {
@@ -55,7 +57,7 @@ func TestUninstallRejectsDetectedInstallation(t *testing.T) {
 		Name: "neovim", Package: "neovim", Strategy: "apt", Source: "detected", State: "installed",
 	})
 	_, err := Uninstall(context.Background(), "neovim", options)
-	if err == nil || !strings.Contains(err.Error(), "apenas detectada") {
+	if err == nil || i18n.ErrorCode(err) != "uninstall_detected" {
 		t.Fatalf("unexpected detected uninstall result: %v", err)
 	}
 	if len(runner.commands) != 0 {
@@ -69,7 +71,7 @@ func TestUninstallProtectsSharedPackage(t *testing.T) {
 	writeInstallationRecord(t, options, InstallationRecord{Name: "c", Package: "clang", Strategy: "apt", Source: "mobdesk", State: "installed"})
 	writeInstallationRecord(t, options, InstallationRecord{Name: "cpp", Package: "clang", Strategy: "apt", Source: "mobdesk", State: "installed"})
 	_, err := Uninstall(context.Background(), "c", options)
-	if err == nil || !strings.Contains(err.Error(), "pacote compartilhado") {
+	if err == nil || i18n.ErrorCode(err) != "uninstall_shared_package" {
 		t.Fatalf("unexpected shared package result: %v", err)
 	}
 	if len(runner.commands) != 0 {

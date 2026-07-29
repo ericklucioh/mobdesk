@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
 
 // The profile files are compiled into the binary so applying a profile does
@@ -23,7 +25,7 @@ func profileFile(name string) string {
 
 // DefaultConfigProfiles returns the versioned configuration profiles shipped
 // by Mobdesk. The returned map is safe for a caller to replace or extend.
-func DefaultConfigProfiles() map[string]ConfigProfile {
+func DefaultConfigProfiles(localizers ...i18n.Localizer) map[string]ConfigProfile {
 	configRoot := "/root/.config/nvim"
 	dataRoot := "/root/.local/share/nvim/lazy"
 	plugins := []ConfigPlugin{
@@ -36,12 +38,12 @@ func DefaultConfigProfiles() map[string]ConfigProfile {
 		managedPlugins = append(managedPlugins, plugin.Path)
 	}
 
-	return map[string]ConfigProfile{
+	profiles := map[string]ConfigProfile{
 		"lazyvim": {
-			ID:          "lazyvim",
-			Version:     "1.0.0",
-			App:         "neovim",
-			Description: "LazyVim versionado com lazy.nvim e plugins essenciais do Mobdesk",
+			ID:            "lazyvim",
+			Version:       "1.0.0",
+			App:           "neovim",
+			DescriptionID: i18n.ProfileLazyVimDescription,
 			ManagedPaths: []string{
 				configRoot,
 				filepath.Join(configRoot, "lua"),
@@ -58,6 +60,16 @@ func DefaultConfigProfiles() map[string]ConfigProfile {
 			StorageEstimate: plannedStorage(0, 0, 0, 20, 100, 300),
 		},
 	}
+	// Keep the existing TUI presentation until its dedicated localization phase.
+	localizer := i18n.New(i18n.LocalePTBR)
+	if len(localizers) > 0 {
+		localizer = localizers[0]
+	}
+	for id, profile := range profiles {
+		profile.Description = localizer.Text(profile.DescriptionID, nil)
+		profiles[id] = profile
+	}
+	return profiles
 }
 
 func lazyVimConfigFiles(configRoot string) []ConfigFile {
