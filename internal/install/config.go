@@ -116,6 +116,21 @@ func applyConfig(ctx context.Context, app string, options Options) (ConfigOperat
 		}
 		createdFiles = append(createdFiles, file.Path)
 	}
+	for _, plugin := range profile.Plugins {
+		clone := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "git", "clone", "--filter=blob:none", "--no-checkout", "--", plugin.Repository, plugin.Path)
+		if clone.Err != nil {
+			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, clone.Err)
+		}
+		createdPaths = append(createdPaths, plugin.Path)
+		fetch := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "git", "-C", plugin.Path, "fetch", "--depth", "1", "origin", plugin.Commit)
+		if fetch.Err != nil {
+			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, fetch.Err)
+		}
+		checkout := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "git", "-C", plugin.Path, "checkout", "--detach", plugin.Commit)
+		if checkout.Err != nil {
+			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, checkout.Err)
+		}
+	}
 	for _, validation := range profile.Validation {
 		if command := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", validation.Name, validation.Args...); command.Err != nil {
 			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, command.Err)
@@ -186,13 +201,28 @@ func removeConfig(ctx context.Context, app string, options Options) (ConfigOpera
 		}
 		removed = append(removed, path)
 	}
-	for _, path := range record.ManagedPaths {
+	for index := len(record.ManagedPaths) - 1; index >= 0; index-- {
+		path := record.ManagedPaths[index]
 		if err := validateConfigPath(path); err != nil {
 			return failConfigRemove(options, record, preserved, result, err)
 		}
 		if remove := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "rmdir", "--", path); remove.Err != nil {
 			preserved = append(preserved, path)
 		}
+	}
+	for _, path := range record.ManagedPlugins {
+		if err := validateConfigPath(path); err != nil {
+			return failConfigRemove(options, record, preserved, result, err)
+		}
+		pluginStatus := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "git", "-C", path, "status", "--porcelain")
+		if pluginStatus.Err != nil || len(strings.TrimSpace(string(pluginStatus.Stdout))) > 0 {
+			preserved = append(preserved, path)
+			continue
+		}
+		if remove := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "rm", "-rf", "--", path); remove.Err != nil {
+			return failConfigRemove(options, record, preserved, result, remove.Err)
+		}
+		removed = append(removed, path)
 	}
 	record.ModifiedPaths = preserved
 	record.RemovedAt = options.Now().UTC()
@@ -249,6 +279,20 @@ func validateConfigProfile(profile ConfigProfile) error {
 			return fmt.Errorf("arquivo de configuração fora dos caminhos gerenciados: %s", file.Path)
 		}
 	}
+	for _, plugin := range profile.Plugins {
+		if plugin.Name == "" || plugin.Repository == "" || plugin.Commit == "" {
+			return fmt.Errorf("plugin de configuração incompleto")
+		}
+		if !strings.HasPrefix(plugin.Repository, "https://") || len(plugin.Commit) != 40 {
+			return fmt.Errorf("plugin de configuração não está fixado: %s", plugin.Name)
+		}
+		if err := validateConfigPath(plugin.Path); err != nil {
+			return err
+		}
+	}
+	if len(profile.ManagedPlugins) != len(profile.Plugins) {
+		return fmt.Errorf("manifesto de plugins inconsistente")
+	}
 	return nil
 }
 
@@ -256,6 +300,9 @@ func configPaths(profile ConfigProfile) []string {
 	paths := append([]string(nil), profile.ManagedPaths...)
 	for _, file := range profile.Files {
 		paths = append(paths, file.Path)
+	}
+	for _, plugin := range profile.Plugins {
+		paths = append(paths, plugin.Path)
 	}
 	return uniqueStrings(paths)
 }
@@ -318,7 +365,10 @@ func rollbackConfigAttempt(ctx context.Context, options Options, files, paths []
 	}
 	for index := len(paths) - 1; index >= 0; index-- {
 		if validateConfigPath(paths[index]) == nil {
-			_ = runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "rmdir", "--", paths[index])
+			removed := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "rmdir", "--", paths[index])
+			if removed.Err != nil {
+				_ = runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "rm", "-rf", "--", paths[index])
+			}
 		}
 	}
 }
@@ -352,6 +402,9 @@ func configDefaults(options Options) Options {
 	}
 	if options.CommandTimeout <= 0 {
 		options.CommandTimeout = defaultCommandTimeout
+	}
+	if options.ConfigProfiles == nil {
+		options.ConfigProfiles = DefaultConfigProfiles()
 	}
 	return options
 }

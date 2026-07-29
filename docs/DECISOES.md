@@ -43,6 +43,14 @@ Ela mantém apenas informações do ambiente e o acesso ao shell Ubuntu.
 
 Ubuntu, ferramentas, projetos e configurações não devem ser recriados em cada execução. O instalador deve ser idempotente, ter estado e preservar dados.
 
+### LazyVim é um perfil versionado e opcional
+
+O perfil LazyVim não faz parte da instalação do Neovim. Seus arquivos são
+embutidos no binário e os plugins são obtidos apenas pelas revisões completas
+declaradas no catálogo. A aplicação exige Neovim instalado pelo Mobdesk,
+recusa uma configuração existente e a remoção preserva plugins cujo checkout
+tenha sido alterado manualmente.
+
 ### Atualização do binário preserva uma versão executável
 
 O atualizador grava a nova versão em arquivo temporário privado no mesmo

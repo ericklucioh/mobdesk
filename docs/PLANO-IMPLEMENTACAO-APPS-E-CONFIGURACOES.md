@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 6 concluida; Fase 7 pendente
+**Status:** Fase 7 concluida; Fase 8 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -777,6 +777,20 @@ executar conteúdo arbitrário retornado por uma rede.
 - Remoção não apaga arquivos modificados.
 - Estado `modified` é exibido quando necessário.
 - O tamanho de LazyVim aparece na popup.
+
+### Resultado da Fase 7
+
+- O perfil `lazyvim` é embutido no binário e contém `init.lua`, módulos Lua e
+  `lazy-lock.json` versionados.
+- O perfil declara `lazy.nvim`, LazyVim e nvim-treesitter por repositório HTTPS,
+  commit de 40 caracteres e diretório gerenciado no Ubuntu.
+- `config apply` clona, busca e faz checkout apenas das revisões declaradas;
+  `config remove` remove somente plugins limpos pertencentes ao manifesto.
+- A configuração continua opcional, exige Neovim instalado pelo Mobdesk e
+  preserva conflitos existentes antes de qualquer escrita ou clone.
+- Testes cobrem o manifesto, revisões fixas, aplicação, persistência e remoção
+  dos plugins gerenciados. A validação headless do Neovim permanece pendente no
+  dispositivo Termux/POCO F6 real.
 
 ## 15. Fase 8: CLI e Contratos JSON
 

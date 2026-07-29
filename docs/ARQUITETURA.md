@@ -92,8 +92,8 @@ ferramentas e atualização do binário.
 
 - `internal/status`: coleta uma fotografia do ambiente e produz o modelo de
   estado compartilhado pelo CLI e pela TUI;
-- `internal/install`: resolve perfis, executa instalações idempotentes e grava
-  seus registros;
+- `internal/install`: resolve perfis, executa instalações idempotentes, aplica
+  configurações embutidas e grava seus registros;
 - `internal/update`: consulta e aplica atualizações do Mobdesk;
 - `internal/logs`: lê registros persistidos sem criar uma tela própria;
 - `internal/version`: fornece metadados de versão do binário.
@@ -200,6 +200,12 @@ abstração que prometa capacidades inexistentes.
 - operações destrutivas devem ter confirmação explícita;
 - comandos longos devem aceitar contexto e cancelamento;
 - falhas parciais não devem apagar dados nem deixar processos órfãos.
+
+Perfis de configuração podem declarar plugins, mas somente com repositório
+HTTPS, revisão completa e caminho dentro do HOME do Ubuntu. O motor executa o
+clone e o checkout dentro do Ubuntu via `proot-distro`; conteúdo de rede não é
+tratado como script. Na remoção, um checkout com alterações locais é
+preservado.
 
 ## Verificação da base
 

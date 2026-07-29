@@ -794,6 +794,16 @@ ambiguidade no plano.
 - Reduz divergência durante a refatoração.
 - Exige disciplina em cada entrega.
 
+### D17. Conteúdo do perfil LazyVim
+
+**Decisão adotada:** embutir os arquivos do perfil e clonar somente revisões
+fixas dos plugins declarados.
+
+- O binário não depende de um template remoto mutável para criar a configuração.
+- Cada plugin possui repositório HTTPS, commit completo e caminho gerenciado.
+- A remoção verifica o estado Git e preserva um plugin alterado manualmente.
+- A validação headless do Neovim continua sendo a última etapa da aplicação.
+
 ## 12. Registro das Escolhas
 
 Estas são as escolhas consolidadas para a implementação:

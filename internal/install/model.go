@@ -142,10 +142,20 @@ type ConfigProfile struct {
 	Description     string           `json:"description"`
 	ManagedPaths    []string         `json:"managed_paths"`
 	Files           []ConfigFile     `json:"files"`
+	Plugins         []ConfigPlugin   `json:"plugins,omitempty"`
 	ManagedPlugins  []string         `json:"managed_plugins,omitempty"`
 	Validation      []ConfigCommand  `json:"validation,omitempty"`
 	ConflictPolicy  string           `json:"conflict_policy"`
 	StorageEstimate *StorageEstimate `json:"storage_estimate,omitempty"`
+}
+
+// ConfigPlugin identifies a fixed revision cloned into a profile-owned path.
+// Repository and commit are catalog data; they are never formed from input.
+type ConfigPlugin struct {
+	Name       string `json:"name"`
+	Repository string `json:"repository"`
+	Commit     string `json:"commit"`
+	Path       string `json:"path"`
 }
 
 type ConfigOperationResult struct {

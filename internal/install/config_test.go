@@ -8,9 +8,10 @@ import (
 )
 
 type configRunner struct {
-	existing map[string]bool
-	hash     string
-	commands []string
+	existing     map[string]bool
+	hash         string
+	pluginStatus string
+	commands     []string
 }
 
 func (r *configRunner) Run(_ context.Context, name string, args ...string) CommandResult {
@@ -27,6 +28,9 @@ func (r *configRunner) Run(_ context.Context, name string, args ...string) Comma
 	}
 	if tool == "sha256sum" && len(args) > 1 {
 		return CommandResult{Stdout: []byte(r.hash + "  " + args[len(args)-1] + "\n")}
+	}
+	if tool == "git" && len(args) >= 2 && args[len(args)-1] == "--porcelain" {
+		return CommandResult{Stdout: []byte(r.pluginStatus)}
 	}
 	return CommandResult{}
 }
