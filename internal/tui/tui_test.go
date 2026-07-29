@@ -3,6 +3,7 @@ package tui
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -201,6 +202,56 @@ func TestToolsCanSelectAndInstallLastCatalogItem(t *testing.T) {
 	model = updated.(Model)
 	if cmd == nil || model.installingTool != entries[last].language.Name {
 		t.Fatalf("last catalog item was not installable: cmd=%v installing=%q", cmd != nil, model.installingTool)
+	}
+}
+
+func TestReleaseToolRowsDispatchInstallThroughButton(t *testing.T) {
+	for _, name := range []string{"lazygit", "leetgo"} {
+		t.Run(name, func(t *testing.T) {
+			backend := &controlledBackend{}
+			model := NewWithBackend(backend)
+			model.screen = toolsScreen
+			model.statusLoaded = true
+			model.status.Host.Termux = true
+			model.width = 44
+			model.height = 30
+			model.resize(model.width, model.height)
+
+			index := -1
+			for candidate, entry := range toolEntries("") {
+				if entry.language.Name == name {
+					index = candidate
+					break
+				}
+			}
+			if index < 0 {
+				t.Fatalf("%s missing from tool entries", name)
+			}
+			model.toolsList.Select(index)
+			lines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
+			row := -1
+			for candidate, line := range lines {
+				if strings.Contains(line, name) {
+					row = candidate
+					break
+				}
+			}
+			if row < 0 {
+				t.Fatalf("%s row was not rendered", name)
+			}
+
+			updated, _ := model.Update(tea.MouseClickMsg{X: 1, Y: row + 4, Button: tea.MouseLeft})
+			model = updated.(Model)
+			updated, command := model.Update(tea.MouseReleaseMsg{X: 1, Y: row + 4, Button: tea.MouseLeft})
+			model = updated.(Model)
+			if command == nil || model.installingTool != name {
+				t.Fatalf("button did not start %s: command=%v installing=%q", name, command != nil, model.installingTool)
+			}
+			command()
+			if !slices.Equal(backend.operationArgs, []string{"install", name, "--json", "--progress"}) {
+				t.Fatalf("button sent args %v for %s", backend.operationArgs, name)
+			}
+		})
 	}
 }
 
@@ -814,6 +865,7 @@ func TestRunCommandUsesCanceledContext(t *testing.T) {
 
 type controlledBackend struct {
 	operationCalls int
+	operationArgs  []string
 	canceled       bool
 }
 
@@ -827,6 +879,7 @@ func (b *controlledBackend) StatusCmd() tea.Cmd {
 }
 
 func (b *controlledBackend) OperationCmd(args ...string) tea.Cmd {
+	b.operationArgs = append([]string(nil), args...)
 	return func() tea.Msg {
 		b.operationCalls++
 		return operationMessage{command: args[0], result: operationResult{Success: true}}

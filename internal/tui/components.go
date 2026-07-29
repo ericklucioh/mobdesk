@@ -77,7 +77,7 @@ func blockContainsAtAny(lines []string, index, x int, text string) bool {
 func toolRowContainsAt(lines []string, index, x int, label string, width int) bool {
 	for position, line := range lines {
 		plain := ansi.Strip(line)
-		if !strings.Contains(strings.ToLower(plain), strings.ToLower(label)) {
+		if !containsToolLabel(plain, label) {
 			continue
 		}
 		if index >= position && index <= position+1 && x >= 0 && x < width {
@@ -86,6 +86,30 @@ func toolRowContainsAt(lines []string, index, x int, label string, width int) bo
 	}
 	return false
 }
+
+func containsToolLabel(line, label string) bool {
+	line = strings.ToLower(line)
+	label = strings.ToLower(label)
+	start := 0
+	for start < len(line) {
+		match := strings.Index(line[start:], label)
+		if match < 0 {
+			return false
+		}
+		match += start
+		end := match + len(label)
+		if (match == 0 || !toolLabelChar(line[match-1])) && (end == len(line) || !toolLabelChar(line[end])) {
+			return true
+		}
+		start = end
+	}
+	return false
+}
+
+func toolLabelChar(value byte) bool {
+	return value >= 'a' && value <= 'z' || value >= '0' && value <= '9' || value == '_'
+}
+
 func max(a, b int) int {
 	if a > b {
 		return a
