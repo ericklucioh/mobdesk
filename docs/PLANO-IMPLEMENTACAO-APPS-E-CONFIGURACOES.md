@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 3 concluida; Fase 4 pendente
+**Status:** Fase 4 concluida; Fase 5 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -514,6 +514,17 @@ Criar registro separado por app com:
 - Arquivos de estado têm permissões privadas.
 - Testes usam diretório temporário.
 - Registros antigos continuam legíveis.
+
+### Resultado da Fase 4
+
+- Registros de instalação persistem estratégia, dependências, pacotes, arquivos
+  declarados e fonte `mobdesk`.
+- Status normaliza registros antigos como gerenciados e mantém detecções futuras
+  separadas como `source=detected` e não gerenciadas.
+- Foi criado o registro separado `state/configurations/<app>.json` com schema
+  estável para perfil, estado, caminhos, hashes, conflitos e erros.
+- Estado de configuração usa diretório `0700`, arquivos `0600` e rename
+  atômico, com rejeição de nomes que escapem do diretório privado.
 
 ## 12. Fase 5: Desinstalação Segura
 

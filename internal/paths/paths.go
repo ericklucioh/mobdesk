@@ -48,6 +48,12 @@ func (p Paths) PasswordDone() string { return filepath.Join(p.DataDir(), "passwo
 
 func (p Paths) InstallationsDir() string { return filepath.Join(p.StateDir(), "installations") }
 
+func (p Paths) ConfigurationsDir() string { return filepath.Join(p.StateDir(), "configurations") }
+
+func (p Paths) ConfigurationState(app string) string {
+	return filepath.Join(p.ConfigurationsDir(), app+".json")
+}
+
 func (p Paths) InstallLogsDir() string { return filepath.Join(p.DataDir(), "logs", "install") }
 
 func (p Paths) SSHConfig() string { return filepath.Join(p.ConfigDir(), "ssh", "sshd_config") }

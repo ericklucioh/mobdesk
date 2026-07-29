@@ -86,14 +86,36 @@ type Result struct {
 }
 
 type InstallationRecord struct {
-	Name          string    `json:"name"`
-	Kind          string    `json:"kind"`
-	Package       string    `json:"package"`
-	Executable    string    `json:"executable"`
-	State         string    `json:"state"`
-	Version       string    `json:"version,omitempty"`
-	InstalledAt   time.Time `json:"installed_at,omitempty"`
-	LastAttemptAt time.Time `json:"last_attempt_at"`
-	LastError     string    `json:"last_error,omitempty"`
-	LogPath       string    `json:"log_path"`
+	Name              string    `json:"name"`
+	Kind              string    `json:"kind"`
+	Package           string    `json:"package"`
+	Executable        string    `json:"executable"`
+	Strategy          string    `json:"strategy,omitempty"`
+	Dependencies      []string  `json:"dependencies,omitempty"`
+	InstalledPackages []string  `json:"installed_packages,omitempty"`
+	InstalledFiles    []string  `json:"installed_files,omitempty"`
+	InstalledDirs     []string  `json:"installed_directories,omitempty"`
+	State             string    `json:"state"`
+	Source            string    `json:"source,omitempty"`
+	Version           string    `json:"version,omitempty"`
+	InstalledAt       time.Time `json:"installed_at,omitempty"`
+	LastAttemptAt     time.Time `json:"last_attempt_at"`
+	LastError         string    `json:"last_error,omitempty"`
+	LogPath           string    `json:"log_path"`
+}
+
+type ConfigurationRecord struct {
+	App            string            `json:"app"`
+	Profile        string            `json:"profile"`
+	ProfileVersion string            `json:"profile_version"`
+	State          ConfigState       `json:"state"`
+	ManagedPaths   []string          `json:"managed_paths,omitempty"`
+	GeneratedFiles []string          `json:"generated_files,omitempty"`
+	ManagedPlugins []string          `json:"managed_plugins,omitempty"`
+	FileHashes     map[string]string `json:"file_hashes,omitempty"`
+	AppliedAt      time.Time         `json:"applied_at,omitempty"`
+	RemovedAt      time.Time         `json:"removed_at,omitempty"`
+	ModifiedPaths  []string          `json:"modified_paths,omitempty"`
+	Conflicts      []string          `json:"conflicts,omitempty"`
+	LastError      string            `json:"last_error,omitempty"`
 }

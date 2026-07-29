@@ -383,6 +383,7 @@ func collectInstallations(o Options) []InstallationStatus {
 		}
 		result = append(result, installation)
 	}
+	result = normalizeInstallationProvenance(result)
 	result = enrichInstallationMetadata(result)
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Name < result[j].Name
@@ -391,6 +392,7 @@ func collectInstallations(o Options) []InstallationStatus {
 }
 
 func collectCatalogInstallations(o Options, persisted []InstallationStatus) []InstallationStatus {
+	persisted = normalizeInstallationProvenance(persisted)
 	persisted = enrichInstallationMetadata(persisted)
 	if !o.termux || !commandAvailable(o, "proot-distro") {
 		return persisted
@@ -421,13 +423,25 @@ func collectCatalogInstallations(o Options, persisted []InstallationStatus) []In
 			Package:    tool.Package,
 			Executable: tool.Executable,
 			State:      "installed",
+			Source:     "detected",
 		})
 	}
+	persisted = normalizeInstallationProvenance(persisted)
 	persisted = enrichInstallationMetadata(persisted)
 	sort.Slice(persisted, func(i, j int) bool {
 		return persisted[i].Name < persisted[j].Name
 	})
 	return persisted
+}
+
+func normalizeInstallationProvenance(values []InstallationStatus) []InstallationStatus {
+	for index := range values {
+		if values[index].Source == "" {
+			values[index].Source = "mobdesk"
+		}
+		values[index].Managed = values[index].Source == "mobdesk"
+	}
+	return values
 }
 
 func enrichInstallationMetadata(values []InstallationStatus) []InstallationStatus {

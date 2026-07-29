@@ -207,13 +207,18 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		StorageEstimate: language.StorageEstimate,
 	}
 	record := InstallationRecord{
-		Name:          language.Name,
-		Kind:          language.Kind,
-		Package:       language.Package,
-		Executable:    language.Executable,
-		State:         "installing",
-		LastAttemptAt: now,
-		LogPath:       logPath,
+		Name:              language.Name,
+		Kind:              language.Kind,
+		Package:           language.Package,
+		Executable:        language.Executable,
+		Strategy:          language.InstallKind,
+		Dependencies:      append([]string(nil), language.Requires...),
+		InstalledPackages: declaredInstalledPackages(language),
+		InstalledFiles:    declaredInstalledFiles(language),
+		State:             "installing",
+		Source:            "mobdesk",
+		LastAttemptAt:     now,
+		LogPath:           logPath,
 	}
 	if err := os.MkdirAll(installationsDir, 0o700); err != nil {
 		return result, fmt.Errorf("criar estado da instalação: %w", err)
@@ -263,6 +268,31 @@ func progress(options Options, message string) {
 	if options.Progress != nil {
 		options.Progress(message)
 	}
+}
+
+func declaredInstalledPackages(profile AppProfile) []string {
+	if profile.Package == "" {
+		return nil
+	}
+	return []string{profile.Package}
+}
+
+func declaredInstalledFiles(profile AppProfile) []string {
+	if profile.Executable == "" {
+		return nil
+	}
+	binDir := "/usr/local/bin"
+	if profile.UserBin {
+		binDir = "/root/.local/bin"
+	}
+	files := []string{filepath.Join(binDir, profile.Executable)}
+	if profile.Name == "yazi" && profile.UserBin {
+		files = append(files, filepath.Join(binDir, "ya"))
+	}
+	if profile.InstallKind == "apt" {
+		return nil
+	}
+	return files
 }
 
 func acquireInstallLock(parent context.Context, options Options) (func(), error) {

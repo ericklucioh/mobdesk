@@ -2,6 +2,7 @@ package install
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -383,6 +384,13 @@ func TestInstallPersistsRecordAndCommandLog(t *testing.T) {
 	}
 	if !strings.Contains(string(recordBytes), `"state": "installed"`) {
 		t.Fatalf("record did not contain installed state: %s", recordBytes)
+	}
+	var record InstallationRecord
+	if err := json.Unmarshal(recordBytes, &record); err != nil {
+		t.Fatal(err)
+	}
+	if record.Source != "mobdesk" || record.Strategy != "node" || !slices.Contains(record.InstalledPackages, "nodejs") {
+		t.Fatalf("installation provenance was not persisted: %+v", record)
 	}
 	logBytes, err := os.ReadFile(result.LogPath)
 	if err != nil {

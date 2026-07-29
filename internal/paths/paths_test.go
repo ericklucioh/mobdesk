@@ -22,6 +22,9 @@ func TestLayoutUsesExistingMobdeskPaths(t *testing.T) {
 	if paths.InstallationsDir() != "/home/mobdesk/.local/share/mobdesk/state/installations" || paths.InstallLogsDir() != "/home/mobdesk/.local/share/mobdesk/logs/install" {
 		t.Fatalf("unexpected installation paths: %q, %q", paths.InstallationsDir(), paths.InstallLogsDir())
 	}
+	if paths.ConfigurationsDir() != "/home/mobdesk/.local/share/mobdesk/state/configurations" || paths.ConfigurationState("neovim") != "/home/mobdesk/.local/share/mobdesk/state/configurations/neovim.json" {
+		t.Fatalf("unexpected configuration paths: %q, %q", paths.ConfigurationsDir(), paths.ConfigurationState("neovim"))
+	}
 	if paths.InstallLock() != "/home/mobdesk/.local/share/mobdesk/state/install.lock" {
 		t.Fatalf("install lock = %q", paths.InstallLock())
 	}

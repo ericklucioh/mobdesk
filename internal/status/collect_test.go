@@ -223,6 +223,9 @@ func TestCollectReadsGenericInstallationRecords(t *testing.T) {
 	if value.Installations[0].LastError != "apt failed" || value.Installations[1].Kind != "tool" {
 		t.Fatalf("installation metadata was not preserved: %+v", value.Installations)
 	}
+	if value.Installations[0].Source != "mobdesk" || !value.Installations[0].Managed {
+		t.Fatalf("legacy installation provenance was not normalized: %+v", value.Installations[0])
+	}
 	if value.Overall != StateDegraded {
 		t.Fatalf("overall = %s, want degraded", value.Overall)
 	}

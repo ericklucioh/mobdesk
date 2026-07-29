@@ -128,17 +128,24 @@ type WiFiStatus struct {
 }
 
 type InstallationStatus struct {
-	Name            string                   `json:"name"`
-	Kind            string                   `json:"kind"`
-	Package         string                   `json:"package"`
-	Executable      string                   `json:"executable"`
-	State           string                   `json:"state"`
-	Version         string                   `json:"version,omitempty"`
-	InstalledAt     time.Time                `json:"installed_at,omitempty"`
-	LastAttemptAt   time.Time                `json:"last_attempt_at"`
-	LastError       string                   `json:"last_error,omitempty"`
-	LogPath         string                   `json:"log_path"`
-	StorageEstimate *install.StorageEstimate `json:"storage_estimate,omitempty"`
+	Name              string                   `json:"name"`
+	Kind              string                   `json:"kind"`
+	Package           string                   `json:"package"`
+	Executable        string                   `json:"executable"`
+	Strategy          string                   `json:"strategy,omitempty"`
+	Dependencies      []string                 `json:"dependencies,omitempty"`
+	InstalledPackages []string                 `json:"installed_packages,omitempty"`
+	InstalledFiles    []string                 `json:"installed_files,omitempty"`
+	InstalledDirs     []string                 `json:"installed_directories,omitempty"`
+	State             string                   `json:"state"`
+	Source            string                   `json:"source,omitempty"`
+	Managed           bool                     `json:"managed,omitempty"`
+	Version           string                   `json:"version,omitempty"`
+	InstalledAt       time.Time                `json:"installed_at,omitempty"`
+	LastAttemptAt     time.Time                `json:"last_attempt_at"`
+	LastError         string                   `json:"last_error,omitempty"`
+	LogPath           string                   `json:"log_path"`
+	StorageEstimate   *install.StorageEstimate `json:"storage_estimate,omitempty"`
 }
 
 type AlertSummary struct {
