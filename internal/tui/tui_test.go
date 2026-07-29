@@ -295,6 +295,40 @@ func TestSystemRendersFigmaSections(t *testing.T) {
 	}
 }
 
+func TestSystemRendersPersistentUpdateResult(t *testing.T) {
+	model := New()
+	model.screen = systemScreen
+	model.width = 80
+	model.height = 30
+
+	for _, result := range []operationResult{
+		{Success: true, State: "current", Message: "Mobdesk v1.0.0 já está atualizado"},
+		{Success: true, State: "available", Message: "Atualização disponível: v1.0.0 → v1.1.0"},
+		{Success: true, State: "updated", Message: "Mobdesk atualizado: v1.0.0 → v1.1.0"},
+		{Success: false, State: "failed", Message: "rede indisponível"},
+	} {
+		updated, _ := model.Update(operationMessage{command: "update", result: result})
+		model = updated.(Model)
+		view := ansi.Strip(model.renderSystem())
+		for _, expected := range []string{"RESULTADO", result.Message} {
+			if !strings.Contains(view, expected) {
+				t.Fatalf("system result does not contain %q: %s", expected, view)
+			}
+		}
+	}
+}
+
+func TestSystemUpdateResultUsesFailureForProcessError(t *testing.T) {
+	model := New()
+	model.screen = systemScreen
+	updated, _ := model.Update(operationMessage{command: "update", err: errors.New("falha de rede")})
+	model = updated.(Model)
+
+	if model.systemState != "failed" || model.systemMessage != "falha de rede" {
+		t.Fatalf("system failure = state %q, message %q", model.systemState, model.systemMessage)
+	}
+}
+
 func intPtr(value int) *int { return &value }
 
 func TestHeaderStaysOnOneFullWidthLine(t *testing.T) {

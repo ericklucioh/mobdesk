@@ -124,9 +124,16 @@ func (m *mockBackend) OperationCmd(args ...string) tea.Cmd {
 				result.Message = "Upgrade mock concluído"
 			}
 		case "update":
+			result.CurrentVersion = m.info.Version
+			result.LatestVersion = m.info.Version
 			if checkOnly {
+				result.State = "current"
 				result.Message = "Nenhuma atualização pendente"
 			} else {
+				result.State = "updated"
+				result.Updated = true
+				result.LatestVersion = "mock-2.0"
+				m.info.Version = result.LatestVersion
 				result.Message = "Atualização mock concluída"
 			}
 		case "install":

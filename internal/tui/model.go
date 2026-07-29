@@ -40,6 +40,8 @@ type Model struct {
 	operationID    int
 	statusID       int
 	message        string
+	systemMessage  string
+	systemState    string
 	operation      string
 	installingTool string
 	confirmStop    bool

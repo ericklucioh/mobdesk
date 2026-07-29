@@ -82,7 +82,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.busy = false
 		m.operation = ""
-		m.message = operationMessageText(msg)
+		if msg.command == "update" || msg.command == "update-check" {
+			m.systemMessage = operationMessageText(msg)
+			m.systemState = operationState(msg)
+			m.message = ""
+		} else {
+			m.message = operationMessageText(msg)
+		}
 		m.applyOperationState(msg)
 		return m.requestStatus()
 	case tea.KeyPressMsg:
@@ -136,6 +142,9 @@ func (m Model) runHostOperation(operation string, args ...string) (tea.Model, te
 	m.operationID++
 	m.statusID++ // Invalida snapshots iniciados antes da operação mutável.
 	m.busy, m.operation = true, operation
+	if operation == "update" || operation == "update-check" {
+		m.systemMessage, m.systemState = "", ""
+	}
 	operationID := m.operationID
 	return m, func() tea.Msg {
 		message, ok := m.backend.OperationCmd(args...)().(operationMessage)
@@ -221,6 +230,13 @@ func operationMessageText(msg operationMessage) string {
 	default:
 		return ""
 	}
+}
+
+func operationState(msg operationMessage) string {
+	if msg.err != nil || !msg.result.Success {
+		return "failed"
+	}
+	return msg.result.State
 }
 
 func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
