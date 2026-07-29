@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 4 concluida; Fase 5 pendente
+**Status:** Fase 5 concluida; Fase 6 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -590,6 +590,18 @@ automaticamente.
 - Falha parcial é observável no estado e no JSON.
 - Repetir a remoção é seguro.
 - Não existe remoção genérica baseada apenas no nome do executável.
+
+### Resultado da Fase 5
+
+- `Uninstall` usa o mesmo lock da instalação e exige proveniência `mobdesk`.
+- Registros apenas detectados, pacotes compartilhados e caminhos sem
+  proveniência comprovada são recusados com segurança.
+- Estratégias `apt`, `node`, `npm`, `pipx`, `script`, `go`, `ttt`, `cargo` e
+  `gh-extension` foram separadas sem remover dependências automaticamente.
+- Arquivos gerenciados persistem hashes; arquivos alterados são preservados e
+  marcados como `modified`.
+- Estado, arquivos removidos/preservados e falhas permanecem observáveis no
+  registro persistente.
 
 ## 13. Fase 6: Motor de Configuração
 

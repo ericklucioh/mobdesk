@@ -86,22 +86,26 @@ type Result struct {
 }
 
 type InstallationRecord struct {
-	Name              string    `json:"name"`
-	Kind              string    `json:"kind"`
-	Package           string    `json:"package"`
-	Executable        string    `json:"executable"`
-	Strategy          string    `json:"strategy,omitempty"`
-	Dependencies      []string  `json:"dependencies,omitempty"`
-	InstalledPackages []string  `json:"installed_packages,omitempty"`
-	InstalledFiles    []string  `json:"installed_files,omitempty"`
-	InstalledDirs     []string  `json:"installed_directories,omitempty"`
-	State             string    `json:"state"`
-	Source            string    `json:"source,omitempty"`
-	Version           string    `json:"version,omitempty"`
-	InstalledAt       time.Time `json:"installed_at,omitempty"`
-	LastAttemptAt     time.Time `json:"last_attempt_at"`
-	LastError         string    `json:"last_error,omitempty"`
-	LogPath           string    `json:"log_path"`
+	Name                string            `json:"name"`
+	Kind                string            `json:"kind"`
+	Package             string            `json:"package"`
+	Executable          string            `json:"executable"`
+	Strategy            string            `json:"strategy,omitempty"`
+	Dependencies        []string          `json:"dependencies,omitempty"`
+	InstalledPackages   []string          `json:"installed_packages,omitempty"`
+	InstalledFiles      []string          `json:"installed_files,omitempty"`
+	InstalledDirs       []string          `json:"installed_directories,omitempty"`
+	InstalledFileHashes map[string]string `json:"installed_file_hashes,omitempty"`
+	RemovedPackages     []string          `json:"removed_packages,omitempty"`
+	RemovedFiles        []string          `json:"removed_files,omitempty"`
+	PreservedFiles      []string          `json:"preserved_files,omitempty"`
+	State               string            `json:"state"`
+	Source              string            `json:"source,omitempty"`
+	Version             string            `json:"version,omitempty"`
+	InstalledAt         time.Time         `json:"installed_at,omitempty"`
+	LastAttemptAt       time.Time         `json:"last_attempt_at"`
+	LastError           string            `json:"last_error,omitempty"`
+	LogPath             string            `json:"log_path"`
 }
 
 type ConfigurationRecord struct {

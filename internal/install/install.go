@@ -258,6 +258,11 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	record.State = result.State
 	record.Version = result.Version
 	record.InstalledAt = options.Now().UTC()
+	if len(record.InstalledFiles) > 0 {
+		if hashes, hashErr := hashInstalledFiles(ctx, runner, options.CommandTimeout, logPath, record.InstalledFiles); hashErr == nil {
+			record.InstalledFileHashes = hashes
+		}
+	}
 	if err := saveRecord(installationsDir, record); err != nil {
 		return result, fmt.Errorf("registrar instalação concluída: %w", err)
 	}
@@ -293,6 +298,27 @@ func declaredInstalledFiles(profile AppProfile) []string {
 		return nil
 	}
 	return files
+}
+
+func hashInstalledFiles(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, files []string) (map[string]string, error) {
+	args := []string{"--"}
+	args = append(args, files...)
+	result := runUbuntuLogged(ctx, runner, timeout, logPath, "sha256sum", args...)
+	if result.Err != nil {
+		return nil, result.Err
+	}
+	hashes := make(map[string]string, len(files))
+	for _, line := range strings.Split(string(result.Stdout), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		hashes[fields[1]] = fields[0]
+	}
+	if len(hashes) != len(files) {
+		return nil, fmt.Errorf("hash incompleto dos arquivos instalados")
+	}
+	return hashes, nil
 }
 
 func acquireInstallLock(parent context.Context, options Options) (func(), error) {

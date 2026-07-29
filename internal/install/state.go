@@ -32,6 +32,21 @@ func LoadConfigurationRecord(p paths.Paths, app string) (ConfigurationRecord, er
 	return record, nil
 }
 
+func loadInstallationRecord(p paths.Paths, app string) (InstallationRecord, error) {
+	if err := validateStateName(app); err != nil {
+		return InstallationRecord{}, err
+	}
+	payload, err := os.ReadFile(filepath.Join(p.InstallationsDir(), app+".json"))
+	if err != nil {
+		return InstallationRecord{}, err
+	}
+	var record InstallationRecord
+	if err := json.Unmarshal(payload, &record); err != nil {
+		return InstallationRecord{}, fmt.Errorf("ler estado da instalação %q: %w", app, err)
+	}
+	return record, nil
+}
+
 func writePrivateJSON(path string, value any) error {
 	directory := filepath.Dir(path)
 	if err := os.MkdirAll(directory, 0o700); err != nil {
