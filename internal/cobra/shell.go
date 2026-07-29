@@ -33,7 +33,7 @@ func runShell(ctx context.Context, p paths.Paths) error {
 	if err := command.Run(); err != nil {
 		return fmt.Errorf("ubuntu não está disponível; execute mobdesk setup: %w", err)
 	}
-	return runInteractive(ctx, "proot-distro", "login", "ubuntu", "--", "bash", "-l")
+	return runInteractive(ctx, "proot-distro", "login", "ubuntu", "--", "bash", "--rcfile", p.UbuntuShellConfig(), "-i")
 }
 
 func ensureSetupCompleted(p paths.Paths) error {

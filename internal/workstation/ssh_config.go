@@ -42,7 +42,7 @@ func writeSSHWrapper(p paths.Paths) error {
 	if err := os.MkdirAll(p.SSHRuntimeDir(), 0o700); err != nil {
 		return fmt.Errorf("criar runtime SSH do Mobdesk: %w", err)
 	}
-	wrapper := fmt.Sprintf("#!%s\nexec %s login ubuntu -- bash -l\n", filepath.Join(p.Prefix, "bin", "sh"), filepath.Join(p.Prefix, "bin", "proot-distro"))
+	wrapper := fmt.Sprintf("#!%s\nexec %s login ubuntu -- bash --rcfile %s -i\n", filepath.Join(p.Prefix, "bin", "sh"), filepath.Join(p.Prefix, "bin", "proot-distro"), p.UbuntuShellConfig())
 	if err := os.WriteFile(p.SSHWrapper(), []byte(wrapper), 0o700); err != nil {
 		return fmt.Errorf("criar shell SSH do Ubuntu: %w", err)
 	}

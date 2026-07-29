@@ -31,7 +31,7 @@ func TestSetupOrchestratesAllPhasesWithExplicitPaths(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !configured || len(result.Phases) != 9 {
+	if !configured || len(result.Phases) != 10 {
 		t.Fatalf("setup incompleto: configured=%t phases=%v", configured, result.Phases)
 	}
 	for _, phase := range result.Phases {
@@ -42,9 +42,15 @@ func TestSetupOrchestratesAllPhasesWithExplicitPaths(t *testing.T) {
 	if _, err := os.Stat(p.SetupDone()); err != nil {
 		t.Fatalf("setup.done ausente: %v", err)
 	}
-	want := []string{"pkg update", "pkg upgrade -y -o Dpkg::Options::=--force-confold", "pkg install -y -o Dpkg::Options::=--force-confold proot-distro openssh net-tools", "proot-distro login ubuntu -- true", "proot-distro install ubuntu", "proot-distro login ubuntu -- mkdir -p /root/workspace /root/.config/mobdesk /root/.local/share/mobdesk", "passwd "}
-	if strings.Join(commands, "\n") != strings.Join(want, "\n") {
+	wantPrefix := []string{"pkg update", "pkg upgrade -y -o Dpkg::Options::=--force-confold", "pkg install -y -o Dpkg::Options::=--force-confold proot-distro openssh net-tools", "proot-distro login ubuntu -- true", "proot-distro install ubuntu", "proot-distro login ubuntu -- mkdir -p /root/workspace /root/.config/mobdesk /root/.local/share/mobdesk", "passwd "}
+	if len(commands) != len(wantPrefix)+2 || strings.Join(commands[:len(wantPrefix)], "\n") != strings.Join(wantPrefix, "\n") {
 		t.Fatalf("ordem de comandos inesperada:\n%v", commands)
+	}
+	if commands[7] != "proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
+		t.Fatalf("instalação do autocomplete inesperada: %q", commands[7])
+	}
+	if !strings.Contains(commands[8], "bash_completion") || !strings.Contains(commands[8], "PS1=") {
+		t.Fatalf("configuração do shell ausente: %q", commands[8])
 	}
 }
 

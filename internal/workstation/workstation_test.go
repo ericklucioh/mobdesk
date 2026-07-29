@@ -77,6 +77,31 @@ func TestRenderSSHConfigIsDedicatedToMobdesk(t *testing.T) {
 	}
 }
 
+func TestSSHWrapperUsesConfiguredInteractiveBash(t *testing.T) {
+	p := paths.New(t.TempDir(), t.TempDir())
+	if err := writeSSHWrapper(p); err != nil {
+		t.Fatal(err)
+	}
+	contents, err := os.ReadFile(p.SSHWrapper())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, expected := range []string{"bash --rcfile /root/.config/mobdesk/bashrc -i", p.UbuntuShellConfig()} {
+		if !strings.Contains(string(contents), expected) {
+			t.Fatalf("wrapper não contém %q:\n%s", expected, contents)
+		}
+	}
+}
+
+func TestRenderUbuntuShellConfigEnablesCompletionAndPurplePrompt(t *testing.T) {
+	config := renderUbuntuShellConfig(paths.New("/home/user", "/termux/usr"))
+	for _, expected := range []string{"/usr/share/bash-completion/bash_completion", `PS1='\[\e[35m\]`, `\u@\h`} {
+		if !strings.Contains(config, expected) {
+			t.Fatalf("configuração não contém %q:\n%s", expected, config)
+		}
+	}
+}
+
 type fakeProcess struct{}
 
 func (fakeProcess) Signal(os.Signal) error { return errors.New("não deve receber sinal") }
