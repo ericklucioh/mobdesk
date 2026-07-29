@@ -29,13 +29,14 @@ func setupAction(width int, focused bool, label string, primary bool) string {
 	if primary {
 		style = primaryButtonStyle
 	}
+	style = style.Padding(1, 2)
 	if focused {
-		style = cardSelectedStyle.Padding(0, 1)
+		style = style.BorderForeground(lipgloss.Color(colorLilac)).Bold(true)
 		if primary {
-			style = primaryButtonStyle.Bold(true)
+			style = style.Background(lipgloss.Color(colorLilac)).Foreground(lipgloss.Color(colorBlack))
 		}
 	}
-	return style.Width(max(1, width-4)).Render(label)
+	return style.Width(max(1, width)).Render(label)
 }
 
 func setupStep(width int, mark, title, detail string, style lipgloss.Style) string {

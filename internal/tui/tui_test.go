@@ -282,6 +282,26 @@ func TestSetupRendersResponsiveSections(t *testing.T) {
 	}
 }
 
+func TestShellRendersLargeTouchActions(t *testing.T) {
+	model := New()
+	model.width = 40
+	model.height = 30
+	view := model.renderShell()
+	for _, expected := range []string{"Abrir shell Ubuntu", "Suspender a TUI", "Voltar para início", "Retornar à tela principal"} {
+		if !strings.Contains(view, expected) {
+			t.Fatalf("shell view does not contain %q: %s", expected, view)
+		}
+	}
+	if strings.Count(view, "┌") < 2 || strings.Count(view, "└") < 2 {
+		t.Fatalf("shell actions are not rendered as bordered touch targets: %s", view)
+	}
+	for _, line := range strings.Split(view, "\n") {
+		if lipgloss.Width(line) > contentWidth(model.width) {
+			t.Fatalf("shell line exceeds terminal width: %q", line)
+		}
+	}
+}
+
 func TestStatusRendersResponsiveSections(t *testing.T) {
 	model := New()
 	model.statusLoaded = true

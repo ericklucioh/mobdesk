@@ -68,10 +68,10 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			}
 		}
 	case setupScreen:
-		if blockContainsAt(lines, bodyIndex, mouse.X, "Continuar configuração") {
+		if touchBlockContainsAt(lines, bodyIndex, mouse.X, "Continuar configuração") {
 			return m.runHostOperation("setup", "setup", "--json")
 		}
-		if blockContainsAt(lines, bodyIndex, mouse.X, "upgrade completo") {
+		if touchBlockContainsAt(lines, bodyIndex, mouse.X, "upgrade completo") {
 			return m.runHostOperation("setup-upgrade", "setup", "--upgrade-system", "--json")
 		}
 		if nearLine(lines, bodyIndex, "upgrade") || nearLine(lines, bodyIndex, "upgrade completo") {
@@ -91,8 +91,11 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			m.navigate(homeScreen)
 		}
 	case shellScreen:
-		if nearLine(lines, bodyIndex, "Abrir shell") || nearLine(lines, bodyIndex, "Enter abrir shell") {
+		if touchBlockContainsAt(lines, bodyIndex, mouse.X, "Abrir shell Ubuntu") {
 			return m, m.backend.ShellCmd()
+		}
+		if touchBlockContainsAt(lines, bodyIndex, mouse.X, "Voltar para início") {
+			m.navigate(homeScreen)
 		}
 	case systemScreen:
 		if blockContainsAt(lines, bodyIndex, mouse.X, "Verificar") {

@@ -11,12 +11,6 @@ import (
 func renderPage(tag, title, body string) string {
 	return tagStyle.Render(tag) + "\n" + titleStyle.Render(title) + "\n" + bodyStyle.Render(body)
 }
-func (m Model) focusAction(index int, text string) string {
-	if m.focus == index {
-		return "> " + text
-	}
-	return "  " + text
-}
 func available(value bool) string {
 	if value {
 		return "disponível"
@@ -39,17 +33,27 @@ func nearLine(lines []string, index int, text string) bool {
 	return index >= 0 && index < len(lines) && strings.Contains(strings.ToLower(lines[index]), strings.ToLower(text))
 }
 func blockContainsAt(lines []string, index, x int, text string) bool {
+	return blockContainsAtVertical(lines, index, x, text, 1)
+}
+
+func touchBlockContainsAt(lines []string, index, x int, text string) bool {
+	return blockContainsAtVertical(lines, index, x, text, 2)
+}
+
+func blockContainsAtVertical(lines []string, index, x int, text string, verticalPadding int) bool {
 	for position, line := range lines {
 		plain := ansi.Strip(line)
 		start := strings.Index(strings.ToLower(plain), strings.ToLower(text))
-		// Botões Lipgloss têm três linhas: borda superior, conteúdo e borda
-		// inferior. Todas pertencem ao mesmo alvo.
-		if start < 0 || index < position-1 || index > position+1 {
+		if start < 0 || index < position-verticalPadding || index > position+verticalPadding {
 			continue
 		}
 		first := utf8.RuneCountInString(plain[:start])
 		last := first + utf8.RuneCountInString(text) - 1
-		// O alvo inclui o padding e a borda do botão, não apenas as letras.
+		if verticalPadding > 1 {
+			// Large actions on mobile use the full rendered row as the touch target.
+			lineWidth := utf8.RuneCountInString(plain)
+			return x >= max(0, first-2) && x <= max(last+2, lineWidth-1)
+		}
 		return x >= first-2 && x <= last+2
 	}
 	return false
