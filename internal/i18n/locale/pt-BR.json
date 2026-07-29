@@ -1,0 +1,6 @@
+{
+  "error.invalid_locale": "locale {{.Locale}} inválido; os locales suportados são en-US e pt-BR",
+  "locale.english_name": "Inglês",
+  "locale.portuguese_br_name": "Português do Brasil",
+  "error.missing_message": "Tradução ausente: {{.ID}}"
+}

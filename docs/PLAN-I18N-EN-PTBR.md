@@ -1,6 +1,6 @@
 # English-First Localization and Documentation Migration Plan
 
-**Status:** Phase 0 complete; Phase 1 pending.
+**Status:** Phase 1 complete; Phase 2 pending.
 
 **Primary locale:** `en-US`
 
@@ -192,6 +192,15 @@ Acceptance criteria:
 - Both supported locale identifiers resolve correctly.
 - Invalid explicit values fail without changing the process environment.
 - Catalog tests prove that both locales contain every required message ID.
+
+#### Phase 1 Result
+
+- Locale resolution, POSIX normalization and explicit/environment precedence are
+  implemented in `internal/i18n`.
+- English and Brazilian Portuguese catalogs are embedded in the binary and
+  validated for completeness at startup and in tests.
+- The standard library is sufficient for the current two-locale scope, so no
+  locale-matching dependency was added in this phase.
 
 ### Phase 2: Localize Cobra and JSON Presentation
 

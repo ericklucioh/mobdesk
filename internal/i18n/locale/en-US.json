@@ -1,0 +1,6 @@
+{
+  "error.invalid_locale": "unsupported locale {{.Locale}}; supported locales are en-US and pt-BR",
+  "locale.english_name": "English",
+  "locale.portuguese_br_name": "Brazilian Portuguese",
+  "error.missing_message": "Missing translation: {{.ID}}"
+}
