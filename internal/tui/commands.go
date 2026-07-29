@@ -31,9 +31,11 @@ func runCommand(ctx context.Context, args ...string) tea.Cmd {
 }
 
 func runInstallCommand(ctx context.Context, args ...string) tea.Cmd {
-	stream := &operationStream{messages: make(chan tea.Msg, 1)}
-	go stream.run(ctx, args...)
-	return stream.next()
+	return func() tea.Msg {
+		stream := &operationStream{messages: make(chan tea.Msg, 1)}
+		go stream.run(ctx, args...)
+		return stream.next()()
+	}
 }
 
 type operationStream struct {
