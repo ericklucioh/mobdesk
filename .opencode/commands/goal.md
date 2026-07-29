@@ -12,9 +12,14 @@ Treat the decision document and implementation plan as authoritative. Do not
 reopen decisions that those documents mark as closed.
 
 If arguments were provided, interpret them as the requested scope, such as a
-phase number or a focused task. Without arguments, execute phases 0 through 11
-in dependency order. Work in small, coherent increments and preserve any
-unrelated pre-existing worktree changes.
+phase number or a focused task. Without arguments, inspect the implementation
+plan status, phase results, current tests, implementation, and recent commits;
+resume at the first incomplete phase and continue through phase 11 in
+dependency order. Do not reimplement or recreate commits for phases whose
+acceptance criteria are already satisfied. If the documentation is stale,
+reconcile it with the code, tests, and commits before choosing the next phase.
+Work in small, coherent increments and preserve any unrelated pre-existing
+worktree changes.
 
 For every phase:
 
@@ -44,4 +49,7 @@ for a genuine technical blocker or an unsafe ambiguity; otherwise choose the
 minimal option consistent with the locked decisions.
 
 Before finishing, run `make check`, summarize changed files and validation
-results, and list any checks that still require a real Termux/POCO F6 run.
+results, and list any checks that still require a real Termux/POCO F6 run. Run
+the expensive `make catalog-test` only when the phase changes the catalog,
+installation strategies, PRoot boundary, catalog smoke script, or related
+runtime behavior; otherwise use `make check` and focused tests.
