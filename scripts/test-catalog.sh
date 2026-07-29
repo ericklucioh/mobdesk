@@ -29,7 +29,7 @@ MOBDESK=/data/data/com.termux/files/home/mobdesk/bin/mobdesk
 # separate integration test owns the clean-install user journey.
 proot-distro login ubuntu -- true
 
-for tool in go python node c cpp lua git gh tmux micro lazygit tree ttt htop ncdu inxi speedtest-cli posting yazi tuifi opencode-cli codex-cli claudecode-cli; do
+for tool in go python node c cpp lua git gh tmux micro lazygit tree ttt htop ncdu inxi speedtest-cli posting yazi tuifi neovim opencode-cli codex-cli claudecode-cli; do
     "$MOBDESK" install "$tool"
 done
 
@@ -55,13 +55,15 @@ proot-distro login ubuntu -- posting --help
 proot-distro login ubuntu -- sh -ec 'PATH="$HOME/.local/bin:$PATH"; yazi --version'
 proot-distro login ubuntu -- sh -ec 'PATH="$HOME/.local/bin:$PATH"; ya --version'
 proot-distro login ubuntu -- tuifi --version
+proot-distro login ubuntu -- nvim --version
+test ! -e /root/.config/nvim
 proot-distro login ubuntu -- sh -ec 'PATH="$HOME/.local/bin:$PATH"; opencode --version'
 proot-distro login ubuntu -- sh -ec 'PATH="$HOME/.local/bin:$PATH"; codex --version'
 proot-distro login ubuntu -- sh -ec 'PATH="$HOME/.local/bin:$PATH"; claude --version'
 
 # A second pass proves profiles remain idempotent without exercising login or
 # network benchmarks.
-for tool in git yazi tuifi opencode-cli codex-cli claudecode-cli; do
+for tool in git yazi tuifi nvim opencode-cli codex-cli claudecode-cli; do
     "$MOBDESK" install "$tool"
 done
 CONTAINER_SCRIPT

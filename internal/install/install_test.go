@@ -92,8 +92,8 @@ func TestCanonicalAppAndConfigStates(t *testing.T) {
 
 func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
 	profiles := Tools()
-	if len(profiles) != 25 {
-		t.Fatalf("catalog has %d profiles, want 25", len(profiles))
+	if len(profiles) != 26 {
+		t.Fatalf("catalog has %d profiles, want 26", len(profiles))
 	}
 	seen := make(map[string]bool, len(profiles))
 	for _, profile := range profiles {
@@ -159,6 +159,39 @@ func TestFileManagersUsePinnedInstallProfiles(t *testing.T) {
 	}
 	if !strings.Contains(tuifi.Script, "pipx install --force TUIFIManager==5.2.6") || tuifi.Executable != "tuifi" {
 		t.Fatalf("unexpected tuifi installation: %+v", tuifi)
+	}
+}
+
+func TestNeovimProfileUsesOptionalLazyVimConfiguration(t *testing.T) {
+	neovim, ok := Resolve("neovim")
+	if !ok {
+		t.Fatal("neovim missing from catalog")
+	}
+	alias, ok := Resolve("nvim")
+	if !ok || alias.Name != neovim.Name {
+		t.Fatalf("nvim alias did not resolve to neovim: %+v", alias)
+	}
+	if neovim.Package != "neovim" || neovim.Executable != "nvim" || !slices.Equal(neovim.VersionArg, []string{"--version"}) || neovim.InstallKind != "apt" {
+		t.Fatalf("unexpected neovim installation profile: %+v", neovim)
+	}
+	if neovim.ConfigProfile != "lazyvim" || neovim.ConfigTarget != "/root/.config/nvim" || neovim.MinimumVersion == "" || neovim.ProfileVersion == "" {
+		t.Fatalf("unexpected neovim configuration profile: %+v", neovim)
+	}
+}
+
+func TestInstallNeovimUsesUbuntuApt(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y neovim": {{}},
+	}}
+	neovim, ok := Resolve("neovim")
+	if !ok {
+		t.Fatal("neovim missing from catalog")
+	}
+	if result := installTool(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", neovim); result.Err != nil {
+		t.Fatal(result.Err)
+	}
+	if !slices.Equal(runner.commands, []string{"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y neovim"}) {
+		t.Fatalf("commands = %v", runner.commands)
 	}
 }
 

@@ -45,6 +45,8 @@ type AppProfile struct {
 	InstallProfile   string           `json:"install_profile,omitempty"`
 	UninstallProfile string           `json:"uninstall_profile,omitempty"`
 	ConfigProfile    string           `json:"config_profile,omitempty"`
+	ConfigTarget     string           `json:"config_target,omitempty"`
+	MinimumVersion   string           `json:"minimum_version,omitempty"`
 	ProfileVersion   string           `json:"profile_version,omitempty"`
 	StorageEstimate  *StorageEstimate `json:"storage_estimate,omitempty"`
 }
