@@ -139,6 +139,11 @@ Regras estruturais:
 - armazenamento externo do Android não deve ser tratado como filesystem Unix
   completo sem validação.
 
+Ferramentas instaladas no perfil do usuário do Ubuntu, como o Zellij, ficam em
+`$HOME/.local/bin`; a configuração gerada do shell inclui esse diretório no
+`PATH`. Comandos de controle e instalação continuam pertencendo ao Termux e
+não devem tentar chamar `proot-distro` quando executados dentro do Ubuntu.
+
 ## Contratos entre camadas
 
 Os comandos da CLI são a fronteira pública de execução. Quando a TUI chama o

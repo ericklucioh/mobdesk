@@ -49,8 +49,44 @@ func TestSetupOrchestratesAllPhasesWithExplicitPaths(t *testing.T) {
 	if commands[7] != "proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
 		t.Fatalf("instalação do autocomplete inesperada: %q", commands[7])
 	}
-	if !strings.Contains(commands[8], "bash_completion") || !strings.Contains(commands[8], "PS1=") {
+	if !strings.Contains(commands[8], "bash_completion") || !strings.Contains(commands[8], "PATH=\"$HOME/.local/bin:$PATH\"") || !strings.Contains(commands[8], "PS1=") {
 		t.Fatalf("configuração do shell ausente: %q", commands[8])
+	}
+}
+
+func TestSetupReconcilesShellConfigForExistingSetup(t *testing.T) {
+	p := paths.New(t.TempDir(), t.TempDir())
+	service := New(p)
+	reconciled := false
+	service.Deps.Run = func(_ context.Context, name string, args ...string) error {
+		if name == "proot-distro" && strings.Join(args, " ") == "login ubuntu -- sh -ec "+renderUbuntuShellConfig(p) {
+			reconciled = true
+			return nil
+		}
+		return nil
+	}
+	service.Deps.EnsureSSHConfigured = func(paths.Paths) error { return nil }
+	service.Deps.Executable = func() (string, error) { return "/bin/mobdesk", nil }
+	service.Deps.Abs = func(path string) (string, error) { return path, nil }
+	service.Deps.EvalSymlinks = func(path string) (string, error) { return path, nil }
+
+	if err := os.MkdirAll(p.StateDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, phase := range []string{"directories", "packages-updated", "packages-installed", "ubuntu-installed", "workspace-created", "password-configured", "ssh-configured", "shell-configured", "launcher-installed"} {
+		if err := os.WriteFile(p.SetupPhase(phase), []byte("done"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if _, err := service.Setup(context.Background(), SetupOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(p.SetupDone()); err != nil {
+		t.Fatalf("setup.done ausente: %v", err)
+	}
+	if !reconciled {
+		t.Fatal("configuração do shell existente não foi reconciliada")
 	}
 }
 

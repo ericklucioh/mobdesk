@@ -42,6 +42,9 @@ func init() {
 }
 
 func runStart(ctx context.Context) error {
+	if err := requireTermuxRuntime("mobdesk start"); err != nil {
+		return err
+	}
 	info, err := workstation.New(paths.Current()).Start(ctx)
 	if err != nil {
 		return err
@@ -74,6 +77,9 @@ func runStart(ctx context.Context) error {
 	return nil
 }
 func runStop(ctx context.Context) error {
+	if err := requireTermuxRuntime("mobdesk stop"); err != nil {
+		return err
+	}
 	info, err := workstation.New(paths.Current()).Stop(ctx)
 	if err != nil {
 		return err
@@ -90,8 +96,12 @@ func runStop(ctx context.Context) error {
 
 func runStartJSON(ctx context.Context) error {
 	var err error
-	if quietErr := withQuietOutput(func() error { _, err = workstation.New(paths.Current()).Start(ctx); return err }); quietErr != nil {
-		err = quietErr
+	if runtimeErr := requireTermuxRuntime("mobdesk start"); runtimeErr != nil {
+		err = runtimeErr
+	} else {
+		if quietErr := withQuietOutput(func() error { _, err = workstation.New(paths.Current()).Start(ctx); return err }); quietErr != nil {
+			err = quietErr
+		}
 	}
 	result := operationResult{SchemaVersion: 1, Command: "start", Success: err == nil, State: "running", Message: "Workstation iniciada", Port: workstation.SSHPort, Addresses: workstation.LocalIPv4Addresses()}
 	if err != nil {
@@ -105,8 +115,12 @@ func runStartJSON(ctx context.Context) error {
 
 func runStopJSON(ctx context.Context) error {
 	var err error
-	if quietErr := withQuietOutput(func() error { _, err = workstation.New(paths.Current()).Stop(ctx); return err }); quietErr != nil {
-		err = quietErr
+	if runtimeErr := requireTermuxRuntime("mobdesk stop"); runtimeErr != nil {
+		err = runtimeErr
+	} else {
+		if quietErr := withQuietOutput(func() error { _, err = workstation.New(paths.Current()).Stop(ctx); return err }); quietErr != nil {
+			err = quietErr
+		}
 	}
 	result := operationResult{SchemaVersion: 1, Command: "stop", Success: err == nil, State: "stopped", Message: "Workstation parada", Port: workstation.SSHPort}
 	if err != nil {

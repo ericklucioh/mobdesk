@@ -1,7 +1,9 @@
 package cobra
 
 import (
+	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/ericklucioh/mobdesk/internal/install"
@@ -21,5 +23,16 @@ func TestInstallOperationResultReportsSuccessAsJSON(t *testing.T) {
 
 	if !result.Success || result.State != "installed" || result.Language != "go" || result.Version != "go1.26" {
 		t.Fatalf("unexpected result: %+v", result)
+	}
+}
+
+func TestInstallRejectsUbuntuRuntime(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("PREFIX", "/not-termux")
+	t.Setenv("TERMUX_VERSION", "")
+
+	err := runInstall(context.Background(), "zellij")
+	if err == nil || !strings.Contains(err.Error(), "deve ser executado no Termux") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

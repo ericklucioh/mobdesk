@@ -31,6 +31,9 @@ func init() {
 }
 
 func runSetup(ctx context.Context, p paths.Paths) error {
+	if err := requireTermuxRuntime("mobdesk setup"); err != nil {
+		return err
+	}
 	_, err := workstation.New(p).Setup(ctx, workstation.SetupOptions{UpgradeSystem: setupUpgradeSystem, AllowPasswordPrompt: true})
 	if err != nil {
 		return err
@@ -49,11 +52,15 @@ func runSetup(ctx context.Context, p paths.Paths) error {
 
 func runSetupJSON(ctx context.Context, p paths.Paths) error {
 	var err error
-	if quietErr := withQuietOutput(func() error {
-		_, err = workstation.New(p).Setup(ctx, workstation.SetupOptions{UpgradeSystem: setupUpgradeSystem})
-		return err
-	}); quietErr != nil {
-		err = quietErr
+	if runtimeErr := requireTermuxRuntime("mobdesk setup"); runtimeErr != nil {
+		err = runtimeErr
+	} else {
+		if quietErr := withQuietOutput(func() error {
+			_, err = workstation.New(p).Setup(ctx, workstation.SetupOptions{UpgradeSystem: setupUpgradeSystem})
+			return err
+		}); quietErr != nil {
+			err = quietErr
+		}
 	}
 	result := operationResult{SchemaVersion: 1, Command: "setup", Success: err == nil, State: "completed", Message: "Setup concluído"}
 	if err != nil {

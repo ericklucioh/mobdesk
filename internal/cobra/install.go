@@ -30,6 +30,15 @@ func init() {
 }
 
 func runInstall(ctx context.Context, name string) error {
+	if err := requireTermuxRuntime("mobdesk install"); err != nil {
+		if installJSON {
+			result := installOperationResult(install.Result{Language: name, State: "failed"}, err)
+			if encodeErr := json.NewEncoder(os.Stdout).Encode(result); encodeErr != nil {
+				return encodeErr
+			}
+		}
+		return err
+	}
 	options := install.Options{Paths: paths.Current()}
 	if installProgress {
 		options.Progress = func(message string) {

@@ -34,6 +34,15 @@ func runUpdate(ctx context.Context) error {
 	info := version.Current()
 	options := update.Options{CurrentVersion: info.Version, Channel: info.Channel}
 	result := update.Result{CurrentVersion: info.Version, Channel: info.Channel}
+	if runtimeErr := requireTermuxRuntime("mobdesk update"); runtimeErr != nil {
+		if updateJSON {
+			response := updateOperationResult(result, runtimeErr, updateCheck)
+			if encodeErr := json.NewEncoder(os.Stdout).Encode(response); encodeErr != nil {
+				return encodeErr
+			}
+		}
+		return runtimeErr
+	}
 	err := update.Recover(options)
 	if err == nil {
 		result, err = update.Check(ctx, options)

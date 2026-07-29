@@ -67,6 +67,12 @@ mobdesk install cpp
 mobdesk install lua
 ```
 
+Ferramentas instaladas pelo Mobdesk pertencem ao Ubuntu. Execute `mobdesk
+install`, `mobdesk logs` e `mobdesk setup` no Termux; dentro do Ubuntu, use
+diretamente a ferramenta, por exemplo `zellij`. O setup mantém
+`$HOME/.local/bin` no `PATH` do shell Ubuntu para ferramentas instaladas no
+perfil do usuário.
+
 Consulte a versão compilada e verifique atualizações:
 
 ```bash

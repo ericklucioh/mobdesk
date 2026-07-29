@@ -114,9 +114,12 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (SetupResult, 
 		if err := s.runUbuntu(ctx, "apt-get", "-o", "DPkg::Lock::Timeout=300", "install", "-y", "bash-completion"); err != nil {
 			return result, fmt.Errorf("instalar autocomplete do Bash: %w", err)
 		}
-		if err := s.runUbuntu(ctx, "sh", "-ec", renderUbuntuShellConfig(s.Paths)); err != nil {
-			return result, fmt.Errorf("configurar shell do Ubuntu: %w", err)
-		}
+	}
+	// Reconcile generated shell configuration so updates also repair existing setups.
+	if err := s.runUbuntu(ctx, "sh", "-ec", renderUbuntuShellConfig(s.Paths)); err != nil {
+		return result, fmt.Errorf("configurar shell do Ubuntu: %w", err)
+	}
+	if !s.setupPhaseDone("shell-configured") {
 		// Reescreve o wrapper mesmo quando o setup antigo já tinha SSH configurado.
 		if err := s.Deps.EnsureSSHConfigured(s.Paths); err != nil {
 			return result, err
@@ -154,6 +157,7 @@ fi
 if [ -r /usr/share/bash-completion/bash_completion ]; then
     . /usr/share/bash-completion/bash_completion
 fi
+export PATH="$HOME/.local/bin:$PATH"
 PS1='\[\e[35m\]\u@\h\[\e[0m\]:\[\e[36m\]\w\[\e[0m\]\$ '
 EOF
 chmod 0600 %q`, p.UbuntuConfigDir(), p.UbuntuShellConfig(), p.UbuntuShellConfig(), p.UbuntuShellConfig())

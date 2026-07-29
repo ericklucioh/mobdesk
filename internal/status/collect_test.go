@@ -127,7 +127,7 @@ func TestSetupDoesNotRequireOptionalSystemUpgrade(t *testing.T) {
 	}
 	for _, phase := range []string{
 		"directories", "packages-updated", "packages-installed", "ubuntu-installed",
-		"workspace-created", "password-configured", "ssh-configured", "launcher-installed",
+		"workspace-created", "password-configured", "ssh-configured", "shell-configured", "launcher-installed",
 	} {
 		if err := os.WriteFile(paths.SetupPhase(phase), []byte("done"), 0o600); err != nil {
 			t.Fatal(err)

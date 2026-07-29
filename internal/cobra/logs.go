@@ -34,6 +34,9 @@ func init() {
 }
 
 func runLogs() error {
+	if err := requireTermuxRuntime("mobdesk logs"); err != nil {
+		return err
+	}
 	snapshot, err := logstore.Read(logstore.Options{Paths: paths.Current(), Name: logsName, Lines: logsLines})
 	if err != nil {
 		return err

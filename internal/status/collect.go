@@ -80,6 +80,12 @@ func ReadInstallations(p paths.Paths) []InstallationStatus {
 	return collectInstallations(Options{Paths: p}.withDefaults())
 }
 
+// IsTermuxRuntime reports whether the current process can control the Termux host.
+// Commands started inside the Ubuntu PRoot must not invoke host operations.
+func IsTermuxRuntime(prefix string) bool {
+	return detectTermuxRuntime(prefix)
+}
+
 func collectHost(o Options) HostStatus {
 	result := HostStatus{
 		State:        CheckOK,
@@ -112,7 +118,7 @@ func collectSetup(o Options) SetupStatus {
 	phases := []string{
 		"directories", "packages-updated", "system-upgraded", "packages-installed",
 		"ubuntu-installed", "workspace-created", "password-configured",
-		"ssh-configured", "launcher-installed",
+		"ssh-configured", "shell-configured", "launcher-installed",
 	}
 	requiredPhases := map[string]bool{
 		"directories":         true,
@@ -122,6 +128,7 @@ func collectSetup(o Options) SetupStatus {
 		"workspace-created":   true,
 		"password-configured": true,
 		"ssh-configured":      true,
+		"shell-configured":    true,
 		"launcher-installed":  true,
 	}
 	result := SetupStatus{State: CheckWarning, Phases: make(map[string]string, len(phases))}
