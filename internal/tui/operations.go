@@ -28,6 +28,12 @@ func operationTitle(operation string) string {
 		return "Verificando atualização"
 	case "update":
 		return "Atualizando Mobdesk"
+	case "uninstall":
+		return "Desinstalando app"
+	case "config-apply":
+		return "Aplicando configuração"
+	case "config-remove":
+		return "Removendo configuração"
 	default:
 		return "Instalando ferramenta"
 	}

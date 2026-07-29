@@ -32,7 +32,7 @@ func runCommand(ctx context.Context, args ...string) tea.Cmd {
 
 func runInstallCommand(ctx context.Context, args ...string) tea.Cmd {
 	return func() tea.Msg {
-		stream := &operationStream{messages: make(chan tea.Msg, 1)}
+		stream := &operationStream{messages: make(chan tea.Msg, 1), command: args[0]}
 		go stream.run(ctx, args...)
 		return stream.next()()
 	}
@@ -40,13 +40,14 @@ func runInstallCommand(ctx context.Context, args ...string) tea.Cmd {
 
 type operationStream struct {
 	messages chan tea.Msg
+	command  string
 }
 
 func (s *operationStream) next() tea.Cmd {
 	return func() tea.Msg {
 		message, ok := <-s.messages
 		if !ok {
-			return operationMessage{command: "install", err: fmt.Errorf("fluxo de instalação encerrado sem resultado")}
+			return operationMessage{command: s.command, err: fmt.Errorf("fluxo de operação encerrado sem resultado")}
 		}
 		if progress, ok := message.(operationProgressMessage); ok {
 			progress.next = s.next()

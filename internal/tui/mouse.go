@@ -19,6 +19,21 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	}
+	if m.appPopupOpen {
+		bodyIndex := m.viewport.YOffset() + mouse.Y - 4
+		lines := strings.Split(m.renderScreen(), "\n")
+		if m.popupConfirm {
+			if action := popupConfirmationMouseAction(lines, bodyIndex, mouse.X); action != "" {
+				return m.updatePopupKey(action)
+			}
+			return m, nil
+		}
+		if focus, ok := m.popupActionAt(lines, bodyIndex, mouse.X); ok {
+			m.popupFocus = focus
+			return m.activatePopupAction()
+		}
+		return m, nil
+	}
 	if mouse.Y <= 3 {
 		if mouse.X >= terminalWidth(m.width)-8 {
 			m.confirmExit = true
@@ -62,9 +77,8 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			if toolRowContainsAt(lines, bodyIndex, mouse.X, toolAppLabel(entry), contentWidth(m.width)) {
 				m.selectedTool = index
 				m.toolsList.Select(index)
-				// Toda a linha funciona como alvo no celular. O teclado ainda
-				// permite selecionar e confirmar sem depender do mouse.
-				return m.installSelectedTool()
+				m.openAppPopup(index)
+				return m, nil
 			}
 		}
 	case setupScreen:

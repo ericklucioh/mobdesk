@@ -83,6 +83,11 @@ A TUI não deve duplicar instalação, coleta, atualização ou regras de segura
 No backend real, ela se comunica com o contrato JSON da própria CLI. O backend
 mock implementa a mesma interface apenas para cenários de teste visual.
 
+Na tela de apps, a TUI mantém somente estado de apresentação da popup, foco,
+confirmação e mensagens. As ações são convertidas em `install`, `uninstall` ou
+`config apply/remove` e passam pelo backend; a popup não executa comandos de
+Ubuntu diretamente.
+
 Quando aberta dentro da sessão SSH do Mobdesk, a TUI roda no Ubuntu/PRoot, não
 no Termux. Nesse modo ela pode mostrar o workspace atual, mas não consegue
 inspecionar ou controlar diretamente o host Termux, o `sshd` e o

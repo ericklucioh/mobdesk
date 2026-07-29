@@ -205,7 +205,7 @@ func TestToolsCanSelectAndInstallLastCatalogItem(t *testing.T) {
 	}
 }
 
-func TestReleaseToolRowsDispatchInstallThroughButton(t *testing.T) {
+func TestReleaseToolRowsOpenDetailsBeforeInstall(t *testing.T) {
 	for _, name := range []string{"lazygit", "leetgo"} {
 		t.Run(name, func(t *testing.T) {
 			backend := &controlledBackend{}
@@ -244,8 +244,27 @@ func TestReleaseToolRowsDispatchInstallThroughButton(t *testing.T) {
 			model = updated.(Model)
 			updated, command := model.Update(tea.MouseReleaseMsg{X: 1, Y: row + 4, Button: tea.MouseLeft})
 			model = updated.(Model)
+			if command != nil || !model.appPopupOpen || model.installingTool != "" {
+				t.Fatalf("row did not open details for %s: command=%v popup=%v installing=%q", name, command != nil, model.appPopupOpen, model.installingTool)
+			}
+			popupLines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
+			installLine := -1
+			for candidate, line := range popupLines {
+				if strings.Contains(line, "[ Instalar ]") {
+					installLine = candidate
+					break
+				}
+			}
+			if installLine < 0 {
+				t.Fatalf("install action was not rendered for %s: %s", name, model.renderScreen())
+			}
+			actionX := utf8.RuneCountInString(popupLines[installLine][:strings.Index(popupLines[installLine], "[ Instalar ]")]) + 1
+			updated, _ = model.Update(tea.MouseClickMsg{X: actionX, Y: installLine + 4, Button: tea.MouseLeft})
+			model = updated.(Model)
+			updated, command = model.Update(tea.MouseReleaseMsg{X: actionX, Y: installLine + 4, Button: tea.MouseLeft})
+			model = updated.(Model)
 			if command == nil || model.installingTool != name {
-				t.Fatalf("button did not start %s: command=%v installing=%q", name, command != nil, model.installingTool)
+				t.Fatalf("popup did not start %s: command=%v installing=%q", name, command != nil, model.installingTool)
 			}
 			command()
 			if !slices.Equal(backend.operationArgs, []string{"install", name, "--json", "--progress"}) {
@@ -881,6 +900,161 @@ func TestRunCommandUsesCanceledContext(t *testing.T) {
 	if !ok || !errors.Is(message.err, context.Canceled) {
 		t.Fatalf("canceled command = %+v", message)
 	}
+}
+
+func TestToolsPopupOpensWithKeyboardAndClosesWithEscape(t *testing.T) {
+	model := NewWithBackend(&controlledBackend{})
+	model.screen = toolsScreen
+	model.width = 44
+	model.height = 30
+	updated, command := model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+	model = updated.(Model)
+	if command != nil || !model.appPopupOpen || model.popupAppIndex != 0 {
+		t.Fatalf("Enter did not open app popup: command=%v popup=%v index=%d", command != nil, model.appPopupOpen, model.popupAppIndex)
+	}
+	updated, command = model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEscape}))
+	model = updated.(Model)
+	if command != nil || model.appPopupOpen {
+		t.Fatalf("Escape did not close app popup: command=%v popup=%v", command != nil, model.appPopupOpen)
+	}
+}
+
+func TestPopupInstallAndConfigActionsUseCLIContract(t *testing.T) {
+	backend := &controlledBackend{}
+	model := popupTestModel(backend, "neovim", "mobdesk", true, status.ConfigStateNotApplied)
+	for range 2 {
+		updated, _ := model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyTab}))
+		model = updated.(Model)
+	}
+	updated, command := model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+	model = updated.(Model)
+	if command == nil || backend.operationArgs[0] != "config" || backend.operationArgs[1] != "apply" || backend.operationArgs[2] != "neovim" {
+		t.Fatalf("config apply did not use CLI contract: command=%v args=%v", command != nil, backend.operationArgs)
+	}
+
+	model = popupTestModel(backend, "neovim", "mobdesk", true, status.ConfigStateApplied)
+	for range 3 {
+		updated, _ = model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyTab}))
+		model = updated.(Model)
+	}
+	updated, command = model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+	model = updated.(Model)
+	if command != nil || !model.popupConfirm {
+		t.Fatalf("config removal did not request confirmation: command=%v confirm=%v", command != nil, model.popupConfirm)
+	}
+	updated, command = model.Update(tea.KeyPressMsg(tea.Key{Text: "y"}))
+	model = updated.(Model)
+	if command == nil || backend.operationArgs[0] != "config" || backend.operationArgs[1] != "remove" || backend.operationArgs[2] != "neovim" {
+		t.Fatalf("config remove did not use CLI contract: command=%v args=%v", command != nil, backend.operationArgs)
+	}
+}
+
+func TestPopupUninstallRequiresKeyboardAndMouseConfirmation(t *testing.T) {
+	backend := &controlledBackend{}
+	model := popupTestModel(backend, "neovim", "mobdesk", true, status.ConfigStateNotApplied)
+	updated, _ := model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyTab}))
+	model = updated.(Model)
+	updated, command := model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+	model = updated.(Model)
+	if command != nil || !model.popupConfirm {
+		t.Fatalf("uninstall did not request confirmation: command=%v confirm=%v", command != nil, model.popupConfirm)
+	}
+	updated, command = model.Update(tea.KeyPressMsg(tea.Key{Text: "n"}))
+	model = updated.(Model)
+	if command != nil || model.popupConfirm {
+		t.Fatal("N did not cancel uninstall confirmation")
+	}
+
+	lines := strings.Split(ansi.Strip(model.renderScreen()), "\n")
+	actionLine := -1
+	for index, line := range lines {
+		if strings.Contains(line, "[ Desinstalar ]") {
+			actionLine = index
+			break
+		}
+	}
+	if actionLine < 0 {
+		t.Fatalf("uninstall action missing from popup: %s", model.renderScreen())
+	}
+	actionX := utf8.RuneCountInString(lines[actionLine][:strings.Index(lines[actionLine], "[ Desinstalar ]")]) + 1
+	updated, _ = model.Update(tea.MouseClickMsg{X: actionX, Y: actionLine + 4, Button: tea.MouseLeft})
+	model = updated.(Model)
+	updated, command = model.Update(tea.MouseReleaseMsg{X: actionX, Y: actionLine + 4, Button: tea.MouseLeft})
+	model = updated.(Model)
+	if command != nil || !model.popupConfirm {
+		t.Fatalf("mouse uninstall did not request confirmation: command=%v confirm=%v", command != nil, model.popupConfirm)
+	}
+	lines = strings.Split(ansi.Strip(model.renderScreen()), "\n")
+	confirmLine := -1
+	for index, line := range lines {
+		if strings.Contains(line, "[ Y ] Sim") {
+			confirmLine = index
+			break
+		}
+	}
+	if confirmLine < 0 {
+		t.Fatalf("confirmation buttons missing from popup: %s", model.renderScreen())
+	}
+	confirmX := utf8.RuneCountInString(lines[confirmLine][:strings.Index(lines[confirmLine], "[ Y ] Sim")]) + 1
+	updated, _ = model.Update(tea.MouseClickMsg{X: confirmX, Y: confirmLine + 4, Button: tea.MouseLeft})
+	model = updated.(Model)
+	updated, command = model.Update(tea.MouseReleaseMsg{X: confirmX, Y: confirmLine + 4, Button: tea.MouseLeft})
+	model = updated.(Model)
+	if command == nil || backend.operationArgs[0] != "uninstall" || backend.operationArgs[1] != "neovim" {
+		t.Fatalf("mouse confirmation did not dispatch uninstall: command=%v args=%v", command != nil, backend.operationArgs)
+	}
+}
+
+func TestPopupBlocksDetectedAppAndRemoteRuntime(t *testing.T) {
+	detected := popupTestModel(&controlledBackend{}, "neovim", "detected", false, status.ConfigStateNotApplied)
+	detected.popupFocus = 1
+	updated, command := detected.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+	detected = updated.(Model)
+	if command != nil || !strings.Contains(detected.popupMessage, "proveniência") {
+		t.Fatalf("detected app was not blocked: command=%v message=%q", command != nil, detected.popupMessage)
+	}
+
+	remote := popupTestModel(&controlledBackend{}, "neovim", "mobdesk", true, status.ConfigStateNotApplied)
+	remote.status.Host.Termux = false
+	remote.popupFocus = 0
+	updated, command = remote.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
+	remote = updated.(Model)
+	if command != nil || !strings.Contains(remote.popupMessage, "Termux host") {
+		t.Fatalf("remote popup did not explain restriction: command=%v message=%q", command != nil, remote.popupMessage)
+	}
+}
+
+func TestPopupFitsNarrowTerminal(t *testing.T) {
+	model := popupTestModel(&controlledBackend{}, "neovim", "mobdesk", true, status.ConfigStateApplied)
+	model.width = 20
+	model.height = 40
+	for _, line := range strings.Split(ansi.Strip(model.renderScreen()), "\n") {
+		if lipgloss.Width(line) > contentWidth(model.width) {
+			t.Fatalf("popup line exceeds narrow terminal: %q", line)
+		}
+	}
+}
+
+func popupTestModel(backend *controlledBackend, name, source string, managed bool, configState status.ConfigState) Model {
+	model := NewWithBackend(backend)
+	model.screen = toolsScreen
+	model.statusLoaded = true
+	model.status.Host.Termux = true
+	model.status.Installations = []status.InstallationStatus{{Name: name, Kind: "editor", Package: "neovim", Executable: "nvim", State: "installed", Source: source, Managed: managed, Version: "0.11"}}
+	model.status.Configurations = []status.ConfigurationStatus{{App: name, Profile: "lazyvim", State: configState, ManagedPaths: []string{"/root/.config/nvim"}}}
+	model.openAppPopup(toolIndex(name))
+	model.width = 44
+	model.height = 30
+	return model
+}
+
+func toolIndex(name string) int {
+	for index, entry := range toolEntries("") {
+		if entry.profile.Name == name {
+			return index
+		}
+	}
+	return -1
 }
 
 type controlledBackend struct {

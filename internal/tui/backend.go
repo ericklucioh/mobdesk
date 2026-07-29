@@ -37,7 +37,7 @@ func (b *realBackend) StatusCmd() tea.Cmd {
 }
 
 func (b *realBackend) OperationCmd(args ...string) tea.Cmd {
-	if len(args) > 0 && args[0] == "install" {
+	if len(args) > 0 && containsArg(args, "--progress") && (args[0] == "install" || args[0] == "uninstall" || args[0] == "config") {
 		return runInstallCommand(b.ctx, args...)
 	}
 	return runCommand(b.ctx, args...)
@@ -145,6 +145,17 @@ func (m *mockBackend) OperationCmd(args ...string) tea.Cmd {
 				result.Language = args[1]
 				result.Version = "mock-1.0"
 			}
+		case "uninstall":
+			if len(args) > 1 {
+				m.uninstall(args[1])
+				result.Target = args[1]
+			}
+		case "config":
+			if len(args) > 2 {
+				m.configure(args[1], args[2])
+				result.Target = args[2]
+				result.Action = args[1]
+			}
 		}
 		return operationMessage{command: command, result: result}
 	}
@@ -161,6 +172,16 @@ func validateMockOperation(args []string) error {
 	case "install":
 		if len(args) < 2 || args[1] == "" {
 			return errors.New("mobdesk install exige uma linguagem")
+		}
+		return nil
+	case "uninstall":
+		if len(args) < 2 || args[1] == "" {
+			return errors.New("mobdesk uninstall exige um app")
+		}
+		return nil
+	case "config":
+		if len(args) < 3 || (args[1] != "apply" && args[1] != "remove") || args[2] == "" {
+			return errors.New("mobdesk config exige apply/remove e um app")
 		}
 		return nil
 	case "setup", "update":
@@ -212,6 +233,33 @@ func (m *mockBackend) install(name string) {
 			return
 		}
 	}
+}
+
+func (m *mockBackend) uninstall(name string) {
+	for index := range m.status.Installations {
+		if m.status.Installations[index].Name == name {
+			m.status.Installations[index].State = "uninstalled"
+			return
+		}
+	}
+}
+
+func (m *mockBackend) configure(action, name string) {
+	for index := range m.status.Configurations {
+		if m.status.Configurations[index].App == name {
+			if action == "apply" {
+				m.status.Configurations[index].State = status.ConfigStateApplied
+			} else {
+				m.status.Configurations[index].State = status.ConfigStateRemoved
+			}
+			return
+		}
+	}
+	state := status.ConfigStateApplied
+	if action == "remove" {
+		state = status.ConfigStateRemoved
+	}
+	m.status.Configurations = append(m.status.Configurations, status.ConfigurationStatus{App: name, Profile: "lazyvim", State: state})
 }
 
 func mockStatus(scenario string) status.SystemStatus {

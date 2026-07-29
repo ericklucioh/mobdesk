@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 9 concluida; Fase 10 pendente
+**Status:** Fase 10 concluida; Fase 11 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -1077,6 +1077,21 @@ Atualizar:
 - Configuração não disponível aparece claramente.
 - Estado é atualizado após cada operação.
 - Sessão remota continua bloqueando operações de host.
+
+### Resultado da Fase 10
+
+- Toque ou `Enter` em uma linha abre a popup de detalhes sem iniciar uma
+  instalação diretamente.
+- A popup mostra estado, origem, versão, dependências, configuração, caminhos,
+  plugins, estimativa de armazenamento e motivos de indisponibilidade.
+- Instalação, desinstalação, aplicação e remoção de configuração usam o
+  backend CLI; desinstalação e remoção de configuração exigem confirmação
+  interna por teclado ou mouse.
+- Ações bloqueadas no Ubuntu remoto, apps detectados e conflitos ficam visíveis
+  sem disparar operações; operações concorrentes continuam bloqueadas pelo
+  estado `busy` existente.
+- Testes cobrem abertura/fechamento, hit-test da linha e ações, foco por
+  teclado, confirmações, app detectado, runtime remoto e terminal estreito.
 
 ## 18. Fase 11: Testes e Integração
 

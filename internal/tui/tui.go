@@ -91,6 +91,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.message = operationMessageText(msg)
 		}
 		m.applyOperationState(msg)
+		if m.appPopupOpen {
+			m.popupMessage = operationMessageText(msg)
+		}
 		return m.requestStatus()
 	case operationProgressMessage:
 		if msg.id != 0 && msg.id != m.operationID {
@@ -265,6 +268,9 @@ func operationState(msg operationMessage) string {
 
 func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	key := msg.String()
+	if m.appPopupOpen {
+		return m.updatePopupKey(key)
+	}
 	if m.screen == toolsScreen && isListKey(key) {
 		m.moveSelector(&m.toolsList, key)
 		m.selectedTool = m.toolsList.Index()
@@ -332,7 +338,8 @@ func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case "i":
 		if m.screen == toolsScreen {
-			return m.installSelectedTool()
+			m.openAppPopup(m.toolsList.Index())
+			return m, nil
 		}
 	case "s":
 		if m.screen == homeScreen {
@@ -498,8 +505,8 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 		}
 		return nil, true
 	case toolsScreen:
-		_, cmd := m.installSelectedTool()
-		return cmd, true
+		m.openAppPopup(m.toolsList.Index())
+		return nil, true
 	case shellScreen:
 		if m.focus == 0 {
 			return m.backend.ShellCmd(), true
@@ -620,6 +627,9 @@ func (m Model) renderHeader() string {
 func (m Model) renderScreen() string {
 	if m.busy {
 		return m.renderOperation()
+	}
+	if m.appPopupOpen {
+		return m.renderAppPopup()
 	}
 	switch m.screen {
 	case statusScreen:

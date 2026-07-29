@@ -60,6 +60,7 @@ Oferecer uma interface textual organizada para trabalhar no Ubuntu pelo celular 
   contrato JSON versionado.
 - status distingue apps detectados, apps gerenciados e configuração aplicada,
   modificada ou em conflito.
+- popup touch-first para detalhes, ações e confirmações destrutivas dos apps.
 
 ### Critério
 

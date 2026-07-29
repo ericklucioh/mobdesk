@@ -46,6 +46,12 @@ type Model struct {
 	operationProgress string
 	installingTool    string
 	confirmStop       bool
+	appPopupOpen      bool
+	popupAppIndex     int
+	popupFocus        int
+	popupAction       string
+	popupConfirm      bool
+	popupMessage      string
 	dragging          bool
 	dragY             int
 	pointerDown       bool

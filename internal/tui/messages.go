@@ -26,6 +26,13 @@ type operationResult struct {
 	Success         bool                     `json:"success"`
 	State           string                   `json:"state"`
 	Message         string                   `json:"message"`
+	Target          string                   `json:"target"`
+	Action          string                   `json:"action"`
+	Changed         bool                     `json:"changed"`
+	ConfigState     string                   `json:"config_state"`
+	Conflicts       []string                 `json:"conflicts"`
+	Paths           []string                 `json:"paths"`
+	Source          string                   `json:"source"`
 	CurrentVersion  string                   `json:"current_version"`
 	LatestVersion   string                   `json:"latest_version"`
 	Updated         bool                     `json:"updated"`
