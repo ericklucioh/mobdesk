@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 1 concluida; Fase 2 pendente
+**Status:** Fase 2 concluida; Fase 3 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -343,6 +343,18 @@ O primeiro perfil de Neovim deverá:
 - A segunda instalação não reinstala o pacote sem necessidade.
 - A instalação não cria `~/.config/nvim` automaticamente.
 - A popup informa que LazyVim ainda não foi aplicado.
+
+### Resultado da Fase 2
+
+- Neovim foi adicionado com alias `nvim`, pacote Ubuntu `neovim` e verificação
+  `nvim --version`.
+- O perfil declara a versão mínima, o perfil opcional `lazyvim` e o destino
+  `/root/.config/nvim`, sem aplicar configuração durante a instalação.
+- Testes cobrem resolução por nome e alias e o comando `apt` esperado.
+- `scripts/test-catalog.sh` instala Neovim, verifica a versão, confirma que a
+  configuração não foi criada e repete a instalação pelo alias.
+- O fixture PRoot Docker validou `NVIM v0.11.6` em `x86_64`; a validação ARM64
+  ainda depende do Termux/POCO F6 real.
 
 ## 10. Fase 3: Estimativas de Armazenamento
 
@@ -1186,10 +1198,13 @@ A implementação estará concluída quando todos os itens forem verdadeiros:
 - O smoke test do catálogo passa.
 - O fluxo completo passa no Termux/PRoot real.
 
-## 22. Ordem de Commits Recomendada
+## 22. Ordem de Commits por Fase
 
-Cada fase deverá preferencialmente ter um commit isolado e verificável:
+Cada fase deverá terminar com exatamente um commit isolado e verificável. O
+commit só pode ser criado depois dos testes e critérios de aceite da fase
+passarem. Arquivos modificados antes da fase devem permanecer fora do commit.
 
+0. `chore: freeze app management contracts`
 1. `refactor: introduce app profiles`
 2. `feat: add neovim app profile`
 3. `feat: add storage estimates`
@@ -1200,8 +1215,7 @@ Cada fase deverá preferencialmente ter um commit isolado e verificável:
 8. `feat: expose app operations in cli`
 9. `feat: show app configuration status`
 10. `feat: add app details popup`
-11. `test: validate app lifecycle`
-12. `docs: document app management rollout`
+11. `test: validate app lifecycle and document rollout`
 
 Cada commit deverá passar os testes da fase correspondente. Nenhum commit deve
 misturar mudança visual não relacionada, alteração de arquitetura fora do plano
