@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 0 concluida; Fase 1 pendente
+**Status:** Fase 1 concluida; Fase 2 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -285,6 +285,16 @@ StorageEstimate
 - A TUI não mantém frases duplicadas fora do catálogo.
 - Os testes confirmam perfil, estratégia e estimativa de cada app.
 - Nenhum comportamento de instalação existente é alterado sem teste correspondente.
+
+### Resultado da Fase 1
+
+- O catálogo agora usa `AppProfile` e `Languages`, `Tools` e `Resolve` retornam
+  perfis de app.
+- As descrições exibidas na TUI foram movidas para os perfis do catálogo.
+- Todos os perfis atuais possuem estimativa inicial de armazenamento para Ubuntu
+  ARM64, com origem de planejamento e versão do catálogo.
+- Aliases existentes, incluindo Yazi e TUIFI Manager, continuam resolvíveis.
+- O instalador continua usando as mesmas estratégias e comandos de instalação.
 
 ## 9. Fase 2: Neovim Instalável
 

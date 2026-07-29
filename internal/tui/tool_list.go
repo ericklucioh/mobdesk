@@ -14,7 +14,7 @@ type toolListItem struct {
 }
 
 func (i toolListItem) FilterValue() string {
-	return toolAppLabel(i.entry) + " " + i.entry.phrase
+	return toolAppLabel(i.entry) + " " + i.entry.profile.Description
 }
 
 func renderToolItem(value toolListItem, index, selected, width int) string {
@@ -32,7 +32,7 @@ func renderToolItem(value toolListItem, index, selected, width int) string {
 		appStyle = appStyle.Underline(true)
 	}
 	app := ansi.Truncate(toolAppLabel(value.entry), leftWidth, "…")
-	phrase := ansi.Truncate(value.entry.phrase, leftWidth, "…")
+	phrase := ansi.Truncate(value.entry.profile.Description, leftWidth, "…")
 	state := ansi.Truncate(toolDisplayState(value.installed, value.installing), stateWidth, "…")
 	stateStyle := bodyStyle.Bold(true)
 	if value.installed {

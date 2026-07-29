@@ -28,20 +28,25 @@ const (
 	ConfigStateFailed      ConfigState = "failed"
 )
 
-// AppProfile is the additive domain model for the app catalog. The existing
-// Language catalog remains in use until the catalog migration phase.
+// AppProfile is the domain model for the app catalog. Installation strategy
+// details remain declarative data until the corresponding service phases.
 type AppProfile struct {
-	Name            string           `json:"name"`
-	Aliases         []string         `json:"aliases"`
-	Description     string           `json:"description,omitempty"`
-	Kind            string           `json:"kind,omitempty"`
-	Package         string           `json:"package"`
-	Executable      string           `json:"executable"`
-	VersionArg      []string         `json:"version_arg"`
-	InstallKind     string           `json:"install_kind,omitempty"`
-	Requires        []string         `json:"requires,omitempty"`
-	UserBin         bool             `json:"user_bin,omitempty"`
-	StorageEstimate *StorageEstimate `json:"storage_estimate,omitempty"`
+	Name             string           `json:"name"`
+	Aliases          []string         `json:"aliases"`
+	Description      string           `json:"description,omitempty"`
+	Kind             string           `json:"kind,omitempty"`
+	Package          string           `json:"package"`
+	Executable       string           `json:"executable"`
+	VersionArg       []string         `json:"version_arg"`
+	InstallKind      string           `json:"install_kind,omitempty"`
+	Requires         []string         `json:"requires,omitempty"`
+	UserBin          bool             `json:"-"`
+	Script           string           `json:"-"`
+	InstallProfile   string           `json:"install_profile,omitempty"`
+	UninstallProfile string           `json:"uninstall_profile,omitempty"`
+	ConfigProfile    string           `json:"config_profile,omitempty"`
+	ProfileVersion   string           `json:"profile_version,omitempty"`
+	StorageEstimate  *StorageEstimate `json:"storage_estimate,omitempty"`
 }
 
 type StorageEstimate struct {
@@ -55,19 +60,6 @@ type StorageEstimate struct {
 	Version           string    `json:"version"`
 	Architecture      string    `json:"architecture"`
 	MeasuredAt        time.Time `json:"measured_at"`
-}
-
-type Language struct {
-	Name        string   `json:"name"`
-	Aliases     []string `json:"aliases"`
-	Package     string   `json:"package"`
-	Executable  string   `json:"executable"`
-	VersionArg  []string `json:"version_arg"`
-	Kind        string   `json:"kind,omitempty"`
-	InstallKind string   `json:"install_kind,omitempty"`
-	Requires    []string `json:"requires,omitempty"`
-	Script      string   `json:"-"`
-	UserBin     bool     `json:"-"`
 }
 
 type Result struct {

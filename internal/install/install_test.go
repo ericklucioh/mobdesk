@@ -90,6 +90,35 @@ func TestCanonicalAppAndConfigStates(t *testing.T) {
 	}
 }
 
+func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
+	profiles := Tools()
+	if len(profiles) != 25 {
+		t.Fatalf("catalog has %d profiles, want 25", len(profiles))
+	}
+	seen := make(map[string]bool, len(profiles))
+	for _, profile := range profiles {
+		if profile.Name == "" || seen[profile.Name] {
+			t.Fatalf("catalog has invalid or duplicate profile: %+v", profile)
+		}
+		seen[profile.Name] = true
+		if profile.Description == "" || profile.InstallKind == "" || profile.StorageEstimate == nil {
+			t.Fatalf("profile lacks required catalog metadata: %+v", profile)
+		}
+		estimate := profile.StorageEstimate
+		if estimate.AppMinMB > estimate.AppMaxMB || estimate.DependenciesMinMB > estimate.DependenciesMaxMB || estimate.ConfigMinMB > estimate.ConfigMaxMB {
+			t.Fatalf("invalid storage interval for %s: %+v", profile.Name, estimate)
+		}
+		if estimate.Source != "planning" || estimate.Architecture != "arm64" {
+			t.Fatalf("storage estimate metadata missing for %s: %+v", profile.Name, estimate)
+		}
+		for _, alias := range profile.Aliases {
+			if alias != strings.ToLower(alias) {
+				t.Fatalf("alias %q for %s is not normalized", alias, profile.Name)
+			}
+		}
+	}
+}
+
 func TestResolveLanguagesAndAliases(t *testing.T) {
 	for _, name := range []string{"go", "golang", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4"} {
 		if _, ok := Resolve(name); !ok {

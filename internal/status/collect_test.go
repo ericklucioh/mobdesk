@@ -266,7 +266,7 @@ func TestCollectCatalogInstallationsRecognizesToolsWithoutRecords(t *testing.T) 
 	}
 }
 
-func executablesForTools(tools []install.Language) []string {
+func executablesForTools(tools []install.AppProfile) []string {
 	executables := make([]string, 0, len(tools))
 	for _, tool := range tools {
 		executables = append(executables, tool.Executable)

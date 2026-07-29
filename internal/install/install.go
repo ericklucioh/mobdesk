@@ -20,32 +20,49 @@ const (
 	ubuntuPath            = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 )
 
-var catalog = []Language{
-	{Name: "go", Aliases: []string{"golang"}, Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt"},
-	{Name: "python", Aliases: []string{"python3"}, Package: "python3", Executable: "python3", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt"},
-	{Name: "node", Aliases: []string{"nodejs"}, Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "node"},
-	{Name: "c", Aliases: []string{"c-lang"}, Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt"},
-	{Name: "cpp", Aliases: []string{"c++", "cplusplus"}, Package: "clang", Executable: "clang++", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt"},
-	{Name: "lua", Aliases: []string{"lua5.4"}, Package: "lua5.4", Executable: "lua5.4", VersionArg: []string{"-v"}, Kind: "language", InstallKind: "apt"},
-	{Name: "git", Package: "git", Executable: "git", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
-	{Name: "gh", Aliases: []string{"github-cli"}, Package: "gh", Executable: "gh", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "apt"},
-	{Name: "tmux", Package: "tmux", Executable: "tmux", VersionArg: []string{"-V"}, Kind: "terminal", InstallKind: "apt"},
-	{Name: "zellij", Package: "zellij", Executable: "zellij", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "script", UserBin: true, Script: "apt-get install -y ca-certificates curl tar; mkdir -p \"$HOME/.local/bin\"; archive=$(mktemp); curl -fsSL https://github.com/zellij-org/zellij/releases/download/v0.44.3/zellij-aarch64-unknown-linux-musl.tar.gz -o \"$archive\"; printf '%s  %s\\n' '15e6534d42644d66973d136c590c49739dcfd6a1a2a0d3d917973f16c81b45fb' \"$archive\" | sha256sum -c -; tar -xzf \"$archive\" -C \"$HOME/.local/bin\" zellij; chmod 0755 \"$HOME/.local/bin/zellij\"; rm -f \"$archive\""},
-	{Name: "micro", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
-	{Name: "lazygit", Package: "github.com/jesseduffield/lazygit@v0.63.1", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "script", Script: githubReleaseScript("jesseduffield/lazygit", "v0.63.1", "lazygit_0.63.1_linux_arm64.tar.gz", "555dbc9a8efcf2e33bc24e7fbd9463e9fa375e3c5e23cc270763733c38eeae36", "lazygit_0.63.1_linux_x86_64.tar.gz", "8e033bc78c8e192dee9510e951f6c9e154289b7198d22c924ed1d0a951b0dac1", "lazygit")},
-	{Name: "tree", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
-	{Name: "ttt", Package: "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0", Executable: "ttt", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "ttt", Requires: []string{"go"}},
-	{Name: "htop", Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
-	{Name: "ncdu", Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
-	{Name: "inxi", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
-	{Name: "speedtest-cli", Package: "speedtest-cli", Executable: "speedtest-cli", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
-	{Name: "posting", Package: "posting", Executable: "posting", VersionArg: []string{"--help"}, Kind: "terminal", InstallKind: "pipx", Requires: []string{"python"}},
-	{Name: "yazi", Aliases: []string{"yazi-fm"}, Package: "yazi@v26.5.6", Executable: "yazi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "script", UserBin: true, Script: yaziReleaseScript()},
-	{Name: "tuifi", Aliases: []string{"tuifimanager"}, Package: "TUIFIManager==5.2.6", Executable: "tuifi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "script", Requires: []string{"python"}, Script: tuifiInstallScript()},
-	{Name: "opencode-cli", Aliases: []string{"opencode"}, Package: "opencode-ai", Executable: "opencode", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
-	{Name: "codex-cli", Aliases: []string{"codex"}, Package: "@openai/codex", Executable: "codex", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
-	{Name: "claudecode-cli", Aliases: []string{"claude-code"}, Package: "@anthropic-ai/claude-code", Executable: "claude", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
-	{Name: "leetgo", Package: "github.com/j178/leetgo@v1.4.17", Executable: "leetgo", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "script", Script: githubReleaseScript("j178/leetgo", "v1.4.17", "leetgo_linux_arm64.tar.gz", "de77054553b61c1733f9b034e4a976630a3da585e414f93f0ce13ada5dd80ca4", "leetgo_linux_x86_64.tar.gz", "fe18dc54f2784aded76ef1e04e6917d6d9d8731520bbe232328ba942b5b3c47b", "leetgo")},
+var catalog = []AppProfile{
+	{Name: "go", Aliases: []string{"golang"}, Description: "Linguagem compilada", Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(180, 300, 0, 50, 0, 5)},
+	{Name: "python", Aliases: []string{"python3"}, Description: "Scripts e automação", Package: "python3", Executable: "python3", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(35, 60, 0, 20, 0, 5)},
+	{Name: "node", Aliases: []string{"nodejs"}, Description: "JavaScript no servidor", Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "node", StorageEstimate: plannedStorage(70, 130, 20, 60, 0, 10)},
+	{Name: "c", Aliases: []string{"c-lang"}, Description: "Compilador C", Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(250, 450, 20, 80, 0, 10)},
+	{Name: "cpp", Aliases: []string{"c++", "cplusplus"}, Description: "Compilador C++", Package: "clang", Executable: "clang++", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(250, 450, 20, 80, 0, 10)},
+	{Name: "lua", Aliases: []string{"lua5.4"}, Description: "Scripts leves", Package: "lua5.4", Executable: "lua5.4", VersionArg: []string{"-v"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(2, 6, 0, 5, 0, 2)},
+	{Name: "git", Description: "Controle de versão", Package: "git", Executable: "git", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(35, 60, 0, 10, 0, 5)},
+	{Name: "gh", Aliases: []string{"github-cli"}, Description: "GitHub pelo terminal", Package: "gh", Executable: "gh", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "apt", StorageEstimate: plannedStorage(30, 50, 0, 10, 0, 5)},
+	{Name: "tmux", Description: "Sessões persistentes", Package: "tmux", Executable: "tmux", VersionArg: []string{"-V"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(2, 5, 0, 2, 0, 2)},
+	{Name: "zellij", Description: "Multiplexador moderno", Package: "zellij", Executable: "zellij", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "script", UserBin: true, Script: "apt-get install -y ca-certificates curl tar; mkdir -p \"$HOME/.local/bin\"; archive=$(mktemp); curl -fsSL https://github.com/zellij-org/zellij/releases/download/v0.44.3/zellij-aarch64-unknown-linux-musl.tar.gz -o \"$archive\"; printf '%s  %s\\n' '15e6534d42644d66973d136c590c49739dcfd6a1a2a0d3d917973f16c81b45fb' \"$archive\" | sha256sum -c -; tar -xzf \"$archive\" -C \"$HOME/.local/bin\" zellij; chmod 0755 \"$HOME/.local/bin/zellij\"; rm -f \"$archive\"", StorageEstimate: plannedStorage(20, 30, 0, 5, 0, 5)},
+	{Name: "micro", Description: "Editor de terminal", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(15, 25, 0, 5, 0, 5)},
+	{Name: "lazygit", Description: "Git interativo", Package: "github.com/jesseduffield/lazygit@v0.63.1", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "script", Script: githubReleaseScript("jesseduffield/lazygit", "v0.63.1", "lazygit_0.63.1_linux_arm64.tar.gz", "555dbc9a8efcf2e33bc24e7fbd9463e9fa375e3c5e23cc270763733c38eeae36", "lazygit_0.63.1_linux_x86_64.tar.gz", "8e033bc78c8e192dee9510e951f6c9e154289b7198d22c924ed1d0a951b0dac1", "lazygit"), StorageEstimate: plannedStorage(15, 25, 0, 5, 0, 5)},
+	{Name: "tree", Description: "Árvore de diretórios", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt", StorageEstimate: plannedStorage(1, 1, 0, 1, 0, 1)},
+	{Name: "ttt", Description: "Editor e IDE de terminal", Package: "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0", Executable: "ttt", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "ttt", Requires: []string{"go"}, StorageEstimate: plannedStorage(10, 20, 0, 10, 0, 2)},
+	{Name: "htop", Description: "Monitor do sistema", Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(1, 3, 0, 1, 0, 1)},
+	{Name: "ncdu", Description: "Uso de disco", Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(1, 3, 0, 1, 0, 1)},
+	{Name: "inxi", Description: "Informações do sistema", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(5, 15, 0, 5, 0, 2)},
+	{Name: "speedtest-cli", Description: "Teste de rede", Package: "speedtest-cli", Executable: "speedtest-cli", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt", StorageEstimate: plannedStorage(5, 15, 0, 10, 0, 2)},
+	{Name: "posting", Description: "Cliente HTTP no terminal", Package: "posting", Executable: "posting", VersionArg: []string{"--help"}, Kind: "terminal", InstallKind: "pipx", Requires: []string{"python"}, StorageEstimate: plannedStorage(20, 60, 10, 40, 0, 5)},
+	{Name: "yazi", Aliases: []string{"yazi-fm"}, Description: "Gerenciador de arquivos com previews", Package: "yazi@v26.5.6", Executable: "yazi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "script", UserBin: true, Script: yaziReleaseScript(), StorageEstimate: plannedStorage(25, 40, 300, 550, 1, 20)},
+	{Name: "tuifi", Aliases: []string{"tuifimanager"}, Description: "Explorador visual de arquivos", Package: "TUIFIManager==5.2.6", Executable: "tuifi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "script", Requires: []string{"python"}, Script: tuifiInstallScript(), StorageEstimate: plannedStorage(20, 40, 90, 180, 1, 5)},
+	{Name: "opencode-cli", Aliases: []string{"opencode"}, Description: "Assistente de IA", Package: "opencode-ai", Executable: "opencode", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(60, 150, 0, 100, 5, 30)},
+	{Name: "codex-cli", Aliases: []string{"codex"}, Description: "Assistente de IA", Package: "@openai/codex", Executable: "codex", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(60, 150, 0, 100, 5, 30)},
+	{Name: "claudecode-cli", Aliases: []string{"claude-code"}, Description: "Assistente de IA", Package: "@anthropic-ai/claude-code", Executable: "claude", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(80, 200, 0, 100, 5, 30)},
+	{Name: "leetgo", Description: "Exercícios LeetCode", Package: "github.com/j178/leetgo@v1.4.17", Executable: "leetgo", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "script", Script: githubReleaseScript("j178/leetgo", "v1.4.17", "leetgo_linux_arm64.tar.gz", "de77054553b61c1733f9b034e4a976630a3da585e414f93f0ce13ada5dd80ca4", "leetgo_linux_x86_64.tar.gz", "fe18dc54f2784aded76ef1e04e6917d6d9d8731520bbe232328ba942b5b3c47b", "leetgo"), StorageEstimate: plannedStorage(10, 20, 0, 20, 0, 5)},
+}
+
+var catalogEstimateMeasuredAt = time.Date(2026, 7, 29, 0, 0, 0, 0, time.UTC)
+
+func plannedStorage(appMin, appMax, dependenciesMin, dependenciesMax, configMin, configMax int64) *StorageEstimate {
+	return &StorageEstimate{
+		AppMinMB:          appMin,
+		AppMaxMB:          appMax,
+		DependenciesMinMB: dependenciesMin,
+		DependenciesMaxMB: dependenciesMax,
+		ConfigMinMB:       configMin,
+		ConfigMaxMB:       configMax,
+		Source:            "planning",
+		Version:           "mvp-1",
+		Architecture:      "arm64",
+		MeasuredAt:        catalogEstimateMeasuredAt,
+	}
 }
 
 func githubReleaseScript(repository, version, arm64Archive, arm64Checksum, amd64Archive, amd64Checksum, executable string) string {
@@ -119,15 +136,15 @@ type Options struct {
 	Progress       func(string)
 }
 
-func Languages() []Language {
-	result := make([]Language, len(catalog))
+func Languages() []AppProfile {
+	result := make([]AppProfile, len(catalog))
 	copy(result, catalog)
 	return result
 }
 
-func Tools() []Language { return Languages() }
+func Tools() []AppProfile { return Languages() }
 
-func Resolve(name string) (Language, bool) {
+func Resolve(name string) (AppProfile, bool) {
 	name = strings.ToLower(strings.TrimSpace(name))
 	for _, language := range catalog {
 		if name == language.Name {
@@ -139,7 +156,7 @@ func Resolve(name string) (Language, bool) {
 			}
 		}
 	}
-	return Language{}, false
+	return AppProfile{}, false
 }
 
 func Install(ctx context.Context, name string, options Options) (Result, error) {
@@ -283,7 +300,7 @@ func acquireInstallLock(parent context.Context, options Options) (func(), error)
 	}
 }
 
-func runToolVersion(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool Language) CommandResult {
+func runToolVersion(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool AppProfile) CommandResult {
 	if !tool.UserBin {
 		return runUbuntuLogged(ctx, runner, timeout, logPath, tool.Executable, tool.VersionArg...)
 	}
@@ -291,7 +308,7 @@ func runToolVersion(ctx context.Context, runner CommandRunner, timeout time.Dura
 	return runUbuntuLogged(ctx, runner, timeout, logPath, "sh", args...)
 }
 
-func installTool(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool Language) CommandResult {
+func installTool(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool AppProfile) CommandResult {
 	switch tool.InstallKind {
 	case "node":
 		return runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "nodejs", "npm")

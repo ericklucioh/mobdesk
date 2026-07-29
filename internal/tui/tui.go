@@ -400,8 +400,8 @@ func (m Model) installSelectedTool() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	m.selectedTool = index
-	m.installingTool = entries[index].language.Name
-	return m.runHostOperation("install", "install", entries[index].language.Name, "--json", "--progress")
+	m.installingTool = entries[index].profile.Name
+	return m.runHostOperation("install", "install", entries[index].profile.Name, "--json", "--progress")
 }
 
 func (m Model) toggleWorkstation() (tea.Model, tea.Cmd) {

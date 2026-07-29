@@ -195,12 +195,12 @@ func TestToolsCanSelectAndInstallLastCatalogItem(t *testing.T) {
 		t.Fatalf("tools selector stopped at %d, want last catalog item %d", model.toolsList.Index(), last)
 	}
 	if !strings.Contains(ansi.Strip(model.renderTools()), toolAppLabel(entries[last])) {
-		t.Fatalf("tools view does not render last catalog item %q", entries[last].language.Name)
+		t.Fatalf("tools view does not render last catalog item %q", entries[last].profile.Name)
 	}
 
 	updated, cmd := model.installSelectedTool()
 	model = updated.(Model)
-	if cmd == nil || model.installingTool != entries[last].language.Name {
+	if cmd == nil || model.installingTool != entries[last].profile.Name {
 		t.Fatalf("last catalog item was not installable: cmd=%v installing=%q", cmd != nil, model.installingTool)
 	}
 }
@@ -219,7 +219,7 @@ func TestReleaseToolRowsDispatchInstallThroughButton(t *testing.T) {
 
 			index := -1
 			for candidate, entry := range toolEntries("") {
-				if entry.language.Name == name {
+				if entry.profile.Name == name {
 					index = candidate
 					break
 				}

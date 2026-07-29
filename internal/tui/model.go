@@ -107,13 +107,12 @@ func newModel(backend Backend, p paths.Paths) Model {
 }
 
 type toolEntry struct {
-	language install.Language
-	kind     string
-	phrase   string
+	profile install.AppProfile
+	kind    string
 }
 
 func toolAppLabel(entry toolEntry) string {
-	switch entry.language.Name {
+	switch entry.profile.Name {
 	case "python":
 		return "python3"
 	case "node":
@@ -125,41 +124,14 @@ func toolAppLabel(entry toolEntry) string {
 	case "lua":
 		return "lua5.4"
 	default:
-		return entry.language.Name
+		return entry.profile.Name
 	}
 }
 
 func toolEntries(kind string) []toolEntry {
-	phrases := map[string]string{
-		"go":             "Linguagem compilada",
-		"python":         "Scripts e automação",
-		"node":           "JavaScript no servidor",
-		"c":              "Compilador C",
-		"cpp":            "Compilador C++",
-		"lua":            "Scripts leves",
-		"git":            "Controle de versão",
-		"gh":             "GitHub pelo terminal",
-		"tmux":           "Sessões persistentes",
-		"zellij":         "Multiplexador moderno",
-		"micro":          "Editor de terminal",
-		"lazygit":        "Git interativo",
-		"tree":           "Árvore de diretórios",
-		"ttt":            "Editor e IDE de terminal",
-		"htop":           "Monitor do sistema",
-		"ncdu":           "Uso de disco",
-		"inxi":           "Informações do sistema",
-		"speedtest-cli":  "Teste de rede",
-		"posting":        "Cliente HTTP no terminal",
-		"yazi":           "Gerenciador de arquivos com previews",
-		"tuifi":          "Explorador visual de arquivos",
-		"opencode-cli":   "Assistente de IA",
-		"codex-cli":      "Assistente de IA",
-		"claudecode-cli": "Assistente de IA",
-		"leetgo":         "Exercícios LeetCode",
-	}
 	entries := make([]toolEntry, 0)
 	for _, item := range install.Tools() {
-		entry := toolEntry{language: item, kind: item.Kind, phrase: phrases[item.Name]}
+		entry := toolEntry{profile: item, kind: item.Kind}
 		if kind == "" || entry.kind == kind {
 			entries = append(entries, entry)
 		}
@@ -174,7 +146,7 @@ func toolListItems(value status.SystemStatus, installing string) []toolListItem 
 		items = append(items, toolListItem{
 			entry:      entry,
 			installed:  toolInstalled(value, entry),
-			installing: entry.language.Name == installing,
+			installing: entry.profile.Name == installing,
 		})
 	}
 	return items
@@ -185,7 +157,7 @@ func toolInstalled(value status.SystemStatus, entry toolEntry) bool {
 		if installation.Kind != "" && installation.Kind != entry.kind {
 			continue
 		}
-		matches := installation.Name == entry.language.Name || installation.Package == entry.language.Package || installation.Executable == entry.language.Executable
+		matches := installation.Name == entry.profile.Name || installation.Package == entry.profile.Package || installation.Executable == entry.profile.Executable
 		if matches && installation.State == "installed" && installation.LastError == "" {
 			return true
 		}
