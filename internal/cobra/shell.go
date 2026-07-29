@@ -9,21 +9,22 @@ import (
 
 	"github.com/creack/pty/v2"
 	"github.com/ericklucioh/mobdesk/internal/executil"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
 
-var shellCmd = &cobra.Command{
-	Use:   "shell",
-	Short: "abrir um shell direto no Ubuntu",
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		return runShell(cmd.Context(), paths.Current())
-	},
+var shellCmd = newShellCmd(nil)
+
+func newShellCmd(state *commandState) *cobra.Command {
+	return &cobra.Command{Use: "shell", RunE: func(cmd *cobra.Command, _ []string) error {
+		return runShell(cmd.Context(), paths.Current(), commandLocalizer(state, cmd))
+	}}
 }
 
-func runShell(ctx context.Context, p paths.Paths) error {
-	if err := ensureSetupCompleted(p); err != nil {
+func runShell(ctx context.Context, p paths.Paths, localizers ...i18n.Localizer) error {
+	if err := ensureSetupCompleted(p, localizers...); err != nil {
 		return err
 	}
 	command, err := executil.CommandContext(ctx, "proot-distro", "login", "ubuntu", "--", "true")
@@ -31,16 +32,16 @@ func runShell(ctx context.Context, p paths.Paths) error {
 		return err
 	}
 	if err := command.Run(); err != nil {
-		return fmt.Errorf("ubuntu não está disponível; execute mobdesk setup: %w", err)
+		return fmt.Errorf("%s", localized(localizers, i18n.ErrorUbuntuUnavailable, map[string]any{"Detail": err.Error()}, "ubuntu não está disponível; execute mobdesk setup: "+err.Error()))
 	}
 	return runInteractive(ctx, "proot-distro", "login", "ubuntu", "--", "bash", "--rcfile", p.UbuntuShellConfig(), "-i")
 }
 
-func ensureSetupCompleted(p paths.Paths) error {
+func ensureSetupCompleted(p paths.Paths, localizers ...i18n.Localizer) error {
 	path := p.SetupDone()
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("setup ainda não foi concluído; execute: mobdesk setup")
+			return fmt.Errorf("%s", localized(localizers, i18n.ErrorSetupIncomplete, nil, "setup ainda não foi concluído; execute: mobdesk setup"))
 		}
 		return fmt.Errorf("verificar estado do setup: %w", err)
 	}

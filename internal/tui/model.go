@@ -6,6 +6,7 @@ import (
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/ericklucioh/mobdesk/internal/status"
@@ -67,14 +68,23 @@ type Model struct {
 }
 
 func New(values ...paths.Paths) Model {
-	return newModel(newRealBackend(), tuiPaths(values))
+	return NewWithLocale(i18n.LocaleENUS, values...)
+}
+
+// NewWithLocale forwards the selected CLI locale to child Mobdesk commands.
+func NewWithLocale(locale i18n.Locale, values ...paths.Paths) Model {
+	return newModel(newRealBackend(locale), tuiPaths(values))
 }
 
 // NewWithBackend builds the TUI with an explicit communication backend. It is
 // used by the executable mock mode and by focused UI tests.
 func NewWithBackend(backend Backend, values ...paths.Paths) Model {
+	return NewWithBackendLocale(backend, i18n.LocaleENUS, values...)
+}
+
+func NewWithBackendLocale(backend Backend, locale i18n.Locale, values ...paths.Paths) Model {
 	if backend == nil {
-		backend = newRealBackend()
+		backend = newRealBackend(locale)
 	}
 	return newModel(backend, tuiPaths(values))
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	if err := cobra.RootCmd.Execute(); err != nil {
+	if err := cobra.NewRootCmd().Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		if errors.Is(err, cobra.ErrStatusStrict) {
 			os.Exit(3)

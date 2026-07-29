@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/ericklucioh/mobdesk/internal/status"
 	"github.com/spf13/cobra"
@@ -18,31 +19,34 @@ var (
 	statusStrict bool
 )
 
-var statusCmd = &cobra.Command{
-	Use:   "status",
-	Short: "mostrar o estado do ambiente",
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		return runStatus(cmd.Context())
-	},
-}
+var statusCmd = newStatusCmd(nil)
 
-func init() {
-	statusCmd.Flags().BoolVar(&statusJSON, "json", false, "emitir apenas JSON válido")
-	statusCmd.Flags().BoolVar(&statusStrict, "strict", false, "falhar quando houver coleta parcial")
+func newStatusCmd(state *commandState) *cobra.Command {
+	var jsonOutput, strict bool
+	cmd := &cobra.Command{Use: "status", Args: localizedNoArgs(state), RunE: func(cmd *cobra.Command, _ []string) error {
+		return runStatusOptions(cmd.Context(), jsonOutput, strict, commandLocalizer(state, cmd))
+	}}
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "")
+	cmd.Flags().BoolVar(&strict, "strict", false, "")
+	return cmd
 }
 
 func runStatus(ctx context.Context) error {
+	return runStatusOptions(ctx, statusJSON, statusStrict)
+}
+
+func runStatusOptions(ctx context.Context, jsonOutput, strict bool, localizers ...i18n.Localizer) error {
 	value := status.Collect(ctx, status.Options{Paths: paths.Current()})
-	if statusJSON {
+	if jsonOutput {
 		if err := status.EncodeJSON(os.Stdout, value); err != nil {
-			return fmt.Errorf("emitir status JSON: %w", err)
+			return fmt.Errorf("%s", localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}, "emitir status JSON: "+err.Error()))
 		}
 	} else {
 		if err := status.RenderText(os.Stdout, value); err != nil {
-			return fmt.Errorf("emitir status: %w", err)
+			return fmt.Errorf("%s", localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}, "emitir status: "+err.Error()))
 		}
 	}
-	if statusStrict && (value.Alerts.Warnings > 0 || value.Alerts.Errors > 0 || value.Alerts.Missing > 0 || value.Alerts.Unknown > 0) {
+	if strict && (value.Alerts.Warnings > 0 || value.Alerts.Errors > 0 || value.Alerts.Missing > 0 || value.Alerts.Unknown > 0) {
 		return ErrStatusStrict
 	}
 	return nil

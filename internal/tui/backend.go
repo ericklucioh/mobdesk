@@ -8,6 +8,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/status"
 	"github.com/ericklucioh/mobdesk/internal/version"
@@ -25,22 +26,23 @@ type Backend interface {
 type realBackend struct {
 	ctx    context.Context
 	cancel context.CancelFunc
+	locale i18n.Locale
 }
 
-func newRealBackend() *realBackend {
+func newRealBackend(locale i18n.Locale) *realBackend {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &realBackend{ctx: ctx, cancel: cancel}
+	return &realBackend{ctx: ctx, cancel: cancel, locale: locale}
 }
 
 func (b *realBackend) StatusCmd() tea.Cmd {
-	return runStatusCommand(b.ctx)
+	return runStatusCommand(b.ctx, b.locale)
 }
 
 func (b *realBackend) OperationCmd(args ...string) tea.Cmd {
 	if len(args) > 0 && containsArg(args, "--progress") && (args[0] == "install" || args[0] == "uninstall" || args[0] == "config") {
-		return runInstallCommand(b.ctx, args...)
+		return runInstallCommandWithLocale(b.ctx, b.locale, args...)
 	}
-	return runCommand(b.ctx, args...)
+	return runCommandWithLocale(b.ctx, b.locale, args...)
 }
 
 func (b *realBackend) ShellCmd() tea.Cmd {

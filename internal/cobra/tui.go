@@ -6,24 +6,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var tuiCmd = &cobra.Command{
-	Use:   "tui",
-	Short: "abrir a interface textual do Mobdesk",
-	RunE: func(cmd *cobra.Command, _ []string) error {
+var tuiCmd = newTUICmd(nil)
+
+func newTUICmd(state *commandState) *cobra.Command {
+	var mock bool
+	scenario := "healthy"
+	cmd := &cobra.Command{Use: "tui", RunE: func(cmd *cobra.Command, _ []string) error {
 		p := paths.Current()
-		model := tui.New(p)
-		if tuiMock {
-			model = tui.NewWithBackend(tui.NewMockBackend(tuiMockScenario), p)
+		localizer := commandLocalizer(state, cmd)
+		model := tui.NewWithLocale(localizer.Locale, p)
+		if mock {
+			model = tui.NewWithBackendLocale(tui.NewMockBackend(scenario), localizer.Locale, p)
 		}
 		_, err := model.Run()
 		return err
-	},
+	}}
+	cmd.Flags().BoolVar(&mock, "mock", false, "")
+	cmd.Flags().StringVar(&scenario, "mock-scenario", "healthy", "")
+	return cmd
 }
 
 var tuiMock bool
 var tuiMockScenario string
-
-func init() {
-	tuiCmd.Flags().BoolVar(&tuiMock, "mock", false, "usar backend simulado para testar a TUI")
-	tuiCmd.Flags().StringVar(&tuiMockScenario, "mock-scenario", "healthy", "cenário mock: healthy, degraded ou error")
-}

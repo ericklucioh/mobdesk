@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	logstore "github.com/ericklucioh/mobdesk/internal/logs"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/spf13/cobra"
@@ -17,40 +18,43 @@ var (
 	logsLines int
 )
 
-var logsCmd = &cobra.Command{
-	Use:   "logs",
-	Short: "mostrar logs recentes das operações",
-	Args:  cobra.NoArgs,
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		return runLogs()
-	},
-}
+var logsCmd = newLogsCmd(nil)
 
-func init() {
-	logsCmd.Flags().BoolVar(&logsJSON, "json", false, "emitir apenas JSON válido")
-	logsCmd.Flags().StringVar(&logsName, "name", "", "filtrar pelo nome da instalação")
-	logsCmd.Flags().IntVar(&logsLines, "lines", logstore.DefaultLines, "quantidade de linhas recentes por log")
-	RootCmd.AddCommand(logsCmd)
+func newLogsCmd(state *commandState) *cobra.Command {
+	var jsonOutput bool
+	var name string
+	var lines int
+	cmd := &cobra.Command{Use: "logs", Args: localizedNoArgs(state), RunE: func(cmd *cobra.Command, _ []string) error {
+		return runLogsOptions(jsonOutput, name, lines, commandLocalizer(state, cmd))
+	}}
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "")
+	cmd.Flags().StringVar(&name, "name", "", "")
+	cmd.Flags().IntVar(&lines, "lines", logstore.DefaultLines, "")
+	return cmd
 }
 
 func runLogs() error {
-	if err := requireTermuxRuntime("mobdesk logs"); err != nil {
+	return runLogsOptions(logsJSON, logsName, logsLines)
+}
+
+func runLogsOptions(jsonOutput bool, name string, lines int, localizers ...i18n.Localizer) error {
+	if err := requireTermuxRuntime("mobdesk logs", localizers...); err != nil {
 		return err
 	}
-	snapshot, err := logstore.Read(logstore.Options{Paths: paths.Current(), Name: logsName, Lines: logsLines})
+	snapshot, err := logstore.Read(logstore.Options{Paths: paths.Current(), Name: name, Lines: lines})
 	if err != nil {
 		return err
 	}
-	if logsJSON {
+	if jsonOutput {
 		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetIndent("", "  ")
 		return encoder.Encode(snapshot)
 	}
 	if len(snapshot.Logs) == 0 {
-		if logsName != "" {
-			return fmt.Errorf("nenhum log encontrado para %q", logsName)
+		if name != "" {
+			return fmt.Errorf("%s", localized(localizers, i18n.OutputLogsNameEmpty, map[string]any{"Name": name}, fmt.Sprintf("nenhum log encontrado para %q", name)))
 		}
-		fmt.Println("Nenhum log de instalação registrado.")
+		fmt.Println(localized(localizers, i18n.OutputLogsEmpty, nil, "Nenhum log de instalação registrado."))
 		return nil
 	}
 	for index, record := range snapshot.Logs {
@@ -62,16 +66,16 @@ func runLogs() error {
 			version = record.State
 		}
 		fmt.Printf("[%s] %s (%s)\n", record.State, record.Name, version)
-		fmt.Printf("Log: %s\n", record.LogPath)
+		fmt.Println(localized(localizers, i18n.OutputLogsLabel, map[string]any{"Path": record.LogPath}, "Log: "+record.LogPath))
 		if record.LastError != "" {
-			fmt.Printf("Erro: %s\n", record.LastError)
+			fmt.Println(localized(localizers, i18n.OutputLogsError, map[string]any{"Detail": record.LastError}, "Erro: "+record.LastError))
 		}
 		if record.Missing {
-			fmt.Println("Conteúdo: arquivo ausente")
+			fmt.Println(localized(localizers, i18n.OutputLogsMissing, nil, "Conteúdo: arquivo ausente"))
 			continue
 		}
 		if strings.TrimSpace(record.Content) == "" {
-			fmt.Println("Conteúdo: vazio")
+			fmt.Println(localized(localizers, i18n.OutputLogsContentEmpty, nil, "Conteúdo: vazio"))
 			continue
 		}
 		fmt.Println(record.Content)

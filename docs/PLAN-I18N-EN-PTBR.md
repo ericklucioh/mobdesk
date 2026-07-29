@@ -1,6 +1,6 @@
 # English-First Localization and Documentation Migration Plan
 
-**Status:** Phase 1 complete; Phase 2 pending.
+**Status:** Phase 2 complete; Phase 3 pending.
 
 **Primary locale:** `en-US`
 
@@ -230,6 +230,19 @@ Acceptance criteria:
 - Text output changes language without changing operation state.
 - JSON keys, schema version and machine values remain stable.
 - JSON stdout contains no human diagnostic outside the JSON document.
+
+#### Phase 2 Result
+
+- Cobra now builds independent command trees with explicit locale resolution,
+  localized help, usage, examples, flags and validation messages.
+- CLI text presentation uses the selected locale without changing command names,
+  flags, JSON keys, schema versions or machine state values.
+- Operation JSON responses keep the existing contract and add locale metadata,
+  message IDs and error codes where presentation errors require them. JSON
+  validation failures remain valid stdout documents.
+- The TUI forwards its selected locale explicitly to child Mobdesk CLI commands.
+- Focused tests cover bilingual help, text messages, JSON failures, invalid
+  locales, independent root state and TUI locale propagation.
 
 ### Phase 3: Localize Services, Status and App Profiles
 

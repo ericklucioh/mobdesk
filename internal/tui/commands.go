@@ -11,11 +11,16 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/status"
 	"github.com/ericklucioh/mobdesk/internal/version"
 )
 
 func runCommand(ctx context.Context, args ...string) tea.Cmd {
+	return runCommandWithLocale(ctx, i18n.LocaleENUS, args...)
+}
+
+func runCommandWithLocale(ctx context.Context, locale i18n.Locale, args ...string) tea.Cmd {
 	return func() tea.Msg {
 		if len(args) == 0 {
 			return operationMessage{err: fmt.Errorf("operação sem comando")}
@@ -24,16 +29,20 @@ func runCommand(ctx context.Context, args ...string) tea.Cmd {
 		if err != nil {
 			return operationMessage{command: args[0], err: err}
 		}
-		cmd := exec.CommandContext(ctx, binary, args...)
+		cmd := exec.CommandContext(ctx, binary, appendLocale(args, locale)...)
 		output, err := cmd.Output()
 		return operationFromOutput(args[0], output, err)
 	}
 }
 
 func runInstallCommand(ctx context.Context, args ...string) tea.Cmd {
+	return runInstallCommandWithLocale(ctx, i18n.LocaleENUS, args...)
+}
+
+func runInstallCommandWithLocale(ctx context.Context, locale i18n.Locale, args ...string) tea.Cmd {
 	return func() tea.Msg {
 		stream := &operationStream{messages: make(chan tea.Msg, 1), command: args[0]}
-		go stream.run(ctx, args...)
+		go stream.run(ctx, locale, args...)
 		return stream.next()()
 	}
 }
@@ -57,7 +66,7 @@ func (s *operationStream) next() tea.Cmd {
 	}
 }
 
-func (s *operationStream) run(ctx context.Context, args ...string) {
+func (s *operationStream) run(ctx context.Context, locale i18n.Locale, args ...string) {
 	if len(args) == 0 {
 		s.send(ctx, operationMessage{err: fmt.Errorf("operação sem comando")})
 		return
@@ -67,7 +76,7 @@ func (s *operationStream) run(ctx context.Context, args ...string) {
 		s.send(ctx, operationMessage{command: args[0], err: err})
 		return
 	}
-	command := exec.CommandContext(ctx, binary, args...)
+	command := exec.CommandContext(ctx, binary, appendLocale(args, locale)...)
 	output, err := command.StdoutPipe()
 	if err != nil {
 		s.send(ctx, operationMessage{command: args[0], err: err})
@@ -131,7 +140,7 @@ func operationFromOutput(command string, output []byte, commandErr error) operat
 	return operationMessage{command: command, err: fmt.Errorf("resposta JSON inválida: %w", parseErr)}
 }
 
-func runStatusCommand(parent context.Context) tea.Cmd {
+func runStatusCommand(parent context.Context, locale i18n.Locale) tea.Cmd {
 	return func() tea.Msg {
 		binary, err := os.Executable()
 		if err != nil {
@@ -139,7 +148,7 @@ func runStatusCommand(parent context.Context) tea.Cmd {
 		}
 		ctx, cancel := context.WithTimeout(parent, 15*time.Second)
 		defer cancel()
-		output, err := exec.CommandContext(ctx, binary, "status", "--json").Output()
+		output, err := exec.CommandContext(ctx, binary, appendLocale([]string{"status", "--json"}, locale)...).Output()
 		if ctx.Err() != nil {
 			return statusMessage{err: fmt.Errorf("coleta de status excedeu 15 segundos: %w", ctx.Err())}
 		}
@@ -150,7 +159,7 @@ func runStatusCommand(parent context.Context) tea.Cmd {
 			}
 			return statusMessage{err: fmt.Errorf("resposta JSON inválida do status: %w", parseErr)}
 		}
-		versionOutput, err := exec.CommandContext(ctx, binary, "version", "--json").Output()
+		versionOutput, err := exec.CommandContext(ctx, binary, appendLocale([]string{"version", "--json"}, locale)...).Output()
 		if ctx.Err() != nil {
 			return statusMessage{err: fmt.Errorf("coleta da versão excedeu 15 segundos: %w", ctx.Err())}
 		}
@@ -163,6 +172,19 @@ func runStatusCommand(parent context.Context) tea.Cmd {
 		}
 		return statusMessage{value: value, info: info}
 	}
+}
+
+func appendLocale(args []string, locale i18n.Locale) []string {
+	result := append([]string(nil), args...)
+	if locale == "" {
+		locale = i18n.LocaleENUS
+	}
+	for _, arg := range result {
+		if arg == "--locale" {
+			return result
+		}
+	}
+	return append(result, "--locale", string(locale))
 }
 
 func realShellCommand(ctx context.Context) tea.Cmd {

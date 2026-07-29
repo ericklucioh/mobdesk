@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 	"github.com/spf13/cobra"
@@ -16,28 +17,34 @@ var (
 	uninstallProgress bool
 )
 
-var uninstallCmd = &cobra.Command{
-	Use:   "uninstall <app>",
-	Short: "desinstalar um app gerenciado no Ubuntu",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return runUninstall(cmd.Context(), args[0])
-	},
-}
+var uninstallCmd = newUninstallCmd(nil)
 
-func init() {
-	uninstallCmd.Flags().BoolVar(&uninstallJSON, "json", false, "emitir apenas JSON válido")
-	uninstallCmd.Flags().BoolVar(&uninstallProgress, "progress", false, "emitir eventos de progresso em JSON")
+func newUninstallCmd(state *commandState) *cobra.Command {
+	var jsonOutput, progressOutput bool
+	cmd := &cobra.Command{
+		Use:  "uninstall <app>",
+		Args: localizedExactArgs(state, 1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return runUninstallOptions(cmd.Context(), args[0], jsonOutput, progressOutput, commandLocalizer(state, cmd))
+		},
+	}
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "")
+	cmd.Flags().BoolVar(&progressOutput, "progress", false, "")
+	return cmd
 }
 
 func runUninstall(ctx context.Context, name string) error {
-	if runtimeErr := requireTermuxRuntime("mobdesk uninstall"); runtimeErr != nil {
-		return emitUninstallResult(name, install.Result{Language: name, State: "failed"}, runtimeErr)
+	return runUninstallOptions(ctx, name, uninstallJSON, uninstallProgress)
+}
+
+func runUninstallOptions(ctx context.Context, name string, jsonOutput, progressOutput bool, localizers ...i18n.Localizer) error {
+	if runtimeErr := requireTermuxRuntime("mobdesk uninstall", localizers...); runtimeErr != nil {
+		return emitUninstallResult(name, install.Result{Language: name, State: "failed"}, runtimeErr, jsonOutput, localizers...)
 	}
 	var result install.Result
 	var err error
 	options := install.Options{Paths: paths.Current()}
-	if uninstallProgress {
+	if progressOutput {
 		options.Progress = emitInstallProgress
 	}
 	run := func() error {
@@ -45,7 +52,7 @@ func runUninstall(ctx context.Context, name string) error {
 		return err
 	}
 	quietErr := error(nil)
-	if uninstallProgress {
+	if progressOutput {
 		err = run()
 	} else {
 		quietErr = withQuietOutput(run)
@@ -53,16 +60,16 @@ func runUninstall(ctx context.Context, name string) error {
 	if quietErr != nil {
 		err = quietErr
 	}
-	return emitUninstallResult(name, result, err)
+	return emitUninstallResult(name, result, err, jsonOutput, localizers...)
 }
 
 func emitInstallProgress(message string) {
 	_ = json.NewEncoder(os.Stdout).Encode(installProgressEvent{Event: "progress", Message: message})
 }
 
-func emitUninstallResult(name string, result install.Result, operationErr error) error {
-	if uninstallJSON {
-		if err := json.NewEncoder(os.Stdout).Encode(uninstallOperationResult(result, name, operationErr)); err != nil {
+func emitUninstallResult(name string, result install.Result, operationErr error, jsonOutput bool, localizers ...i18n.Localizer) error {
+	if jsonOutput {
+		if err := json.NewEncoder(os.Stdout).Encode(uninstallOperationResult(result, name, operationErr, localizers...)); err != nil {
 			return err
 		}
 		return operationErr
@@ -71,14 +78,14 @@ func emitUninstallResult(name string, result install.Result, operationErr error)
 		return operationErr
 	}
 	if result.Changed {
-		fmt.Printf("%s desinstalado do Ubuntu.\n", result.Language)
+		fmt.Println(localized(localizers, i18n.OutputUninstallRemoved, map[string]any{"Name": result.Language}, result.Language+" desinstalado do Ubuntu."))
 	} else {
-		fmt.Printf("%s já estava desinstalado.\n", result.Language)
+		fmt.Println(localized(localizers, i18n.OutputUninstallAlready, map[string]any{"Name": result.Language}, result.Language+" já estava desinstalado."))
 	}
 	return nil
 }
 
-func uninstallOperationResult(result install.Result, target string, operationErr error) operationResult {
+func uninstallOperationResult(result install.Result, target string, operationErr error, localizers ...i18n.Localizer) operationResult {
 	response := operationResult{
 		SchemaVersion:   1,
 		Command:         "uninstall",
@@ -94,7 +101,7 @@ func uninstallOperationResult(result install.Result, target string, operationErr
 		Paths:           result.Paths,
 		Conflicts:       result.Conflicts,
 		StorageEstimate: result.StorageEstimate,
-		Message:         "App desinstalado",
+		Message:         localized(localizers, i18n.OutputUninstallRemoved, map[string]any{"Name": target}, "App desinstalado"),
 	}
 	if response.State == "" {
 		response.State = "failed"
@@ -104,7 +111,8 @@ func uninstallOperationResult(result install.Result, target string, operationErr
 		if response.State == "" || response.State == "installed" {
 			response.State = "failed"
 		}
-		response.Message = operationErr.Error()
+		response.Message = operationErrorMessage(localizers, operationErr)
 	}
+	response = decorateResult(response, localizers, i18n.OutputUninstallRemoved, operationErr)
 	return response
 }

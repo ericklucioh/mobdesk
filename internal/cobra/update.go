@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/update"
 	"github.com/ericklucioh/mobdesk/internal/version"
 	"github.com/spf13/cobra"
@@ -16,27 +17,29 @@ var (
 	updateJSON  bool
 )
 
-var updateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "verificar e atualizar o Mobdesk",
-	Args:  cobra.NoArgs,
-	RunE: func(cmd *cobra.Command, _ []string) error {
-		return runUpdate(cmd.Context())
-	},
-}
+var updateCmd = newUpdateCmd(nil)
 
-func init() {
-	updateCmd.Flags().BoolVar(&updateCheck, "check", false, "apenas verificar se existe atualização")
-	updateCmd.Flags().BoolVar(&updateJSON, "json", false, "emitir apenas JSON válido")
+func newUpdateCmd(state *commandState) *cobra.Command {
+	var check, jsonOutput bool
+	cmd := &cobra.Command{Use: "update", Args: localizedNoArgs(state), RunE: func(cmd *cobra.Command, _ []string) error {
+		return runUpdateOptions(cmd.Context(), check, jsonOutput, commandLocalizer(state, cmd))
+	}}
+	cmd.Flags().BoolVar(&check, "check", false, "")
+	cmd.Flags().BoolVar(&jsonOutput, "json", false, "")
+	return cmd
 }
 
 func runUpdate(ctx context.Context) error {
+	return runUpdateOptions(ctx, updateCheck, updateJSON)
+}
+
+func runUpdateOptions(ctx context.Context, checkOnly, jsonOutput bool, localizers ...i18n.Localizer) error {
 	info := version.Current()
 	options := update.Options{CurrentVersion: info.Version, Channel: info.Channel}
 	result := update.Result{CurrentVersion: info.Version, Channel: info.Channel}
-	if runtimeErr := requireTermuxRuntime("mobdesk update"); runtimeErr != nil {
-		if updateJSON {
-			response := updateOperationResult(result, runtimeErr, updateCheck)
+	if runtimeErr := requireTermuxRuntime("mobdesk update", localizers...); runtimeErr != nil {
+		if jsonOutput {
+			response := updateOperationResult(result, runtimeErr, checkOnly, localizers...)
 			if encodeErr := json.NewEncoder(os.Stdout).Encode(response); encodeErr != nil {
 				return encodeErr
 			}
@@ -47,11 +50,11 @@ func runUpdate(ctx context.Context) error {
 	if err == nil {
 		result, err = update.Check(ctx, options)
 	}
-	if err == nil && !updateCheck && result.Updated {
+	if err == nil && !checkOnly && result.Updated {
 		result, err = update.Apply(ctx, options)
 	}
-	if updateJSON {
-		response := updateOperationResult(result, err, updateCheck)
+	if jsonOutput {
+		response := updateOperationResult(result, err, checkOnly, localizers...)
 		if encodeErr := json.NewEncoder(os.Stdout).Encode(response); encodeErr != nil {
 			return encodeErr
 		}
@@ -61,18 +64,18 @@ func runUpdate(ctx context.Context) error {
 		return err
 	}
 	if !result.Updated {
-		fmt.Printf("Mobdesk %s já está atualizado.\n", result.CurrentVersion)
+		fmt.Println(localized(localizers, i18n.OutputUpdateCurrent, map[string]any{"Version": result.CurrentVersion}, fmt.Sprintf("Mobdesk %s já está atualizado.", result.CurrentVersion)))
 		return nil
 	}
-	if updateCheck {
-		fmt.Printf("Atualização disponível: %s → %s\n", result.CurrentVersion, result.LatestVersion)
+	if checkOnly {
+		fmt.Println(localized(localizers, i18n.OutputUpdateAvailable, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion}, fmt.Sprintf("Atualização disponível: %s → %s", result.CurrentVersion, result.LatestVersion)))
 		return nil
 	}
-	fmt.Printf("Mobdesk atualizado: %s → %s\n", result.CurrentVersion, result.LatestVersion)
+	fmt.Println(localized(localizers, i18n.OutputUpdateUpdated, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion}, fmt.Sprintf("Mobdesk atualizado: %s → %s", result.CurrentVersion, result.LatestVersion)))
 	return nil
 }
 
-func updateOperationResult(result update.Result, updateErr error, checkOnly bool) operationResult {
+func updateOperationResult(result update.Result, updateErr error, checkOnly bool, localizers ...i18n.Localizer) operationResult {
 	response := operationResult{
 		SchemaVersion:  1,
 		Command:        "update",
@@ -83,20 +86,20 @@ func updateOperationResult(result update.Result, updateErr error, checkOnly bool
 	}
 	if updateErr != nil {
 		response.State = "failed"
-		response.Message = updateErr.Error()
-		return response
+		response.Message = operationErrorMessage(localizers, updateErr)
+		return decorateResult(response, localizers, i18n.OutputUpdateUpdated, updateErr)
 	}
 	if !result.Updated {
 		response.State = "current"
-		response.Message = fmt.Sprintf("Mobdesk %s já está atualizado", result.CurrentVersion)
-		return response
+		response.Message = localized(localizers, i18n.OutputUpdateCurrent, map[string]any{"Version": result.CurrentVersion}, fmt.Sprintf("Mobdesk %s já está atualizado", result.CurrentVersion))
+		return decorateResult(response, localizers, i18n.OutputUpdateCurrent, nil)
 	}
 	if checkOnly {
 		response.State = "available"
-		response.Message = fmt.Sprintf("Atualização disponível: %s → %s", result.CurrentVersion, result.LatestVersion)
-		return response
+		response.Message = localized(localizers, i18n.OutputUpdateAvailable, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion}, fmt.Sprintf("Atualização disponível: %s → %s", result.CurrentVersion, result.LatestVersion))
+		return decorateResult(response, localizers, i18n.OutputUpdateAvailable, nil)
 	}
 	response.State = "updated"
-	response.Message = fmt.Sprintf("Mobdesk atualizado: %s → %s", result.CurrentVersion, result.LatestVersion)
-	return response
+	response.Message = localized(localizers, i18n.OutputUpdateUpdated, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion}, fmt.Sprintf("Mobdesk atualizado: %s → %s", result.CurrentVersion, result.LatestVersion))
+	return decorateResult(response, localizers, i18n.OutputUpdateUpdated, nil)
 }
