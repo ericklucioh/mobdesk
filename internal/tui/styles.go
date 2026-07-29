@@ -97,9 +97,9 @@ var (
 
 func statusColor(state string) lipgloss.Style {
 	switch state {
-	case "ok", "healthy", "installed", "running", "ativo", "ativado":
+	case "ok", "healthy", "installed", "running", "ativo", "ativado", "current", "updated":
 		return lipgloss.NewStyle().Foreground(lipgloss.Color(colorGreen))
-	case "warning", "degraded", "installing", "starting", "stopped", "parada", "desativado":
+	case "warning", "degraded", "installing", "starting", "stopped", "parada", "desativado", "available":
 		return lipgloss.NewStyle().Foreground(lipgloss.Color(colorYellow))
 	case "error", "failed":
 		return lipgloss.NewStyle().Foreground(lipgloss.Color(colorRed))

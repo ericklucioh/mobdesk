@@ -60,7 +60,18 @@ func runStatusCommand(parent context.Context) tea.Cmd {
 			}
 			return statusMessage{err: fmt.Errorf("resposta JSON inválida do status: %w", parseErr)}
 		}
-		return statusMessage{value: value, info: version.Current()}
+		versionOutput, err := exec.CommandContext(ctx, binary, "version", "--json").Output()
+		if ctx.Err() != nil {
+			return statusMessage{err: fmt.Errorf("coleta da versão excedeu 15 segundos: %w", ctx.Err())}
+		}
+		if err != nil {
+			return statusMessage{err: fmt.Errorf("executar mobdesk version: %w", err)}
+		}
+		info := version.Info{}
+		if parseErr := json.Unmarshal(versionOutput, &info); parseErr != nil {
+			return statusMessage{err: fmt.Errorf("resposta JSON inválida da versão: %w", parseErr)}
+		}
+		return statusMessage{value: value, info: info}
 	}
 }
 

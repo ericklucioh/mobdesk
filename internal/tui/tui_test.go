@@ -142,10 +142,35 @@ func TestToolsMouseWheelMovesBubbleList(t *testing.T) {
 	model.width = 44
 	model.height = 12
 	model.resize(model.width, model.height)
-	start := model.toolsList.Index()
-	updated, _ := model.Update(tea.MouseWheelMsg{Button: tea.MouseWheelDown})
-	if updated.(Model).toolsList.Index() <= start {
-		t.Fatal("mouse wheel did not move the apps list")
+	for range toolEntries("") {
+		updated, _ := model.Update(tea.MouseWheelMsg{Button: tea.MouseWheelDown})
+		model = updated.(Model)
+	}
+	if model.toolsList.Index() != len(toolEntries(""))-1 {
+		t.Fatalf("mouse wheel stopped at %d, want last catalog item", model.toolsList.Index())
+	}
+}
+
+func TestToolsCanSelectAndInstallLastCatalogItem(t *testing.T) {
+	model := New()
+	model.screen = toolsScreen
+	model.width = 44
+	model.height = 30
+	entries := toolEntries("")
+	last := len(entries) - 1
+
+	model.toolsList.Select(last)
+	if model.toolsList.Index() != last {
+		t.Fatalf("tools selector stopped at %d, want last catalog item %d", model.toolsList.Index(), last)
+	}
+	if !strings.Contains(ansi.Strip(model.renderTools()), toolAppLabel(entries[last])) {
+		t.Fatalf("tools view does not render last catalog item %q", entries[last].language.Name)
+	}
+
+	updated, cmd := model.installSelectedTool()
+	model = updated.(Model)
+	if cmd == nil || model.installingTool != entries[last].language.Name {
+		t.Fatalf("last catalog item was not installable: cmd=%v installing=%q", cmd != nil, model.installingTool)
 	}
 }
 
@@ -292,6 +317,40 @@ func TestSystemRendersFigmaSections(t *testing.T) {
 		if lipgloss.Width(line) > contentWidth(model.width) {
 			t.Fatalf("system line exceeds terminal width: %q", line)
 		}
+	}
+}
+
+func TestSystemRendersPersistentUpdateResult(t *testing.T) {
+	model := New()
+	model.screen = systemScreen
+	model.width = 80
+	model.height = 30
+
+	for _, result := range []operationResult{
+		{Success: true, State: "current", Message: "Mobdesk v1.0.0 já está atualizado"},
+		{Success: true, State: "available", Message: "Atualização disponível: v1.0.0 → v1.1.0"},
+		{Success: true, State: "updated", Message: "Mobdesk atualizado: v1.0.0 → v1.1.0"},
+		{Success: false, State: "failed", Message: "rede indisponível"},
+	} {
+		updated, _ := model.Update(operationMessage{command: "update", result: result})
+		model = updated.(Model)
+		view := ansi.Strip(model.renderSystem())
+		for _, expected := range []string{"RESULTADO", result.Message} {
+			if !strings.Contains(view, expected) {
+				t.Fatalf("system result does not contain %q: %s", expected, view)
+			}
+		}
+	}
+}
+
+func TestSystemUpdateResultUsesFailureForProcessError(t *testing.T) {
+	model := New()
+	model.screen = systemScreen
+	updated, _ := model.Update(operationMessage{command: "update", err: errors.New("falha de rede")})
+	model = updated.(Model)
+
+	if model.systemState != "failed" || model.systemMessage != "falha de rede" {
+		t.Fatalf("system failure = state %q, message %q", model.systemState, model.systemMessage)
 	}
 }
 

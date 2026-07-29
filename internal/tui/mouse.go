@@ -58,7 +58,7 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			m.navigate(systemScreen)
 		}
 	case toolsScreen:
-		for index, entry := range toolEntries("language") {
+		for index, entry := range toolEntries("") {
 			if toolRowContainsAt(lines, bodyIndex, mouse.X, toolAppLabel(entry), contentWidth(m.width)) {
 				m.selectedTool = index
 				m.toolsList.Select(index)

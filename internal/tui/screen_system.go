@@ -33,9 +33,17 @@ func (m Model) renderSystem() string {
 			titleStyle.Render("Operações protegidas") + "\n" +
 			mutedStyle.Render(wrapText("Ações destrutivas não fazem parte do MVP. O reset do Ubuntu exigirá confirmação explícita.", width-6)),
 	)
+	feedback := ""
+	if m.systemMessage != "" {
+		feedback = cardStyle.Width(max(1, width-4)).Render(
+			tagStyle.Render("RESULTADO") + "\n" +
+				statusColor(m.systemState).Render("● "+systemResultLabel(m.systemState)) + "\n" +
+				bodyStyle.Render(wrapText(m.systemMessage, width-6)),
+		)
+	}
 	back := m.systemAction(2, "Voltar", "[Esc]")
 
-	return strings.Join([]string{
+	sections := []string{
 		tagStyle.Render("SISTEMA"),
 		titleStyle.Render("Mobdesk"),
 		mutedStyle.Render(wrapText("Atualizações, versão e informações do aplicativo.", width)),
@@ -45,11 +53,30 @@ func (m Model) renderSystem() string {
 				mutedStyle.Render("Verifique se há uma versão mais recente.") + "\n\n" +
 				actions,
 		),
+	}
+	if feedback != "" {
+		sections = append(sections, feedback)
+	}
+	sections = append(sections,
 		tagStyle.Render("DETALHES DA VERSÃO"),
 		joinCards(details, width),
 		advanced,
 		back,
-	}, "\n\n")
+	)
+	return strings.Join(sections, "\n\n")
+}
+
+func systemResultLabel(state string) string {
+	switch state {
+	case "current":
+		return "Versão atual"
+	case "available":
+		return "Atualização disponível"
+	case "updated":
+		return "Atualização concluída"
+	default:
+		return "Falha na atualização"
+	}
 }
 
 func (m Model) systemAction(index int, label, shortcut string) string {
