@@ -66,8 +66,8 @@ func TestResolveToolsAndPrerequisites(t *testing.T) {
 
 func TestInstallToolUsesPrivateNPMPrefix(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y npm":             {{}},
-		"proot-distro login ubuntu -- env NPM_CONFIG_PREFIX=/root/.local npm install -g opencode-ai": {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y npm":             {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " env NPM_CONFIG_PREFIX=/root/.local npm install -g opencode-ai": {{}},
 	}}
 	tool, ok := Resolve("opencode-cli")
 	if !ok {
@@ -83,7 +83,7 @@ func TestInstallToolUsesPrivateNPMPrefix(t *testing.T) {
 
 func TestInstallNodeInstallsNPM(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y nodejs npm": {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y nodejs npm": {{}},
 	}}
 	tool, ok := Resolve("node")
 	if !ok {
@@ -96,8 +96,8 @@ func TestInstallNodeInstallsNPM(t *testing.T) {
 
 func TestInstallTTTInstallsRequiredTools(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y git ripgrep":                     {{}},
-		"proot-distro login ubuntu -- env GOBIN=/usr/local/bin go install github.com/eugenioenko/ttt/cmd/ttt@v1.1.0": {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y git ripgrep":                     {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " env GOBIN=/usr/local/bin go install github.com/eugenioenko/ttt/cmd/ttt@v1.1.0": {{}},
 	}}
 	tool, ok := Resolve("ttt")
 	if !ok {
@@ -113,7 +113,7 @@ func TestInstallTTTInstallsRequiredTools(t *testing.T) {
 
 func TestRunToolVersionAddsUserBinToPath(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- sh -ec PATH=\"$HOME/.local/bin:$PATH\"; exec \"$@\" -- zellij --version": {{Stdout: []byte("zellij 0.44.3")}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " sh -ec PATH=\"$HOME/.local/bin:$PATH\"; exec \"$@\" -- zellij --version": {{Stdout: []byte("zellij 0.44.3")}},
 	}}
 	tool, ok := Resolve("zellij")
 	if !ok {
@@ -149,7 +149,7 @@ func TestResolveNativeLanguageProfiles(t *testing.T) {
 
 func TestInstallSkipsAlreadyInstalledLanguage(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- python3 --version": {{Stdout: []byte("Python 3.12.1\n")}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " python3 --version": {{Stdout: []byte("Python 3.12.1\n")}},
 	}}
 	result, err := Install(context.Background(), "python", testOptions(t, runner))
 	if err != nil {
@@ -165,9 +165,9 @@ func TestInstallSkipsAlreadyInstalledLanguage(t *testing.T) {
 
 func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- go version":                                           {{Err: errors.New("not found")}, {Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
-		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 update":            {{}},
-		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y golang": {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " go version":                                           {{Err: errors.New("not found")}, {Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 update":            {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y golang": {{}},
 	}}
 	options := testOptions(t, runner)
 	var updates []string
@@ -190,7 +190,7 @@ func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 
 func TestInstallPersistsRecordAndCommandLog(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- node --version": {{Stdout: []byte("v22.1.0\n")}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " node --version": {{Stdout: []byte("v22.1.0\n")}},
 	}}
 	options := testOptions(t, runner)
 	result, err := Install(context.Background(), "node", options)

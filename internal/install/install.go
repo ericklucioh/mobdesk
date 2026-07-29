@@ -17,6 +17,7 @@ const (
 	defaultCommandTimeout = 10 * time.Minute
 	defaultLockTimeout    = 5 * time.Minute
 	aptLockTimeoutSeconds = 300
+	ubuntuPath            = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 )
 
 var catalog = []Language{
@@ -269,7 +270,7 @@ func runAptLogged(ctx context.Context, runner CommandRunner, timeout time.Durati
 func runUbuntuLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, name string, args ...string) CommandResult {
 	commandContext, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	loginArgs := append([]string{"login", "ubuntu", "--", name}, args...)
+	loginArgs := append([]string{"login", "ubuntu", "--", "env", "PATH=" + ubuntuPath, name}, args...)
 	result := runner.Run(commandContext, "proot-distro", loginArgs...)
 	_ = appendLog(logPath, loginArgs, result)
 	return result

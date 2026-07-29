@@ -422,7 +422,7 @@ func collectCatalogInstallations(o Options, persisted []InstallationStatus) []In
 
 func catalogStatusArgs(tools []install.Language) []string {
 	args := make([]string, 0, len(tools)+6)
-	args = append(args, "login", "ubuntu", "--", "sh", "-c", `PATH="$HOME/.local/bin:$PATH"; for tool do if command -v "$tool" >/dev/null 2>&1; then printf '%s\n' "$tool"; fi; done`, "mobdesk-status")
+	args = append(args, "login", "ubuntu", "--", "env", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "sh", "-c", `PATH="$HOME/.local/bin:$PATH"; for tool do if command -v "$tool" >/dev/null 2>&1; then printf '%s\n' "$tool"; fi; done`, "mobdesk-status")
 	for _, tool := range tools {
 		args = append(args, tool.Executable)
 	}
