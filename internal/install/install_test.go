@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -168,7 +169,10 @@ func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 		"proot-distro login ubuntu -- apt-get update":            {{}},
 		"proot-distro login ubuntu -- apt-get install -y golang": {{}},
 	}}
-	result, err := Install(context.Background(), "golang", testOptions(t, runner))
+	options := testOptions(t, runner)
+	var updates []string
+	options.Progress = func(message string) { updates = append(updates, message) }
+	result, err := Install(context.Background(), "golang", options)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,6 +181,10 @@ func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 	}
 	if len(runner.commands) != 4 {
 		t.Fatalf("commands = %v, want version, update, install, version", runner.commands)
+	}
+	wantUpdates := []string{"Verificando go", "Atualizando índices do Ubuntu", "Instalando go", "Verificando go após a instalação"}
+	if !slices.Equal(updates, wantUpdates) {
+		t.Fatalf("progress = %v, want %v", updates, wantUpdates)
 	}
 }
 

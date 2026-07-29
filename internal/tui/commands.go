@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -25,6 +27,91 @@ func runCommand(ctx context.Context, args ...string) tea.Cmd {
 		cmd := exec.CommandContext(ctx, binary, args...)
 		output, err := cmd.Output()
 		return operationFromOutput(args[0], output, err)
+	}
+}
+
+func runInstallCommand(ctx context.Context, args ...string) tea.Cmd {
+	stream := &operationStream{messages: make(chan tea.Msg, 1)}
+	go stream.run(ctx, args...)
+	return stream.next()
+}
+
+type operationStream struct {
+	messages chan tea.Msg
+}
+
+func (s *operationStream) next() tea.Cmd {
+	return func() tea.Msg {
+		message, ok := <-s.messages
+		if !ok {
+			return operationMessage{command: "install", err: fmt.Errorf("fluxo de instalação encerrado sem resultado")}
+		}
+		if progress, ok := message.(operationProgressMessage); ok {
+			progress.next = s.next()
+			return progress
+		}
+		return message
+	}
+}
+
+func (s *operationStream) run(ctx context.Context, args ...string) {
+	if len(args) == 0 {
+		s.send(ctx, operationMessage{err: fmt.Errorf("operação sem comando")})
+		return
+	}
+	binary, err := os.Executable()
+	if err != nil {
+		s.send(ctx, operationMessage{command: args[0], err: err})
+		return
+	}
+	command := exec.CommandContext(ctx, binary, args...)
+	output, err := command.StdoutPipe()
+	if err != nil {
+		s.send(ctx, operationMessage{command: args[0], err: err})
+		return
+	}
+	var stderr bytes.Buffer
+	command.Stderr = &stderr
+	if err := command.Start(); err != nil {
+		s.send(ctx, operationMessage{command: args[0], err: err})
+		return
+	}
+
+	var result []byte
+	scanner := bufio.NewScanner(output)
+	scanner.Buffer(make([]byte, 1024), 1024*1024)
+	for scanner.Scan() {
+		line := append([]byte(nil), scanner.Bytes()...)
+		var event struct {
+			Event   string `json:"event"`
+			Message string `json:"message"`
+		}
+		if err := json.Unmarshal(line, &event); err == nil && event.Event == "progress" {
+			if !s.send(ctx, operationProgressMessage{message: event.Message}) {
+				return
+			}
+			continue
+		}
+		result = line
+	}
+	if scanErr := scanner.Err(); scanErr != nil {
+		_ = command.Wait()
+		s.send(ctx, operationMessage{command: args[0], err: fmt.Errorf("ler progresso da instalação: %w", scanErr)})
+		return
+	}
+	commandErr := command.Wait()
+	if len(stderr.Bytes()) > 0 && len(result) == 0 && commandErr != nil {
+		commandErr = fmt.Errorf("%w: %s", commandErr, bytes.TrimSpace(stderr.Bytes()))
+	}
+	s.send(ctx, operationFromOutput(args[0], result, commandErr))
+}
+
+func (s *operationStream) send(ctx context.Context, message tea.Msg) bool {
+	select {
+	case s.messages <- message:
+		return true
+	case <-ctx.Done():
+		return false
 	}
 }
 

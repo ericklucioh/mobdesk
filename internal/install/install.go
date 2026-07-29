@@ -45,6 +45,7 @@ type Options struct {
 	Runner         CommandRunner
 	Now            func() time.Time
 	CommandTimeout time.Duration
+	Progress       func(string)
 }
 
 func Languages() []Language {
@@ -86,6 +87,7 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 		options.CommandTimeout = defaultCommandTimeout
 	}
 	for _, prerequisite := range language.Requires {
+		progress(options, fmt.Sprintf("Preparando dependência %s", prerequisite))
 		if _, err := Install(ctx, prerequisite, options); err != nil {
 			return Result{}, fmt.Errorf("preparar dependência %s para %s: %w", prerequisite, language.Name, err)
 		}
@@ -121,17 +123,21 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 		return result, fmt.Errorf("registrar tentativa de instalação: %w", err)
 	}
 
+	progress(options, fmt.Sprintf("Verificando %s", language.Name))
 	version := runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
 	if version.Err != nil {
+		progress(options, "Atualizando índices do Ubuntu")
 		if update := runUbuntuLogged(ctx, runner, options.CommandTimeout, logPath, "apt-get", "update"); update.Err != nil {
 			err := fmt.Errorf("atualizar índices do Ubuntu para %s: %w", language.Name, update.Err)
 			return failInstallation(installationsDir, record, result, err)
 		}
+		progress(options, fmt.Sprintf("Instalando %s", language.Name))
 		if install := installTool(ctx, runner, options.CommandTimeout, logPath, language); install.Err != nil {
 			err := fmt.Errorf("instalar %s: %w", language.Name, install.Err)
 			return failInstallation(installationsDir, record, result, err)
 		}
 		result.Changed = true
+		progress(options, fmt.Sprintf("Verificando %s após a instalação", language.Name))
 		version = runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
 	}
 	if version.Err != nil {
@@ -148,6 +154,12 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 		return result, fmt.Errorf("registrar instalação concluída: %w", err)
 	}
 	return result, nil
+}
+
+func progress(options Options, message string) {
+	if options.Progress != nil {
+		options.Progress(message)
+	}
 }
 
 func runToolVersion(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool Language) CommandResult {

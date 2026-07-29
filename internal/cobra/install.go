@@ -13,6 +13,7 @@ import (
 )
 
 var installJSON bool
+var installProgress bool
 
 var installCmd = &cobra.Command{
 	Use:   "install <ferramenta>",
@@ -25,10 +26,17 @@ var installCmd = &cobra.Command{
 
 func init() {
 	installCmd.Flags().BoolVar(&installJSON, "json", false, "emitir apenas JSON válido")
+	installCmd.Flags().BoolVar(&installProgress, "progress", false, "emitir eventos de progresso em JSON")
 }
 
 func runInstall(ctx context.Context, name string) error {
-	result, err := install.Install(ctx, name, install.Options{Paths: paths.Current()})
+	options := install.Options{Paths: paths.Current()}
+	if installProgress {
+		options.Progress = func(message string) {
+			_ = json.NewEncoder(os.Stdout).Encode(installProgressEvent{Event: "progress", Message: message})
+		}
+	}
+	result, err := install.Install(ctx, name, options)
 	if installJSON {
 		if encodeErr := json.NewEncoder(os.Stdout).Encode(installOperationResult(result, err)); encodeErr != nil {
 			return encodeErr
@@ -45,6 +53,11 @@ func runInstall(ctx context.Context, name string) error {
 	}
 	fmt.Printf("%s %s no Ubuntu (%s): %s\n", strings.ToUpper(result.Language[:1])+result.Language[1:], state, result.Executable, result.Version)
 	return nil
+}
+
+type installProgressEvent struct {
+	Event   string `json:"event"`
+	Message string `json:"message"`
 }
 
 func installOperationResult(result install.Result, installErr error) operationResult {

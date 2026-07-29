@@ -82,6 +82,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.busy = false
 		m.operation = ""
+		m.operationProgress = ""
 		if msg.command == "update" || msg.command == "update-check" {
 			m.systemMessage = operationMessageText(msg)
 			m.systemState = operationState(msg)
@@ -91,6 +92,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.applyOperationState(msg)
 		return m.requestStatus()
+	case operationProgressMessage:
+		if msg.id != 0 && msg.id != m.operationID {
+			return m, nil
+		}
+		m.operationProgress = msg.message
+		return m, msg.next
 	case tea.KeyPressMsg:
 		return m.updateKey(msg)
 	}
@@ -142,17 +149,30 @@ func (m Model) runHostOperation(operation string, args ...string) (tea.Model, te
 	m.operationID++
 	m.statusID++ // Invalida snapshots iniciados antes da operação mutável.
 	m.busy, m.operation = true, operation
+	m.operationProgress = ""
+	if operation == "install" && len(args) > 1 {
+		m.operationProgress = "Preparando instalação de " + args[1]
+	}
 	if operation == "update" || operation == "update-check" {
 		m.systemMessage, m.systemState = "", ""
 	}
-	operationID := m.operationID
-	return m, func() tea.Msg {
-		message, ok := m.backend.OperationCmd(args...)().(operationMessage)
-		if !ok {
+	return m, operationCommand(m.operationID, operation, m.backend.OperationCmd(args...))
+}
+
+func operationCommand(operationID int, operation string, command tea.Cmd) tea.Cmd {
+	return func() tea.Msg {
+		message := command()
+		switch value := message.(type) {
+		case operationMessage:
+			value.id = operationID
+			return value
+		case operationProgressMessage:
+			value.id = operationID
+			value.next = operationCommand(operationID, operation, value.next)
+			return value
+		default:
 			return operationMessage{command: operation, id: operationID, err: fmt.Errorf("resposta inesperada da operação")}
 		}
-		message.id = operationID
-		return message
 	}
 }
 
@@ -377,7 +397,7 @@ func (m Model) installSelectedTool() (tea.Model, tea.Cmd) {
 	}
 	m.selectedTool = index
 	m.installingTool = entries[index].language.Name
-	return m.runHostOperation("install", "install", entries[index].language.Name, "--json")
+	return m.runHostOperation("install", "install", entries[index].language.Name, "--json", "--progress")
 }
 
 func (m Model) toggleWorkstation() (tea.Model, tea.Cmd) {

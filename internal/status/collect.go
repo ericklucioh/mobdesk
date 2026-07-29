@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/ericklucioh/mobdesk/internal/executil"
+	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
@@ -358,7 +359,7 @@ func collectInstallations(o Options) []InstallationStatus {
 	directory := o.Paths.InstallationsDir()
 	entries, err := os.ReadDir(directory)
 	if err != nil {
-		return []InstallationStatus{}
+		return collectCatalogInstallations(o, nil)
 	}
 	result := make([]InstallationStatus, 0, len(entries))
 	for _, entry := range entries {
@@ -378,7 +379,54 @@ func collectInstallations(o Options) []InstallationStatus {
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Name < result[j].Name
 	})
-	return result
+	return collectCatalogInstallations(o, result)
+}
+
+func collectCatalogInstallations(o Options, persisted []InstallationStatus) []InstallationStatus {
+	if !o.termux || !commandAvailable(o, "proot-distro") {
+		return persisted
+	}
+	tools := install.Tools()
+	args := catalogStatusArgs(tools)
+	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
+	defer cancel()
+	result := o.CommandRunner.Run(ctx, "proot-distro", args...)
+	if result.Err != nil {
+		return persisted
+	}
+	available := make(map[string]bool)
+	for _, executable := range strings.Fields(string(result.Stdout)) {
+		available[executable] = true
+	}
+	persistedNames := make(map[string]bool, len(persisted))
+	for _, value := range persisted {
+		persistedNames[value.Name] = true
+	}
+	for _, tool := range tools {
+		if !available[tool.Executable] || persistedNames[tool.Name] {
+			continue
+		}
+		persisted = append(persisted, InstallationStatus{
+			Name:       tool.Name,
+			Kind:       tool.Kind,
+			Package:    tool.Package,
+			Executable: tool.Executable,
+			State:      "installed",
+		})
+	}
+	sort.Slice(persisted, func(i, j int) bool {
+		return persisted[i].Name < persisted[j].Name
+	})
+	return persisted
+}
+
+func catalogStatusArgs(tools []install.Language) []string {
+	args := make([]string, 0, len(tools)+6)
+	args = append(args, "login", "ubuntu", "--", "sh", "-c", `PATH="$HOME/.local/bin:$PATH"; for tool do if command -v "$tool" >/dev/null 2>&1; then printf '%s\n' "$tool"; fi; done`, "mobdesk-status")
+	for _, tool := range tools {
+		args = append(args, tool.Executable)
+	}
+	return args
 }
 
 func collectTermuxAPIs(ctx context.Context, o Options) (BatteryStatus, WiFiStatus) {

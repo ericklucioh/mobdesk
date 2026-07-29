@@ -3,6 +3,7 @@ package tui
 import (
 	"encoding/json"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/ericklucioh/mobdesk/internal/status"
 	"github.com/ericklucioh/mobdesk/internal/version"
 )
@@ -12,6 +13,12 @@ type operationMessage struct {
 	command string
 	result  operationResult
 	err     error
+}
+
+type operationProgressMessage struct {
+	id      int
+	message string
+	next    tea.Cmd
 }
 
 type operationResult struct {

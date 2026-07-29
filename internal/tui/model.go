@@ -27,36 +27,37 @@ const (
 // renderização em um arquivo próprio; componentes Bubbles ficam reutilizados
 // no estado central para que Update e View continuem leves.
 type Model struct {
-	backend        Backend
-	screen         screen
-	status         status.SystemStatus
-	version        version.Info
-	statusLoaded   bool
-	width          int
-	height         int
-	confirmExit    bool
-	closing        bool
-	busy           bool
-	operationID    int
-	statusID       int
-	message        string
-	systemMessage  string
-	systemState    string
-	operation      string
-	installingTool string
-	confirmStop    bool
-	dragging       bool
-	dragY          int
-	pointerDown    bool
-	pressMouse     tea.Mouse
-	selectedTool   int
-	focus          int
-	history        []screen
-	toolsList      selector
-	setupActions   selector
-	statusTable    table.Model
-	viewport       viewport.Model
-	help           help.Model
+	backend           Backend
+	screen            screen
+	status            status.SystemStatus
+	version           version.Info
+	statusLoaded      bool
+	width             int
+	height            int
+	confirmExit       bool
+	closing           bool
+	busy              bool
+	operationID       int
+	statusID          int
+	message           string
+	systemMessage     string
+	systemState       string
+	operation         string
+	operationProgress string
+	installingTool    string
+	confirmStop       bool
+	dragging          bool
+	dragY             int
+	pointerDown       bool
+	pressMouse        tea.Mouse
+	selectedTool      int
+	focus             int
+	history           []screen
+	toolsList         selector
+	setupActions      selector
+	statusTable       table.Model
+	viewport          viewport.Model
+	help              help.Model
 }
 
 func New(values ...paths.Paths) Model {

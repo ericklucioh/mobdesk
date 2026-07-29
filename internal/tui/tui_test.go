@@ -136,6 +136,25 @@ func TestOperationViewHasNoFakeProgress(t *testing.T) {
 	}
 }
 
+func TestInstallOperationViewShowsReportedProgress(t *testing.T) {
+	model := New()
+	model.width = 44
+	model.height = 30
+	model.busy = true
+	model.operation = "install"
+	model.operationID = 3
+	next := func() tea.Msg { return operationMessage{command: "install", result: operationResult{Success: true}} }
+
+	updated, command := model.Update(operationProgressMessage{id: 3, message: "Instalando node", next: next})
+	model = updated.(Model)
+	if command == nil || model.operationProgress != "Instalando node" {
+		t.Fatalf("installation progress was not retained: command=%v progress=%q", command != nil, model.operationProgress)
+	}
+	if !strings.Contains(ansi.Strip(model.renderOperation()), "Instalando node") {
+		t.Fatalf("operation view does not show installation progress: %s", model.renderOperation())
+	}
+}
+
 func TestToolsMouseWheelMovesBubbleList(t *testing.T) {
 	model := New()
 	model.screen = toolsScreen

@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
@@ -231,5 +232,37 @@ func TestCollectReadsGenericInstallationRecords(t *testing.T) {
 	}
 	if !strings.Contains(text.String(), "alpha-language") || !strings.Contains(text.String(), "/tmp/alpha.log") {
 		t.Fatalf("human output omitted installation diagnostics: %s", text.String())
+	}
+}
+
+func TestCollectCatalogInstallationsRecognizesToolsWithoutRecords(t *testing.T) {
+	tools := install.Tools()
+	var executables []string
+	for _, tool := range tools {
+		if tool.Name == "git" || tool.Name == "cpp" {
+			executables = append(executables, tool.Executable)
+		}
+	}
+	output := strings.Join(executables, "\n") + "\n"
+	args := catalogStatusArgs(tools)
+	command := "proot-distro " + strings.Join(args, " ")
+	value := collectCatalogInstallations(Options{
+		termux:   true,
+		LookPath: availableCommands("proot-distro"),
+		CommandRunner: &fakeRunner{outputs: map[string]CommandResult{
+			command: {Stdout: []byte(output)},
+		}},
+	}, nil)
+
+	for _, name := range []string{"git", "cpp"} {
+		found := false
+		for _, installation := range value {
+			if installation.Name == name && installation.State == "installed" {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatalf("catalog did not recognize installed %s: %+v", name, value)
+		}
 	}
 }

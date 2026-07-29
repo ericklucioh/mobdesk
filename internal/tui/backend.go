@@ -37,6 +37,9 @@ func (b *realBackend) StatusCmd() tea.Cmd {
 }
 
 func (b *realBackend) OperationCmd(args ...string) tea.Cmd {
+	if len(args) > 0 && args[0] == "install" {
+		return runInstallCommand(b.ctx, args...)
+	}
 	return runCommand(b.ctx, args...)
 }
 

@@ -7,6 +7,9 @@ func (m Model) renderOperation() string {
 	var builder strings.Builder
 	builder.WriteString(tagStyle.Render("MOBDESK") + "\n" + titleStyle.Render(title) + "\n\n")
 	builder.WriteString(operationWaitStyle.Render("Operação em andamento"))
+	if m.operationProgress != "" {
+		builder.WriteString("\n" + bodyStyle.Render(m.operationProgress))
+	}
 	builder.WriteString("\n" + mutedStyle.Render("Aguarde a conclusão do comando."))
 	return builder.String()
 }
