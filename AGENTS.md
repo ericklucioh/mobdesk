@@ -52,6 +52,60 @@ desktop grafico, Docker real, Nix e multiplos usuarios continuam fora do MVP.
 7. Nao crie pacotes antecipadamente; extraia um pacote apenas para comportamento
    real e reutilizavel.
 
+## Regras de fronteira e contrato CLI
+
+1. Todo comando Cobra nao interativo e consumido pela TUI ou por automacao deve
+   oferecer `--json` e manter o schema versionado. `shell` e `tui` sao excecoes
+   por serem fluxos interativos.
+2. Em modo JSON, `stdout` deve conter somente JSON valido. Mensagens humanas,
+   progresso e diagnosticos nao podem poluir a resposta; progresso deve usar o
+   formato de eventos documentado pelo comando.
+3. O contrato JSON deve preservar `schema_version`, `command`, `success`,
+   `state` e `message`. Campos novos devem ser aditivos e compativeis com o
+   schema existente.
+4. Cobra deve adaptar flags, argumentos, contexto e saida. Regras de negocio,
+   instalacao, status, configuracao e operacao de host pertencem aos servicos
+   internos, nao aos handlers dos comandos.
+5. Separe sempre os ambientes: Termux e o host Android; Ubuntu via PRoot e o
+   userland de desenvolvimento. Nao assuma que um processo no Ubuntu possui
+   acesso ao host, root real, systemd ou namespaces completos.
+6. Acoes exclusivas do host devem validar o runtime antes de executar e, quando
+   chamadas a partir do Ubuntu ou de uma sessao SSH, retornar uma explicacao
+   objetiva orientando o usuario a sair para o Termux.
+7. Nao use `runtime.GOOS` sozinho para detectar Termux: o binario Linux ARM64
+   pode rodar no userland Android. Use os marcadores e caminhos canonicos do
+   projeto, como `PREFIX` e `paths.Current()`.
+8. Processos simples devem passar por `executil`; comandos dentro do Ubuntu
+   devem atravessar a fronteira declarada por `proot-distro`. A TUI nao deve
+   chamar `apt`, `pipx`, `npm`, `proot-distro` ou scripts diretamente.
+9. Todo processo longo deve receber `cmd.Context()` ou contexto equivalente,
+   suportar cancelamento e deixar estado e logs consistentes em falhas parciais.
+10. Cada novo comando deve ter testes para argumentos invalidos, modo texto,
+    modo JSON quando aplicavel, erro de runtime e cancelamento quando houver
+    operacao longa.
+
+## Regras de UX da TUI
+
+1. A TUI e touch-first: toda acao importante deve ter um alvo visivel e
+   clicavel por mouse/toque; nao dependa de o usuario descobrir uma tecla.
+2. Todo controle clicavel deve ter uma regiao de hit-test coerente com o
+   controle renderizado. Nao use a linha inteira como botao quando isso puder
+   disparar uma acao demorada, destrutiva ou inesperada.
+3. Toda tela nova ou popup deve oferecer `Voltar`, `Fechar` ou `X` visivel e
+   clicavel, alem de um equivalente de teclado. O usuario nunca deve ficar
+   preso em uma tela.
+4. Toda acao disponivel por mouse/toque tambem deve funcionar por teclado; toda
+   acao indisponivel deve explicar o motivo no proprio fluxo.
+5. Toque em uma linha de app deve abrir detalhes antes de instalar, remover ou
+   alterar configuracao. Acoes destrutivas exigem confirmacao dentro da tela.
+6. Estados `busy`, erro, conflito, concluido e bloqueado devem ser visiveis e
+   impedir cliques duplicados ou acoes incompatíveis.
+7. Telas devem funcionar em terminais estreitos: nao depender de largura fixa,
+   nao cortar botoes e manter navegacao e confirmacoes acessiveis.
+8. Cada fluxo novo de mouse/toque deve ter teste de hit-test, navegacao e
+   teclado equivalente. Validar tambem visualmente em terminal estreito e em
+   um dispositivo Termux real quando a mudanca envolver interacao.
+
 ## Validacao e documentacao
 
 Execute `make check` antes de concluir alteracoes. Docker valida logica e o

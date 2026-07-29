@@ -1,14 +1,13 @@
 # Plano de Refatoração de Apps e Configurações
 
-**Status:** aguardando decisões de produto antes da implementação
+**Status:** decisões de produto registradas; implementação pendente
 
 **Objetivo:** transformar a tela atual de ferramentas em uma central de apps com
 detalhes, instalação, desinstalação e aplicação opcional das configurações
 opinativas do Mobdesk.
 
-**Escopo deste documento:** registrar o que já foi decidido, separar as
-decisões ainda abertas e descrever um plano executável sem deixar escolhas
-implícitas.
+**Escopo deste documento:** registrar as decisões consolidadas e descrever um
+plano executável sem deixar escolhas implícitas.
 
 ## 1. Decisão Principal
 
@@ -45,6 +44,7 @@ salvo mudança explícita de escopo.
 - A popup terá ação de desinstalar.
 - A popup terá ação opcional de adicionar configuração, quando o app oferecer um perfil.
 - A popup terá ação de remover configuração, quando a configuração estiver aplicada.
+- A popup exibirá a estimativa de armazenamento do app, das dependências e da configuração.
 - O usuário poderá ignorar completamente a configuração sugerida.
 - O padrão de configuração será baseado nas preferências do autor do Mobdesk.
 - O padrão será apresentado como sugestão, não como requisito.
@@ -155,10 +155,11 @@ A popup deverá conter:
 - Estado da configuração Mobdesk.
 - Caminhos que serão afetados pela configuração.
 - Plugins ou componentes adicionais, quando houver.
-- Ação `Instalar`.
-- Ação `Desinstalar`.
-- Ação `Adicionar configuração Mobdesk`, quando disponível.
-- Ação `Remover configuração Mobdesk`, quando aplicada.
+- Estimativa de armazenamento do app, das dependências e da configuração.
+- Ação `Instalar`, quando o app não estiver instalado.
+- Ação `Desinstalar`, quando o app estiver instalado e houver remoção segura.
+- Ação `Adicionar configuração Mobdesk`, quando disponível e o app estiver instalado.
+- Ação `Remover configuração Mobdesk`, quando a configuração estiver aplicada.
 - Ação `Fechar`.
 
 ### 4.3 Estados da popup
@@ -166,6 +167,7 @@ A popup deverá conter:
 | Estado | Comportamento |
 |---|---|
 | App não instalado | Permite instalar; configuração fica bloqueada ou explica o pré-requisito |
+| App detectado fora do Mobdesk | Mostra o app como instalado, identifica que foi detectado e bloqueia a desinstalação sem proveniência |
 | App instalado sem configuração | Permite usar o app ou aplicar a configuração opcional |
 | App instalado com configuração aplicada | Permite remover a configuração com confirmação |
 | App em operação | Bloqueia outras ações até o resultado final |
@@ -179,8 +181,6 @@ Deverão exigir confirmação:
 
 - Desinstalar o app.
 - Remover a configuração.
-- Restaurar backup.
-- Substituir uma configuração existente, caso essa operação venha a ser permitida.
 
 As confirmações deverão funcionar por teclado e mouse, inclusive em terminal
 estreito.
@@ -206,6 +206,7 @@ install_profile
 uninstall_profile
 config_profile
 profile_version
+storage_estimate
 ```
 
 O nome exato dos tipos Go será definido na decisão D1.
@@ -226,7 +227,7 @@ Um perfil de configuração deverá declarar:
 - Diretórios gerados.
 - Plugins instalados.
 - Dependências de configuração.
-- Estratégia de backup.
+- Política de conflito e preservação.
 - Estratégia de aplicação.
 - Estratégia de remoção.
 
@@ -262,15 +263,74 @@ registro deverá guardar:
 - Arquivos gerados.
 - Plugins gerenciados.
 - Hashes dos arquivos gerados.
-- Caminho do backup.
 - Data da aplicação.
 - Data da remoção.
 - Indicação de alteração manual.
 - Indicação de conflito.
 - Último erro.
 
-O local recomendado é um diretório específico de configurações dentro do
-estado persistente do Mobdesk. O caminho final depende da decisão D8.
+O registro ficará em `state/configurations/<app>.json`, dentro do estado
+privado e persistente do Mobdesk.
+
+### 5.5 Estimativa de armazenamento
+
+Cada perfil deverá declarar uma estimativa de armazenamento separada em três
+partes:
+
+- `app_mb`: binário, pacote ou conjunto principal do app.
+- `dependencies_mb`: dependências adicionais que ainda não existam no Ubuntu.
+- `config_mb`: configuração, plugins, caches e componentes opcionais do perfil.
+
+A popup deverá mostrar os valores como intervalo, por exemplo:
+
+```text
+App:           20-40 MB
+Dependências:  80-160 MB
+Configuração:  1-5 MB
+Total estimado: 101-205 MB
+```
+
+As estimativas abaixo são de planejamento para Ubuntu ARM64 via PRoot. Elas não
+devem ser somadas entre apps, porque dependências como Go, Python, Node e Clang
+podem ser compartilhadas. O valor final deverá ser recalibrado em um Ubuntu
+limpo usando o tamanho instalado real e `du -sm`.
+
+| App ou linguagem | App | Dependências adicionais | Configuração | Total isolado |
+|---|---:|---:|---:|---:|
+| Go | 180-300 MB | 0-50 MB | 0-5 MB | 180-355 MB |
+| Python | 35-60 MB | 0-20 MB | 0-5 MB | 35-85 MB |
+| Node.js | 70-130 MB | 20-60 MB | 0-10 MB | 90-200 MB |
+| C/C++ com Clang compartilhado | 250-450 MB | 20-80 MB | 0-10 MB | 270-540 MB |
+| Lua | 2-6 MB | 0-5 MB | 0-2 MB | 2-13 MB |
+| Git | 35-60 MB | 0-10 MB | 0-5 MB | 35-75 MB |
+| GitHub CLI | 30-50 MB | 0-10 MB | 0-5 MB | 30-65 MB |
+| tmux | 2-5 MB | 0-2 MB | 0-2 MB | 2-9 MB |
+| Zellij | 20-30 MB | 0-5 MB | 0-5 MB | 20-40 MB |
+| Micro | 15-25 MB | 0-5 MB | 0-5 MB | 15-35 MB |
+| Lazygit | 15-25 MB | 0-5 MB | 0-5 MB | 15-35 MB |
+| tree | <1 MB | 0-1 MB | 0-1 MB | <3 MB |
+| ttt | 10-20 MB | 0-10 MB | 0-2 MB | 10-32 MB |
+| htop | 1-3 MB | 0-1 MB | 0-1 MB | 1-5 MB |
+| ncdu | 1-3 MB | 0-1 MB | 0-1 MB | 1-5 MB |
+| inxi | 5-15 MB | 0-5 MB | 0-2 MB | 5-22 MB |
+| speedtest-cli | 5-15 MB | 0-10 MB | 0-2 MB | 5-27 MB |
+| Posting | 20-60 MB | 10-40 MB | 0-5 MB | 30-105 MB |
+| Yazi com previews | 25-40 MB | 300-550 MB | 1-20 MB | 326-610 MB |
+| TUIFI Manager | 20-40 MB | 90-180 MB | 1-5 MB | 111-225 MB |
+| Neovim sem configuração | 15-30 MB | 0-20 MB | 0-2 MB | 15-52 MB |
+| LazyVim sobre Neovim | 0 MB | 0-20 MB | 100-300 MB | 100-320 MB |
+| OpenCode CLI | 60-150 MB | 0-100 MB | 5-30 MB | 65-280 MB |
+| Codex CLI | 60-150 MB | 0-100 MB | 5-30 MB | 65-280 MB |
+| Claude Code CLI | 80-200 MB | 0-100 MB | 5-30 MB | 85-330 MB |
+| Leetgo | 10-20 MB | 0-20 MB | 0-5 MB | 10-45 MB |
+
+Para C e C++, o custo do pacote Clang deverá ser contado uma única vez. Para
+LazyVim, o app Neovim deverá ser contado separadamente e a linha de LazyVim
+representa apenas configuração, plugins e caches adicionais.
+
+O perfil deverá guardar também a origem da estimativa, a versão avaliada, a
+arquitetura e a data da medição. Uma mudança de versão que altere o intervalo
+deve atualizar o catálogo e os testes de armazenamento.
 
 ## 6. Segurança da Configuração
 
@@ -284,7 +344,7 @@ Antes de modificar qualquer caminho, o serviço deverá:
 4. Validar que os caminhos estão dentro do HOME do Ubuntu esperado.
 5. Inspecionar arquivos e diretórios existentes.
 6. Identificar se são vazios, gerenciados pelo Mobdesk ou desconhecidos.
-7. Criar backup conforme a política escolhida.
+7. Confirmar que não existe conflito conforme a política escolhida.
 8. Persistir uma tentativa de configuração.
 9. Aplicar arquivos e plugins.
 10. Validar o resultado.
@@ -304,11 +364,11 @@ Antes de modificar qualquer caminho, o serviço deverá:
 
 O serviço deverá comparar o estado atual com os hashes registrados:
 
-- Hash igual ao gerado: arquivo pode ser removido ou restaurado.
+- Hash igual ao gerado: arquivo pode ser removido.
 - Hash diferente: arquivo foi alterado; deve ser preservado.
 - Arquivo ausente: registrar como já removido.
 - Arquivo desconhecido: preservar.
-- Backup disponível: oferecer restauração conforme a decisão D5.
+- Backup externo do usuário: não será gerenciado pelo Mobdesk.
 
 ### 6.4 Dependências
 
@@ -352,6 +412,7 @@ changed
 message
 version
 config_state
+storage_estimate
 log_path
 conflicts
 paths
@@ -403,8 +464,8 @@ O perfil deverá especificar:
 - Se o gerenciador de plugins será instalado ou reutilizado.
 - Quais arquivos pertencem ao Mobdesk.
 - Como verificar que a configuração está funcional.
-- Como criar backup.
-- Como remover ou restaurar a configuração.
+- Como detectar conflito antes da aplicação.
+- Como remover a configuração e os plugins gerenciados.
 
 Nenhum outro app deverá receber uma configuração genérica apenas para preencher
 a interface. Apps sem perfil deverão informar que não possuem configuração
@@ -480,10 +541,10 @@ Entregas:
 
 - Aplicar configuração declarada pelo perfil.
 - Criar manifestos e hashes.
-- Criar backup conforme D5.
+- Recusar configuração existente conforme D4; não criar backup automático conforme D5.
 - Detectar conflito conforme D4.
 - Instalar plugins declarados.
-- Remover somente arquivos gerenciados ou restaurar backup.
+- Remover somente arquivos e plugins gerenciados.
 - Preservar arquivos modificados manualmente.
 - Implementar rollback de falha parcial.
 
@@ -568,6 +629,7 @@ Validações:
 - A popup permite desinstalar somente quando existe estratégia segura.
 - A popup mostra claramente se existe configuração Mobdesk.
 - O usuário pode aplicar ou ignorar a configuração.
+- A popup mostra a estimativa de armazenamento antes da instalação ou configuração.
 - A aplicação da configuração exige ação explícita.
 - A remoção da configuração exige confirmação.
 
@@ -582,7 +644,8 @@ Validações:
 ### Segurança
 
 - Arquivos existentes são detectados antes da aplicação.
-- Backups são criados conforme a política escolhida.
+- Configurações existentes geram conflito e não são sobrescritas.
+- O Mobdesk não cria backup automático durante o MVP.
 - Arquivos alterados pelo usuário não são removidos automaticamente.
 - Dependências compartilhadas não são quebradas.
 - Logs não expõem segredos.
@@ -596,87 +659,48 @@ Validações:
 - `make check` passa.
 - O fluxo é validado no Termux real antes de ser considerado concluído.
 
-## 11. Decisões Pendentes
+## 11. Decisões Registradas
 
-Cada decisão abaixo possui exatamente duas opções. A implementação não deverá
-assumir uma escolha sem que ela seja registrada na seção 12.
+As escolhas abaixo foram registradas pelo produto e passam a orientar a
+implementação. As alternativas descartadas foram removidas para evitar
+ambiguidade no plano.
 
 ### D1. Nome do modelo de catálogo
 
-**Pergunta:** o tipo atual `Language` deve ser substituído por um conceito de
-app?
-
-**Opção A, recomendada: introduzir `AppProfile`**
+**Decisão adotada:** introduzir `AppProfile`.
 
 - Representa linguagens, ferramentas, editores e clientes de forma correta.
 - Permite evoluir para configuração sem distorcer o modelo.
 - Exige atualizar usos e testes do catálogo.
 
-**Opção B: manter `Language` e apenas adicionar campos**
-
-- Menor alteração imediata.
-- Preserva o nome atual mesmo para apps que não são linguagens.
-- Pode aumentar a dívida conceitual do pacote.
-
 ### D2. Primeiro escopo do catálogo configurável
 
-**Pergunta:** quais apps terão configuração na primeira entrega?
+**Decisão adotada:** somente Neovim/LazyVim na primeira entrega.
 
-**Opção A, recomendada: somente Neovim/LazyVim**
-
-- Permite validar segurança, backup, plugins e remoção em um caso real.
+- Permite validar segurança, conflitos, plugins e remoção em um caso real.
 - Reduz o risco de criar várias configurações frágeis.
 - Outros apps continuam instaláveis sem configuração Mobdesk.
-
-**Opção B: Neovim/LazyVim e mais um app escolhido pelo usuário**
-
-- Valida dois formatos de configuração desde o início.
-- Aumenta o tempo e a superfície de testes.
-- Exige definir agora o segundo perfil completo.
+- O Neovim deverá ser adicionado ao catálogo de apps instaláveis antes do perfil LazyVim.
 
 ### D3. Instalação do Neovim
 
-**Pergunta:** o perfil do Neovim deve instalar o app caso ele ainda não exista?
-
-**Opção A, recomendada: exigir que o app esteja instalado antes da configuração**
+**Decisão adotada:** exigir que o app esteja instalado antes da configuração.
 
 - Mantém instalação e configuração independentes.
 - Torna o fluxo mais previsível e fácil de desfazer.
 - A popup orienta o usuário a instalar primeiro.
 
-**Opção B: permitir que `config apply` instale o Neovim automaticamente**
-
-- Reduz cliques para iniciantes.
-- Cria uma operação composta com mais pontos de falha.
-- Exige tratar instalação parcial e rollback conjunto.
-
 ### D4. Configuração existente
 
-**Pergunta:** o que fazer quando já existir `~/.config/nvim`?
-
-**Opção A, recomendada: recusar e informar conflito**
+**Decisão adotada:** recusar e informar conflito.
 
 - Nunca sobrescreve a configuração do usuário.
 - É a opção mais segura para o MVP.
 - O usuário pode remover ou mover o diretório manualmente e tentar novamente.
 
-**Opção B: fazer backup e substituir pela configuração Mobdesk**
-
-- Entrega uma experiência mais automática.
-- Aumenta o risco de surpresa e perda percebida.
-- Exige restauração confiável e confirmação específica.
-
 ### D5. Política de backup
 
-**Pergunta:** onde e como guardar o backup?
-
-**Opção A, recomendada: backup local versionado pelo Mobdesk**
-
-- Guardar em `~/.local/share/mobdesk/backups/<app>/<timestamp>`.
-- Permite restauração sem depender de outro dispositivo.
-- Consome armazenamento e exige limpeza futura.
-
-**Opção B: não criar backup automático; apenas recusar conflito**
+**Decisão adotada:** não criar backup automático; apenas recusar conflito.
 
 - Simplifica o motor de configuração.
 - Evita o Mobdesk assumir responsabilidade sobre cópias.
@@ -684,202 +708,114 @@ app?
 
 ### D6. Remoção de plugins
 
-**Pergunta:** remover a configuração deve remover também os plugins instalados?
-
-**Opção A, recomendada: remover apenas plugins comprovadamente gerenciados**
+**Decisão adotada:** remover apenas plugins comprovadamente gerenciados.
 
 - Usa manifesto e hashes para preservar alterações manuais.
 - Remove componentes pertencentes ao perfil quando for seguro.
 - Pode deixar arquivos preservados em conflitos.
 
-**Opção B: remover apenas os arquivos de configuração**
-
-- Minimiza risco de apagar dados de plugins.
-- Pode deixar consumo de espaço e componentes sem uso.
-- Torna a remoção menos completa.
-
 ### D7. Desinstalação de dependências
 
-**Pergunta:** a desinstalação deve remover dependências automáticas?
-
-**Opção A, recomendada: nunca remover dependências automaticamente no MVP**
+**Decisão adotada:** nunca remover dependências automaticamente no MVP.
 
 - Evita quebrar outros apps.
 - Mantém a remoção conservadora.
 - Pode deixar pacotes não utilizados no Ubuntu.
 
-**Opção B: remover dependências com contagem de referências**
-
-- Reduz pacotes sobrando.
-- Exige proveniência precisa e tratamento de pacotes instalados manualmente.
-- Aumenta consideravelmente a complexidade do desinstalador.
-
 ### D8. Local do registro de configuração
 
-**Pergunta:** como persistir o estado da configuração?
-
-**Opção A, recomendada: arquivo separado por app**
+**Decisão adotada:** arquivo separado por app.
 
 - Usar `state/configurations/<app>.json`.
 - Mantém instalação e configuração independentes.
 - Facilita leitura, recuperação e testes.
 
-**Opção B: adicionar campos ao registro de instalação**
-
-- Reduz a quantidade de arquivos persistidos.
-- Mistura dois ciclos de vida diferentes.
-- Torna estados parciais e múltiplas configurações mais difíceis de representar.
-
 ### D9. Versão do contrato JSON
 
-**Pergunta:** as novas ações devem alterar a versão do schema?
-
-**Opção A, recomendada: manter schema 1 com campos aditivos opcionais**
+**Decisão adotada:** manter schema 1 com campos aditivos opcionais.
 
 - Preserva consumidores atuais.
 - Evita migração imediata da TUI e scripts existentes.
 - Exige cuidado para não mudar o significado dos campos antigos.
 
-**Opção B: criar schema 2 para todas as operações de apps**
-
-- Torna o novo contrato explícito.
-- Exige atualizar todos os consumidores ao mesmo tempo.
-- Pode simplificar a modelagem futura.
-
 ### D10. Ação de desinstalação indisponível
 
-**Pergunta:** como tratar apps sem estratégia de remoção segura?
-
-**Opção A, recomendada: desabilitar o botão e explicar o motivo**
+**Decisão adotada:** desabilitar o botão e explicar o motivo.
 
 - Impede uma remoção genérica perigosa.
 - Mantém honestidade na interface.
 - Permite adicionar a estratégia posteriormente.
 
-**Opção B: oferecer remoção manual orientada**
-
-- Ajuda o usuário a concluir a limpeza.
-- Exige exibir comandos e caminhos específicos.
-- Não entrega uma desinstalação automatizada pelo Mobdesk.
-
 ### D11. Fluxo de confirmação
 
-**Pergunta:** onde confirmar operações destrutivas?
-
-**Opção A, recomendada: confirmação dentro da popup**
+**Decisão adotada:** confirmação dentro da popup.
 
 - Mantém o usuário no contexto do app.
 - Funciona bem com mouse e teclado.
 - Exige adicionar mais um estado de foco à TUI.
 
-**Opção B: fechar a popup e usar um modal global de confirmação**
-
-- Reutiliza parte da confirmação existente.
-- Pode reduzir o contexto visual da ação.
-- Exige transportar a operação pendente entre telas.
-
 ### D12. Estado após remoção parcial
 
-**Pergunta:** como exibir uma remoção que preservou arquivos modificados?
-
-**Opção A, recomendada: estado `modified` com detalhes preservados**
+**Decisão adotada:** estado `modified` com detalhes preservados.
 
 - Mostra que a remoção foi parcial por segurança.
 - Permite nova ação depois de intervenção do usuário.
 - Exige incluir detalhes na popup e no JSON.
 
-**Opção B: estado `removed` e aviso apenas no log**
-
-- Simplifica o modelo visual.
-- Esconde uma informação importante da tela principal.
-- Aumenta o risco de o usuário achar que tudo foi removido.
-
 ### D13. Aplicação de plugins
 
-**Pergunta:** quando instalar plugins declarados pelo perfil?
-
-**Opção A, recomendada: instalar durante `config apply`**
+**Decisão adotada:** instalar durante `config apply`.
 
 - A ação representa exatamente a intenção do usuário.
 - O manifesto registra plugins como parte da configuração.
 - A operação pode ser longa e exige progresso confiável.
 
-**Opção B: criar configuração primeiro e instalar plugins na primeira abertura do app**
-
-- Reduz o tempo da ação inicial.
-- Torna o primeiro uso menos previsível.
-- Exige integração com o app ou script de inicialização.
-
 ### D14. Ação de toque na lista
 
-**Pergunta:** o toque em uma linha deve fazer o quê depois da refatoração?
-
-**Opção A, recomendada: sempre abrir a popup**
+**Decisão adotada:** sempre abrir a popup.
 
 - Evita ações acidentais.
 - Mantém teclado e mouse com o mesmo comportamento.
 - Exige um toque ou Enter adicional para instalar.
 
-**Opção B: tocar no nome abre popup e tocar no estado executa a ação principal**
-
-- Pode reduzir cliques para usuários experientes.
-- Cria alvos diferentes na mesma linha.
-- Aumenta o risco de instalação ou remoção acidental em telas móveis.
-
 ### D15. Descoberta de apps instalados
 
-**Pergunta:** como reconciliar estado persistido e executáveis encontrados?
-
-**Opção A, recomendada: mostrar estado `detectado` até haver registro completo**
-
-- Diferencia instalação feita fora do Mobdesk.
-- Evita alegar proveniência que não foi comprovada.
-- Exige um estado adicional na interface.
-
-**Opção B: tratar executável encontrado como `instalado`**
+**Decisão adotada:** tratar executável encontrado como `instalado`, sem considerá-lo automaticamente gerenciado.
 
 - Mantém o comportamento atual mais simples.
-- Pode permitir desinstalação sem saber quem instalou o arquivo.
-- Aumenta o risco de remover instalação externa.
+- A desinstalação continuará bloqueada quando não houver registro de proveniência.
+- A popup deverá distinguir instalação detectada de instalação gerenciada pelo Mobdesk.
 
 ### D16. Escopo de atualização de documentação
 
-**Pergunta:** quando registrar as decisões escolhidas nos documentos oficiais?
-
-**Opção A, recomendada: atualizar documentação junto com cada fase**
+**Decisão adotada:** atualizar documentação junto com cada fase.
 
 - Mantém arquitetura e implementação sincronizadas.
 - Reduz divergência durante a refatoração.
 - Exige disciplina em cada entrega.
 
-**Opção B: atualizar toda documentação ao final da refatoração**
-
-- Reduz alterações intermediárias.
-- Mantém documentação temporariamente desatualizada.
-- Aumenta o risco de esquecer decisões importantes.
-
 ## 12. Registro das Escolhas
 
-Preencher uma opção por decisão antes da implementação.
+Estas são as escolhas consolidadas para a implementação:
 
-| Decisão | Escolha | Observação |
+| Decisão | Escolha registrada |
 |---|---|---|
-| D1. Nome do modelo | [ ] A  [ ] B | |
-| D2. Escopo configurável | [ ] A  [ ] B | |
-| D3. Instalação do Neovim | [ ] A  [ ] B | |
-| D4. Configuração existente | [ ] A  [ ] B | |
-| D5. Backup | [ ] A  [ ] B | |
-| D6. Remoção de plugins | [ ] A  [ ] B | |
-| D7. Dependências | [ ] A  [ ] B | |
-| D8. Registro persistente | [ ] A  [ ] B | |
-| D9. Schema JSON | [ ] A  [ ] B | |
-| D10. Remoção indisponível | [ ] A  [ ] B | |
-| D11. Confirmação | [ ] A  [ ] B | |
-| D12. Remoção parcial | [ ] A  [ ] B | |
-| D13. Plugins | [ ] A  [ ] B | |
-| D14. Toque na lista | [ ] A  [ ] B | |
-| D15. App detectado | [ ] A  [ ] B | |
-| D16. Documentação | [ ] A  [ ] B | |
+| D1. Nome do modelo | `AppProfile` |
+| D2. Escopo configurável | Neovim/LazyVim; Neovim entra no catálogo instalável |
+| D3. Instalação do Neovim | Instalar o Neovim antes de aplicar o LazyVim |
+| D4. Configuração existente | Recusar e informar conflito |
+| D5. Backup | Não criar backup automático; recusar conflito |
+| D6. Remoção de plugins | Remover somente plugins comprovadamente gerenciados |
+| D7. Dependências | Nunca remover dependências automaticamente no MVP |
+| D8. Registro persistente | Arquivo separado por app em `state/configurations/<app>.json` |
+| D9. Schema JSON | Manter schema 1 com campos aditivos opcionais |
+| D10. Remoção indisponível | Desabilitar a ação e explicar o motivo |
+| D11. Confirmação | Confirmar dentro da popup |
+| D12. Remoção parcial | Usar estado `modified` com detalhes preservados |
+| D13. Plugins | Instalar durante `config apply` |
+| D14. Toque na lista | Sempre abrir a popup |
+| D15. App detectado | Mostrar como instalado, mas distinguir de instalação gerenciada e bloquear remoção sem proveniência |
+| D16. Documentação | Atualizar documentação junto com cada fase |
 
 ## 13. Dependências e Riscos
 
@@ -901,7 +837,7 @@ Preencher uma opção por decisão antes da implementação.
 - Catálogo com estratégias explícitas.
 - Manifesto de proveniência.
 - Hashes de arquivos gerenciados.
-- Backup ou recusa de conflito conforme D5.
+- Recusa de conflito conforme D4 e ausência de backup automático conforme D5.
 - Proteção contra dependências compartilhadas.
 - Confirmação para ações destrutivas.
 - Lock compartilhado entre instalação, remoção e configuração.
@@ -911,24 +847,22 @@ Preencher uma opção por decisão antes da implementação.
 
 ## 14. Ordem Final de Execução
 
-1. Registrar as escolhas D1 a D16.
-2. Atualizar este documento com as decisões selecionadas.
-3. Implementar o modelo de perfil de app.
-4. Implementar estado e proveniência.
-5. Implementar desinstalação segura.
-6. Implementar o perfil Neovim/LazyVim.
-7. Implementar comandos CLI e contratos JSON.
-8. Implementar a popup da TUI.
-9. Implementar testes unitários, de contrato e de interação.
-10. Atualizar `docs/ARQUITETURA.md`, `docs/DECISOES.md` e `docs/ROADMAP.md`.
-11. Executar `make check`.
-12. Validar instalação, configuração, remoção e recuperação no Termux real.
+1. Implementar o modelo `AppProfile` e incluir Neovim no catálogo instalável.
+2. Implementar estado e proveniência.
+3. Implementar desinstalação segura.
+4. Implementar o perfil Neovim/LazyVim.
+5. Implementar comandos CLI e contratos JSON.
+6. Implementar a popup da TUI.
+7. Implementar testes unitários, de contrato, armazenamento e interação.
+8. Atualizar `docs/ARQUITETURA.md`, `docs/DECISOES.md` e `docs/ROADMAP.md` a cada fase.
+9. Executar `make check`.
+10. Validar instalação, configuração, remoção e recuperação no Termux real.
 
 ## 15. Definição de Concluído
 
 A refatoração será considerada concluída quando:
 
-- Todas as decisões pendentes estiverem registradas.
+- Todas as decisões registradas neste documento estiverem refletidas na implementação.
 - A popup estiver funcionando por teclado e mouse.
 - O toque não instalar diretamente sem abrir detalhes.
 - Instalação e desinstalação usarem serviços internos comuns.
