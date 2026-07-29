@@ -135,6 +135,7 @@ type Options struct {
 	CommandTimeout time.Duration
 	LockTimeout    time.Duration
 	Progress       func(string)
+	ConfigProfiles map[string]ConfigProfile
 }
 
 func Languages() []AppProfile {

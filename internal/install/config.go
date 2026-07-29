@@ -1,0 +1,357 @@
+package install
+
+import (
+	"context"
+	"encoding/base64"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+)
+
+const configWriteScript = `umask 077; tmp=$(mktemp "$1.tmp.XXXXXX"); printf '%s' "$2" | base64 -d > "$tmp"; chmod "$3" "$tmp"; mv "$tmp" "$1"`
+
+func ApplyConfig(ctx context.Context, app string, options Options) (ConfigOperationResult, error) {
+	options = configDefaults(options)
+	return applyConfig(ctx, app, options)
+}
+
+func RemoveConfig(ctx context.Context, app string, options Options) (ConfigOperationResult, error) {
+	options = configDefaults(options)
+	return removeConfig(ctx, app, options)
+}
+
+func applyConfig(ctx context.Context, app string, options Options) (ConfigOperationResult, error) {
+	profile, appProfile, result, err := resolveConfigProfile(app, options)
+	if err != nil {
+		return result, err
+	}
+	result.Action = "apply"
+	result.Profile = profile.ID
+	installation, err := loadInstallationRecord(options.Paths, appProfile.Name)
+	if err != nil {
+		result.State = ConfigStateFailed
+		return result, fmt.Errorf("carregar instalação de %s: %w", appProfile.Name, err)
+	}
+	if installation.State != "installed" || installation.Source == "detected" {
+		result.State = ConfigStateFailed
+		return result, fmt.Errorf("%s precisa estar instalado pelo Mobdesk antes da configuração", appProfile.Name)
+	}
+	if err := validateConfigProfile(profile); err != nil {
+		result.State = ConfigStateFailed
+		return result, err
+	}
+
+	existing, existingErr := LoadConfigurationRecord(options.Paths, appProfile.Name)
+	if existingErr == nil {
+		if existing.Profile != profile.ID || existing.ProfileVersion != profile.Version {
+			result.State = ConfigStateConflict
+			result.Conflicts = []string{appProfile.ConfigTarget}
+			return result, fmt.Errorf("configuração existente usa outro perfil")
+		}
+		if existing.State == ConfigStateApplied {
+			for path, expected := range existing.FileHashes {
+				current, hashErr := currentFileHash(ctx, runnerFor(options), options, "", path)
+				if hashErr != nil || current != expected {
+					result.State = ConfigStateConflict
+					result.Conflicts = append(result.Conflicts, path)
+					return result, fmt.Errorf("arquivo gerenciado foi alterado: %s", path)
+				}
+			}
+			result.State = ConfigStateApplied
+			result.Success = true
+			result.Message = "Configuração já aplicada"
+			return result, nil
+		}
+	} else if !errors.Is(existingErr, os.ErrNotExist) {
+		result.State = ConfigStateFailed
+		return result, existingErr
+	}
+
+	runner := runnerFor(options)
+	paths := configPaths(profile)
+	for _, path := range paths {
+		if exists := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "test", "-e", path); exists.Err == nil {
+			result.State = ConfigStateConflict
+			result.Conflicts = append(result.Conflicts, path)
+		}
+	}
+	if len(result.Conflicts) > 0 {
+		return result, fmt.Errorf("configuração existente gera conflito")
+	}
+
+	record := ConfigurationRecord{
+		App:            appProfile.Name,
+		Profile:        profile.ID,
+		ProfileVersion: profile.Version,
+		State:          ConfigStateApplying,
+		ManagedPaths:   append([]string(nil), profile.ManagedPaths...),
+		GeneratedFiles: configFilePaths(profile),
+		ManagedPlugins: append([]string(nil), profile.ManagedPlugins...),
+	}
+	if err := SaveConfigurationRecord(options.Paths, record); err != nil {
+		result.State = ConfigStateFailed
+		return result, err
+	}
+
+	createdFiles := []string{}
+	createdPaths := []string{}
+	for _, path := range profile.ManagedPaths {
+		if mkdir := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "mkdir", "-p", path); mkdir.Err != nil {
+			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, mkdir.Err)
+		}
+		createdPaths = append(createdPaths, path)
+	}
+	for _, file := range profile.Files {
+		encoded := base64.StdEncoding.EncodeToString([]byte(file.Content))
+		mode := file.Mode
+		if mode == 0 {
+			mode = 0o600
+		}
+		write := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "sh", "-ec", configWriteScript, "--", file.Path, encoded, fmt.Sprintf("%o", mode))
+		if write.Err != nil {
+			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, write.Err)
+		}
+		createdFiles = append(createdFiles, file.Path)
+	}
+	for _, validation := range profile.Validation {
+		if command := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", validation.Name, validation.Args...); command.Err != nil {
+			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, command.Err)
+		}
+	}
+
+	hashes := map[string]string{}
+	for _, path := range record.GeneratedFiles {
+		hash, hashErr := currentFileHash(ctx, runner, options, "", path)
+		if hashErr != nil {
+			return failConfigApply(ctx, options, record, createdFiles, createdPaths, result, hashErr)
+		}
+		hashes[path] = hash
+	}
+	record.FileHashes = hashes
+	record.State = ConfigStateApplied
+	record.AppliedAt = options.Now().UTC()
+	if err := SaveConfigurationRecord(options.Paths, record); err != nil {
+		return result, err
+	}
+	result.State = ConfigStateApplied
+	result.Success = true
+	result.Changed = true
+	result.Paths = append([]string(nil), record.ManagedPaths...)
+	result.Message = "Configuração aplicada"
+	return result, nil
+}
+
+func removeConfig(ctx context.Context, app string, options Options) (ConfigOperationResult, error) {
+	profile, appProfile, result, err := resolveConfigProfile(app, options)
+	if err != nil {
+		return result, err
+	}
+	result.Action = "remove"
+	result.Profile = profile.ID
+	record, err := LoadConfigurationRecord(options.Paths, appProfile.Name)
+	if err != nil {
+		result.State = ConfigStateFailed
+		return result, fmt.Errorf("carregar configuração de %s: %w", appProfile.Name, err)
+	}
+	if record.Profile != profile.ID {
+		result.State = ConfigStateConflict
+		return result, fmt.Errorf("registro de configuração não pertence ao perfil %s", profile.ID)
+	}
+	runner := runnerFor(options)
+	record.State = ConfigStateRemoving
+	if err := SaveConfigurationRecord(options.Paths, record); err != nil {
+		return result, err
+	}
+	preserved := []string{}
+	removed := []string{}
+	for _, path := range record.GeneratedFiles {
+		if err := validateConfigPath(path); err != nil {
+			return failConfigRemove(options, record, preserved, result, err)
+		}
+		exists := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "test", "-e", path)
+		if exists.Err != nil {
+			continue
+		}
+		expected := record.FileHashes[path]
+		current, hashErr := currentFileHash(ctx, runner, options, "", path)
+		if hashErr != nil || expected == "" || current != expected {
+			preserved = append(preserved, path)
+			continue
+		}
+		if remove := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "rm", "--", path); remove.Err != nil {
+			return failConfigRemove(options, record, preserved, result, remove.Err)
+		}
+		removed = append(removed, path)
+	}
+	for _, path := range record.ManagedPaths {
+		if err := validateConfigPath(path); err != nil {
+			return failConfigRemove(options, record, preserved, result, err)
+		}
+		if remove := runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "rmdir", "--", path); remove.Err != nil {
+			preserved = append(preserved, path)
+		}
+	}
+	record.ModifiedPaths = preserved
+	record.RemovedAt = options.Now().UTC()
+	record.State = ConfigStateRemoved
+	if len(preserved) > 0 {
+		record.State = ConfigStateModified
+	}
+	if err := SaveConfigurationRecord(options.Paths, record); err != nil {
+		return result, err
+	}
+	result.State = record.State
+	result.Success = true
+	result.Changed = len(removed) > 0
+	result.Paths = append([]string(nil), removed...)
+	result.Conflicts = append([]string(nil), preserved...)
+	result.Message = "Configuração removida"
+	return result, nil
+}
+
+func resolveConfigProfile(app string, options Options) (ConfigProfile, AppProfile, ConfigOperationResult, error) {
+	appProfile, ok := Resolve(app)
+	result := ConfigOperationResult{SchemaVersion: 1, Command: "config", App: app, State: ConfigStateFailed}
+	if !ok {
+		return ConfigProfile{}, AppProfile{}, result, fmt.Errorf("app não suportado %q", app)
+	}
+	result.App = appProfile.Name
+	if appProfile.ConfigProfile == "" {
+		result.State = ConfigStateUnavailable
+		return ConfigProfile{}, appProfile, result, fmt.Errorf("%s não possui configuração Mobdesk", appProfile.Name)
+	}
+	profile, ok := options.ConfigProfiles[appProfile.ConfigProfile]
+	if !ok {
+		result.State = ConfigStateUnavailable
+		return ConfigProfile{}, appProfile, result, fmt.Errorf("perfil de configuração %q indisponível", appProfile.ConfigProfile)
+	}
+	if profile.App != appProfile.Name {
+		result.State = ConfigStateConflict
+		return ConfigProfile{}, appProfile, result, fmt.Errorf("perfil de configuração %q pertence a %s", profile.ID, profile.App)
+	}
+	return profile, appProfile, result, nil
+}
+
+func validateConfigProfile(profile ConfigProfile) error {
+	if profile.ID == "" || profile.Version == "" || profile.App == "" {
+		return fmt.Errorf("perfil de configuração incompleto")
+	}
+	for _, path := range configPaths(profile) {
+		if err := validateConfigPath(path); err != nil {
+			return err
+		}
+	}
+	for _, file := range profile.Files {
+		if !configPathWithin(file.Path, profile.ManagedPaths) {
+			return fmt.Errorf("arquivo de configuração fora dos caminhos gerenciados: %s", file.Path)
+		}
+	}
+	return nil
+}
+
+func configPaths(profile ConfigProfile) []string {
+	paths := append([]string(nil), profile.ManagedPaths...)
+	for _, file := range profile.Files {
+		paths = append(paths, file.Path)
+	}
+	return uniqueStrings(paths)
+}
+
+func configFilePaths(profile ConfigProfile) []string {
+	paths := make([]string, 0, len(profile.Files))
+	for _, file := range profile.Files {
+		paths = append(paths, file.Path)
+	}
+	return paths
+}
+
+func configPathWithin(path string, parents []string) bool {
+	for _, parent := range parents {
+		relative, err := filepath.Rel(parent, path)
+		if err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) && relative != "." {
+			return true
+		}
+	}
+	return false
+}
+
+func validateConfigPath(path string) error {
+	clean := filepath.Clean(path)
+	if path == "" || clean != path || !filepath.IsAbs(path) || (path != "/root" && !strings.HasPrefix(path, "/root/")) {
+		return fmt.Errorf("caminho de configuração inválido %q", path)
+	}
+	return nil
+}
+
+func uniqueStrings(values []string) []string {
+	seen := make(map[string]bool, len(values))
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		if !seen[value] {
+			seen[value] = true
+			result = append(result, value)
+		}
+	}
+	return result
+}
+
+func failConfigApply(ctx context.Context, options Options, record ConfigurationRecord, files, paths []string, result ConfigOperationResult, operationErr error) (ConfigOperationResult, error) {
+	rollbackConfigAttempt(ctx, options, files, paths)
+	record.State = ConfigStateFailed
+	record.LastError = operationErr.Error()
+	record.GeneratedFiles = files
+	record.ManagedPaths = paths
+	_ = SaveConfigurationRecord(options.Paths, record)
+	result.State = ConfigStateFailed
+	return result, operationErr
+}
+
+func rollbackConfigAttempt(ctx context.Context, options Options, files, paths []string) {
+	runner := runnerFor(options)
+	for _, path := range files {
+		if validateConfigPath(path) == nil {
+			_ = runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "rm", "--", path)
+		}
+	}
+	for index := len(paths) - 1; index >= 0; index-- {
+		if validateConfigPath(paths[index]) == nil {
+			_ = runUbuntuLogged(ctx, runner, commandTimeoutFor(options), "", "rmdir", "--", paths[index])
+		}
+	}
+}
+
+func failConfigRemove(options Options, record ConfigurationRecord, preserved []string, result ConfigOperationResult, operationErr error) (ConfigOperationResult, error) {
+	record.State = ConfigStateFailed
+	record.ModifiedPaths = preserved
+	record.LastError = operationErr.Error()
+	_ = SaveConfigurationRecord(options.Paths, record)
+	result.State = ConfigStateFailed
+	return result, operationErr
+}
+
+func runnerFor(options Options) CommandRunner {
+	if options.Runner != nil {
+		return options.Runner
+	}
+	return ExecRunner{}
+}
+
+func commandTimeoutFor(options Options) time.Duration {
+	if options.CommandTimeout > 0 {
+		return options.CommandTimeout
+	}
+	return defaultCommandTimeout
+}
+
+func configDefaults(options Options) Options {
+	if options.Now == nil {
+		options.Now = time.Now
+	}
+	if options.CommandTimeout <= 0 {
+		options.CommandTimeout = defaultCommandTimeout
+	}
+	return options
+}

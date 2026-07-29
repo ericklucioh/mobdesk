@@ -123,3 +123,41 @@ type ConfigurationRecord struct {
 	Conflicts      []string          `json:"conflicts,omitempty"`
 	LastError      string            `json:"last_error,omitempty"`
 }
+
+type ConfigFile struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
+	Mode    uint32 `json:"mode,omitempty"`
+}
+
+type ConfigCommand struct {
+	Name string   `json:"name"`
+	Args []string `json:"args,omitempty"`
+}
+
+type ConfigProfile struct {
+	ID              string           `json:"id"`
+	Version         string           `json:"version"`
+	App             string           `json:"app"`
+	Description     string           `json:"description"`
+	ManagedPaths    []string         `json:"managed_paths"`
+	Files           []ConfigFile     `json:"files"`
+	ManagedPlugins  []string         `json:"managed_plugins,omitempty"`
+	Validation      []ConfigCommand  `json:"validation,omitempty"`
+	ConflictPolicy  string           `json:"conflict_policy"`
+	StorageEstimate *StorageEstimate `json:"storage_estimate,omitempty"`
+}
+
+type ConfigOperationResult struct {
+	SchemaVersion int         `json:"schema_version"`
+	Command       string      `json:"command"`
+	App           string      `json:"app"`
+	Action        string      `json:"action"`
+	Success       bool        `json:"success"`
+	State         ConfigState `json:"state"`
+	Changed       bool        `json:"changed"`
+	Message       string      `json:"message"`
+	Profile       string      `json:"profile,omitempty"`
+	Conflicts     []string    `json:"conflicts,omitempty"`
+	Paths         []string    `json:"paths,omitempty"`
+}

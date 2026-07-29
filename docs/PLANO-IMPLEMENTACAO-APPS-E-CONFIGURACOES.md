@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 5 concluida; Fase 6 pendente
+**Status:** Fase 6 concluida; Fase 7 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -702,6 +702,19 @@ Quando uma aplicação falhar:
 - Plugins gerenciados são removidos quando seus hashes permitem.
 - Falha parcial não corrompe arquivos externos.
 - O registro separado é atualizado corretamente.
+
+### Resultado da Fase 6
+
+- Criado motor declarativo `ApplyConfig`/`RemoveConfig` com perfis estáticos,
+  caminhos gerenciados, arquivos, validações e estimativas.
+- Aplicação exige app instalado, rejeita conflitos e é idempotente para o mesmo
+  perfil e hashes conhecidos.
+- Arquivos são escritos por dados base64 e rename no Ubuntu, sem concatenar
+  conteúdo do usuário em shell.
+- Estado `applying`, `applied`, `removing`, `removed`, `modified` e `failed` é
+  persistido no registro separado.
+- Remoção compara hashes e preserva arquivos alterados; falhas tentam remover
+  somente componentes criados pela tentativa atual.
 
 ## 14. Fase 7: Perfil Neovim/LazyVim
 
