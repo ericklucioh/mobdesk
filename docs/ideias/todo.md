@@ -18,3 +18,38 @@ talvez no futuro, bun e C#
 sqlite
 postgres
 redis?
+
+
+
+══════════════════════════════════════╗
+    ║                                                  ║
+    ║                 DETALHES DO APP                  ║
+    ║                      neovim                      ║
+    ║                   Editor modal                   ║
+    ║                                                  ║
+    ║                Estado: disponível                ║
+    ║              Origem: não instalado               ║
+    ║              Versão: não detectada               ║
+    ║        Configuração Mobdesk: not_applied         ║
+    ║          Caminhos: /root/.config/nvim,           ║
+    ║             /root/.config/nvim/lua,              ║
+    ║          /root/.config/nvim/lua/config,          ║
+    ║          /root/.config/nvim/lua/plugins          ║
+    ║              Plugins gerenciados: 3              ║
+    ║  Armazenamento: app 15-30 MB · dependências 0-   ║
+    ║                     20 MB ·                      ║
+    ║                  config 0-2 MB                   ║
+    ║             Total estimado: 15-52 MB             ║
+    ║                                                  ║
+    ║                      Ações                       ║
+    ║                 ┌──────────────┐                 ║
+    ║                 │ [ Instalar ] │                 ║
+    ║                 └──────────────┘                 ║
+    ║                 [ Desinstalar ]                  ║
+    ║       Instale o app antes de desinstalá-lo       ║
+    ║        [ Adicionar configuração Mobdesk ]        ║
+    ║  Instale o app antes de aplicar a configuração   ║
+    ║         [ Remover configuração Mobdesk ]         ║
+    ║      A configuração ainda não foi aplicada       ║
+    ║                  ┌────────────┐                  ║
+    ║                  │ [ Fechar ] │
