@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 2 concluida; Fase 3 pendente
+**Status:** Fase 3 concluida; Fase 4 pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -413,6 +413,18 @@ Total máximo = app_max + dependencies_max + config_max
 - A estimativa não é confundida com espaço livre do dispositivo.
 - Testes cobrem terminal estreito e valores longos.
 - O smoke test registra a medição dos perfis principais.
+
+### Resultado da Fase 3
+
+- Totais mínimo e máximo são calculados a partir de app, dependências e
+  configuração sem alterar o estado da instalação.
+- Resultados de instalação e status incluem `storage_estimate` de forma
+  opcional e compatível com o schema 1.
+- Registros antigos e apps detectados recebem a estimativa do perfil quando
+  existe correspondência no catálogo.
+- O payload consumido pela TUI preserva a estimativa para a popup detalhada da
+  Fase 10.
+- O smoke test valida a estimativa em `install --json` e `status --json`.
 
 ## 11. Fase 4: Proveniência e Estado Persistente
 

@@ -119,6 +119,13 @@ func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
 	}
 }
 
+func TestStorageEstimateTotals(t *testing.T) {
+	estimate := StorageEstimate{AppMinMB: 15, AppMaxMB: 30, DependenciesMinMB: 2, DependenciesMaxMB: 20, ConfigMinMB: 1, ConfigMaxMB: 5}
+	if estimate.TotalMinMB() != 18 || estimate.TotalMaxMB() != 55 {
+		t.Fatalf("totals = %d-%d, want 18-55", estimate.TotalMinMB(), estimate.TotalMaxMB())
+	}
+}
+
 func TestResolveLanguagesAndAliases(t *testing.T) {
 	for _, name := range []string{"go", "golang", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4"} {
 		if _, ok := Resolve(name); !ok {

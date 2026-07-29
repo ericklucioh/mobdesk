@@ -27,6 +27,14 @@ func TestInstallOperationResultReportsSuccessAsJSON(t *testing.T) {
 	}
 }
 
+func TestInstallOperationResultPreservesStorageEstimate(t *testing.T) {
+	estimate := &install.StorageEstimate{AppMinMB: 15, AppMaxMB: 30}
+	result := installOperationResult(install.Result{Language: "neovim", StorageEstimate: estimate}, nil)
+	if result.StorageEstimate != estimate {
+		t.Fatalf("storage estimate was not preserved: %+v", result.StorageEstimate)
+	}
+}
+
 func TestOperationResultKeepsStorageEstimateOptional(t *testing.T) {
 	withoutEstimate, err := json.Marshal(operationResult{SchemaVersion: 1, Command: "install", Success: true, State: "installed", Message: "ok"})
 	if err != nil {

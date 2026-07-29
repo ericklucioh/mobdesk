@@ -66,4 +66,16 @@ proot-distro login ubuntu -- sh -ec 'PATH="$HOME/.local/bin:$PATH"; claude --ver
 for tool in git yazi tuifi nvim opencode-cli codex-cli claudecode-cli; do
     "$MOBDESK" install "$tool"
 done
+
+install_json="$($MOBDESK install nvim --json)"
+case "$install_json" in
+    *'"storage_estimate"'*) ;;
+    *) printf 'install JSON did not contain storage estimate\n' >&2; exit 1 ;;
+esac
+
+status_json="$($MOBDESK status --json)"
+case "$status_json" in
+    *'"storage_estimate"'*) ;;
+    *) printf 'status JSON did not contain storage estimate\n' >&2; exit 1 ;;
+esac
 CONTAINER_SCRIPT

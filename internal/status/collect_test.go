@@ -266,6 +266,13 @@ func TestCollectCatalogInstallationsRecognizesToolsWithoutRecords(t *testing.T) 
 	}
 }
 
+func TestCollectCatalogInstallationsAddsStorageEstimateToPersistedRecord(t *testing.T) {
+	value := enrichInstallationMetadata([]InstallationStatus{{Name: "neovim", State: "installed"}})
+	if len(value) != 1 || value[0].StorageEstimate == nil || value[0].StorageEstimate.TotalMinMB() != 15 {
+		t.Fatalf("storage estimate was not added: %+v", value)
+	}
+}
+
 func executablesForTools(tools []install.AppProfile) []string {
 	executables := make([]string, 0, len(tools))
 	for _, tool := range tools {

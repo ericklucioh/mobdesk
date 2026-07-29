@@ -71,14 +71,15 @@ type installProgressEvent struct {
 
 func installOperationResult(result install.Result, installErr error) operationResult {
 	response := operationResult{
-		SchemaVersion: 1,
-		Command:       "install",
-		Success:       installErr == nil,
-		State:         result.State,
-		Language:      result.Language,
-		Version:       result.Version,
-		LogPath:       result.LogPath,
-		Message:       "Ferramenta instalada",
+		SchemaVersion:   1,
+		Command:         "install",
+		Success:         installErr == nil,
+		State:           result.State,
+		Language:        result.Language,
+		Version:         result.Version,
+		LogPath:         result.LogPath,
+		StorageEstimate: result.StorageEstimate,
+		Message:         "Ferramenta instalada",
 	}
 	if installErr != nil {
 		response.State = "failed"

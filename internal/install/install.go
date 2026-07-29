@@ -198,12 +198,13 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	logsDir := options.Paths.InstallLogsDir()
 	logPath := filepath.Join(logsDir, language.Name+".log")
 	result := Result{
-		SchemaVersion: 1,
-		Language:      language.Name,
-		Package:       language.Package,
-		Executable:    language.Executable,
-		State:         "installing",
-		LogPath:       logPath,
+		SchemaVersion:   1,
+		Language:        language.Name,
+		Package:         language.Package,
+		Executable:      language.Executable,
+		State:           "installing",
+		LogPath:         logPath,
+		StorageEstimate: language.StorageEstimate,
 	}
 	record := InstallationRecord{
 		Name:          language.Name,

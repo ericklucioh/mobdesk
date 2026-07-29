@@ -128,16 +128,17 @@ type WiFiStatus struct {
 }
 
 type InstallationStatus struct {
-	Name          string    `json:"name"`
-	Kind          string    `json:"kind"`
-	Package       string    `json:"package"`
-	Executable    string    `json:"executable"`
-	State         string    `json:"state"`
-	Version       string    `json:"version,omitempty"`
-	InstalledAt   time.Time `json:"installed_at,omitempty"`
-	LastAttemptAt time.Time `json:"last_attempt_at"`
-	LastError     string    `json:"last_error,omitempty"`
-	LogPath       string    `json:"log_path"`
+	Name            string                   `json:"name"`
+	Kind            string                   `json:"kind"`
+	Package         string                   `json:"package"`
+	Executable      string                   `json:"executable"`
+	State           string                   `json:"state"`
+	Version         string                   `json:"version,omitempty"`
+	InstalledAt     time.Time                `json:"installed_at,omitempty"`
+	LastAttemptAt   time.Time                `json:"last_attempt_at"`
+	LastError       string                   `json:"last_error,omitempty"`
+	LogPath         string                   `json:"log_path"`
+	StorageEstimate *install.StorageEstimate `json:"storage_estimate,omitempty"`
 }
 
 type AlertSummary struct {

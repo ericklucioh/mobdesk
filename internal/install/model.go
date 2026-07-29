@@ -64,6 +64,14 @@ type StorageEstimate struct {
 	MeasuredAt        time.Time `json:"measured_at"`
 }
 
+func (s StorageEstimate) TotalMinMB() int64 {
+	return s.AppMinMB + s.DependenciesMinMB + s.ConfigMinMB
+}
+
+func (s StorageEstimate) TotalMaxMB() int64 {
+	return s.AppMaxMB + s.DependenciesMaxMB + s.ConfigMaxMB
+}
+
 type Result struct {
 	SchemaVersion   int              `json:"schema_version"`
 	Language        string           `json:"language"`

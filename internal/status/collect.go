@@ -383,6 +383,7 @@ func collectInstallations(o Options) []InstallationStatus {
 		}
 		result = append(result, installation)
 	}
+	result = enrichInstallationMetadata(result)
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Name < result[j].Name
 	})
@@ -390,6 +391,7 @@ func collectInstallations(o Options) []InstallationStatus {
 }
 
 func collectCatalogInstallations(o Options, persisted []InstallationStatus) []InstallationStatus {
+	persisted = enrichInstallationMetadata(persisted)
 	if !o.termux || !commandAvailable(o, "proot-distro") {
 		return persisted
 	}
@@ -421,10 +423,28 @@ func collectCatalogInstallations(o Options, persisted []InstallationStatus) []In
 			State:      "installed",
 		})
 	}
+	persisted = enrichInstallationMetadata(persisted)
 	sort.Slice(persisted, func(i, j int) bool {
 		return persisted[i].Name < persisted[j].Name
 	})
 	return persisted
+}
+
+func enrichInstallationMetadata(values []InstallationStatus) []InstallationStatus {
+	profiles := install.Tools()
+	for index := range values {
+		for _, profile := range profiles {
+			matches := values[index].Name == profile.Name || values[index].Package == profile.Package || values[index].Executable == profile.Executable
+			if !matches {
+				continue
+			}
+			if values[index].StorageEstimate == nil {
+				values[index].StorageEstimate = profile.StorageEstimate
+			}
+			break
+		}
+	}
+	return values
 }
 
 func catalogStatusArgs(tools []install.AppProfile) []string {
