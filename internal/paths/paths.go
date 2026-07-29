@@ -74,4 +74,6 @@ func (p Paths) UbuntuConfigDir() string { return "/root/.config/mobdesk" }
 
 func (p Paths) UbuntuShellConfig() string { return filepath.Join(p.UbuntuConfigDir(), "bashrc") }
 
+func (p Paths) UbuntuShellLauncher() string { return filepath.Join(p.UbuntuConfigDir(), "shell") }
+
 func (p Paths) UbuntuDataDir() string { return "/root/.local/share/mobdesk" }

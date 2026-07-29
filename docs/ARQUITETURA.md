@@ -143,6 +143,9 @@ Ferramentas instaladas no perfil do usuário do Ubuntu, como o Zellij, ficam em
 `$HOME/.local/bin`; a configuração gerada do shell inclui esse diretório no
 `PATH`. Comandos de controle e instalação continuam pertencendo ao Termux e
 não devem tentar chamar `proot-distro` quando executados dentro do Ubuntu.
+O Mobdesk também fornece um launcher de shell no Ubuntu e o exporta em
+`$SHELL`, para que multiplexadores como Zellij iniciem painéis com a mesma
+configuração interativa do shell principal.
 
 ## Contratos entre camadas
 

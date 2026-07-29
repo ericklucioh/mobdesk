@@ -73,6 +73,10 @@ diretamente a ferramenta, por exemplo `zellij`. O setup mantém
 `$HOME/.local/bin` no `PATH` do shell Ubuntu para ferramentas instaladas no
 perfil do usuário.
 
+O Mobdesk também configura um shell auxiliar como `$SHELL`. O Zellij usa esse
+shell nos novos painéis, preservando o prompt colorido, o caminho da pasta
+atual e o autocomplete do Bash.
+
 Consulte a versão compilada e verifique atualizações:
 
 ```bash

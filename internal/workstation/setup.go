@@ -158,9 +158,15 @@ if [ -r /usr/share/bash-completion/bash_completion ]; then
     . /usr/share/bash-completion/bash_completion
 fi
 export PATH="$HOME/.local/bin:$PATH"
+export SHELL="$HOME/.config/mobdesk/shell"
 PS1='\[\e[35m\]\u@\h\[\e[0m\]:\[\e[36m\]\w\[\e[0m\]\$ '
 EOF
-chmod 0600 %q`, p.UbuntuConfigDir(), p.UbuntuShellConfig(), p.UbuntuShellConfig(), p.UbuntuShellConfig())
+chmod 0600 %q
+cat > %q <<'EOF'
+#!/bin/sh
+exec /bin/bash --rcfile %q -i "$@"
+EOF
+chmod 0700 %q`, p.UbuntuConfigDir(), p.UbuntuShellConfig(), p.UbuntuShellConfig(), p.UbuntuShellConfig(), p.UbuntuShellLauncher(), p.UbuntuShellConfig(), p.UbuntuShellLauncher())
 }
 
 func (s Service) setupPhaseDone(phase string) bool {

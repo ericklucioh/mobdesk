@@ -31,7 +31,7 @@ func TestLayoutUsesExistingMobdeskPaths(t *testing.T) {
 	if paths.Launcher() != "/termux/bin/mobdesk" {
 		t.Fatalf("launcher = %q", paths.Launcher())
 	}
-	if paths.UbuntuWorkspace() != "/root/workspace" || paths.UbuntuConfigDir() != "/root/.config/mobdesk" || paths.UbuntuShellConfig() != "/root/.config/mobdesk/bashrc" || paths.UbuntuDataDir() != "/root/.local/share/mobdesk" {
+	if paths.UbuntuWorkspace() != "/root/workspace" || paths.UbuntuConfigDir() != "/root/.config/mobdesk" || paths.UbuntuShellConfig() != "/root/.config/mobdesk/bashrc" || paths.UbuntuShellLauncher() != "/root/.config/mobdesk/shell" || paths.UbuntuDataDir() != "/root/.local/share/mobdesk" {
 		t.Fatal("unexpected Ubuntu layout")
 	}
 }
