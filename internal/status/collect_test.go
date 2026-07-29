@@ -244,8 +244,7 @@ func TestCollectCatalogInstallationsRecognizesToolsWithoutRecords(t *testing.T) 
 		}
 	}
 	output := strings.Join(executables, "\n") + "\n"
-	args := catalogStatusArgs(tools)
-	command := "proot-distro " + strings.Join(args, " ")
+	command := "proot-distro login ubuntu -- env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin sh -c PATH=\"$HOME/.local/bin:$PATH\"; for tool do if command -v \"$tool\" >/dev/null 2>&1; then printf '%s\\n' \"$tool\"; fi; done mobdesk-status " + strings.Join(executablesForTools(tools), " ")
 	value := collectCatalogInstallations(Options{
 		termux:   true,
 		LookPath: availableCommands("proot-distro"),
@@ -264,5 +263,21 @@ func TestCollectCatalogInstallationsRecognizesToolsWithoutRecords(t *testing.T) 
 		if !found {
 			t.Fatalf("catalog did not recognize installed %s: %+v", name, value)
 		}
+	}
+}
+
+func executablesForTools(tools []install.Language) []string {
+	executables := make([]string, 0, len(tools))
+	for _, tool := range tools {
+		executables = append(executables, tool.Executable)
+	}
+	return executables
+}
+
+func TestCatalogStatusUsesUbuntuOnlyPath(t *testing.T) {
+	args := catalogStatusArgs(install.Tools())
+	wantPrefix := []string{"login", "ubuntu", "--", "env", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+	if len(args) < len(wantPrefix) || strings.Join(args[:len(wantPrefix)], " ") != strings.Join(wantPrefix, " ") {
+		t.Fatalf("catalog status args = %v", args)
 	}
 }

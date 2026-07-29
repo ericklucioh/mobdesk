@@ -32,7 +32,7 @@ var catalog = []Language{
 	{Name: "tmux", Package: "tmux", Executable: "tmux", VersionArg: []string{"-V"}, Kind: "terminal", InstallKind: "apt"},
 	{Name: "zellij", Package: "zellij", Executable: "zellij", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "script", UserBin: true, Script: "apt-get install -y ca-certificates curl tar; mkdir -p \"$HOME/.local/bin\"; archive=$(mktemp); curl -fsSL https://github.com/zellij-org/zellij/releases/download/v0.44.3/zellij-aarch64-unknown-linux-musl.tar.gz -o \"$archive\"; printf '%s  %s\\n' '15e6534d42644d66973d136c590c49739dcfd6a1a2a0d3d917973f16c81b45fb' \"$archive\" | sha256sum -c -; tar -xzf \"$archive\" -C \"$HOME/.local/bin\" zellij; chmod 0755 \"$HOME/.local/bin/zellij\"; rm -f \"$archive\""},
 	{Name: "micro", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
-	{Name: "lazygit", Package: "github.com/jesseduffield/lazygit@latest", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "go", Requires: []string{"go"}},
+	{Name: "lazygit", Package: "github.com/jesseduffield/lazygit@v0.63.1", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "script", Script: githubReleaseScript("jesseduffield/lazygit", "v0.63.1", "lazygit_0.63.1_linux_arm64.tar.gz", "555dbc9a8efcf2e33bc24e7fbd9463e9fa375e3c5e23cc270763733c38eeae36", "lazygit_0.63.1_linux_x86_64.tar.gz", "8e033bc78c8e192dee9510e951f6c9e154289b7198d22c924ed1d0a951b0dac1", "lazygit")},
 	{Name: "tree", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
 	{Name: "ttt", Package: "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0", Executable: "ttt", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "ttt", Requires: []string{"go"}},
 	{Name: "htop", Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
@@ -43,7 +43,32 @@ var catalog = []Language{
 	{Name: "opencode-cli", Aliases: []string{"opencode"}, Package: "opencode-ai", Executable: "opencode", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
 	{Name: "codex-cli", Aliases: []string{"codex"}, Package: "@openai/codex", Executable: "codex", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
 	{Name: "claudecode-cli", Aliases: []string{"claude-code"}, Package: "@anthropic-ai/claude-code", Executable: "claude", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
-	{Name: "leetgo", Package: "github.com/j178/leetgo@latest", Executable: "leetgo", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "go", Requires: []string{"go"}},
+	{Name: "leetgo", Package: "github.com/j178/leetgo@v1.4.17", Executable: "leetgo", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "script", Script: githubReleaseScript("j178/leetgo", "v1.4.17", "leetgo_linux_arm64.tar.gz", "de77054553b61c1733f9b034e4a976630a3da585e414f93f0ce13ada5dd80ca4", "leetgo_linux_x86_64.tar.gz", "fe18dc54f2784aded76ef1e04e6917d6d9d8731520bbe232328ba942b5b3c47b", "leetgo")},
+}
+
+func githubReleaseScript(repository, version, arm64Archive, arm64Checksum, amd64Archive, amd64Checksum, executable string) string {
+	return fmt.Sprintf(`set -eu
+apt-get -o DPkg::Lock::Timeout=300 install -y ca-certificates curl tar
+case "$(uname -m)" in
+aarch64|arm64)
+    archive_name=%q
+    checksum=%q
+    ;;
+x86_64|amd64)
+    archive_name=%q
+    checksum=%q
+    ;;
+*)
+    printf 'arquitetura nao suportada: %%s\n' "$(uname -m)" >&2
+    exit 1
+    ;;
+esac
+archive=$(mktemp)
+trap 'rm -f "$archive"' EXIT
+curl -fsSL "https://github.com/%s/releases/download/%s/$archive_name" -o "$archive"
+printf '%%s  %%s\n' "$checksum" "$archive" | sha256sum -c -
+tar -xzf "$archive" -C /usr/local/bin %s
+chmod 0755 "/usr/local/bin/%s"`, arm64Archive, arm64Checksum, amd64Archive, amd64Checksum, repository, version, executable, executable)
 }
 
 type Options struct {

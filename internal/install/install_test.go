@@ -81,6 +81,32 @@ func TestInstallToolUsesPrivateNPMPrefix(t *testing.T) {
 	}
 }
 
+func TestInstallReleaseToolsUsePinnedArchitectureAwareBinaries(t *testing.T) {
+	for _, name := range []string{"lazygit", "leetgo"} {
+		t.Run(name, func(t *testing.T) {
+			tool, ok := Resolve(name)
+			if !ok {
+				t.Fatalf("%s missing from catalog", name)
+			}
+			if tool.InstallKind != "script" || tool.UserBin || len(tool.Requires) != 0 {
+				t.Fatalf("%s has unexpected installation profile: %+v", name, tool)
+			}
+			if !strings.Contains(tool.Script, "uname -m") || !strings.Contains(tool.Script, "sha256sum -c") || !strings.Contains(tool.Script, "github.com/") {
+				t.Fatalf("%s script is not an architecture-aware verified release install: %s", name, tool.Script)
+			}
+
+			command := "proot-distro login ubuntu -- env PATH=" + ubuntuPath + " sh -ec " + tool.Script
+			runner := &fakeRunner{results: map[string][]CommandResult{command: {{}}}}
+			if result := installTool(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", tool); result.Err != nil {
+				t.Fatal(result.Err)
+			}
+			if !slices.Equal(runner.commands, []string{command}) {
+				t.Fatalf("commands = %v, want %v", runner.commands, []string{command})
+			}
+		})
+	}
+}
+
 func TestInstallNodeInstallsNPM(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
 		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y nodejs npm": {{}},
@@ -122,6 +148,19 @@ func TestRunToolVersionAddsUserBinToPath(t *testing.T) {
 	result := runToolVersion(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", tool)
 	if result.Err != nil || string(result.Stdout) != "zellij 0.44.3" {
 		t.Fatalf("result = %+v, commands = %v", result, runner.commands)
+	}
+}
+
+func TestRunUbuntuLoggedRestrictsPathToUbuntu(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " go version": {{Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
+	}}
+	result := runUbuntuLogged(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", "go", "version")
+	if result.Err != nil {
+		t.Fatal(result.Err)
+	}
+	if len(runner.commands) != 1 || runner.commands[0] != "proot-distro login ubuntu -- env PATH="+ubuntuPath+" go version" {
+		t.Fatalf("commands = %v", runner.commands)
 	}
 }
 
