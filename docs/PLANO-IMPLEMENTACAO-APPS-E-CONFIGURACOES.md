@@ -1,6 +1,6 @@
 # Plano de Implementação de Apps e Configurações
 
-**Status:** Fase 10 concluida; Fase 11 pendente
+**Status:** Fase 11 concluida no fixture automatizado; validacao manual no Termux real pendente
 
 **Documento de decisões:** [`PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`](PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md)
 
@@ -1215,6 +1215,20 @@ Atualizar `scripts/test-catalog.sh` para:
 Adicionar teste específico de configuração quando o motor LazyVim estiver
 implementado. O teste deverá usar um diretório de estado limpo e não deve
 alterar o HOME real do host.
+
+### Resultado da Fase 11
+
+- `make check` passou com `go fmt`, `go vet`, `go test ./...` e build dentro do
+  fixture Termux.
+- Os testes unitários cobrem catálogo, instalação, desinstalação, configuração,
+  contratos JSON, status, popup, confirmações, conflitos, runtime remoto e
+  terminal estreito.
+- O smoke test do catálogo já passou após as mudanças de catálogo e instalação,
+  incluindo Neovim, Yazi e TUIFI; não foi repetido nesta fase porque as mudanças
+  finais não alteraram catálogo, instalação ou PRoot.
+- A validação manual descrita na seção 19 continua pendente no Termux/POCO F6
+  real e deve ser executada antes de declarar o fluxo operacional validado no
+  dispositivo.
 
 ## 19. Validação Manual no Termux Real
 
