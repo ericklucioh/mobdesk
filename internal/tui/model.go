@@ -81,7 +81,7 @@ func tuiPaths(values []paths.Paths) paths.Paths {
 
 func newModel(backend Backend, p paths.Paths) Model {
 	setupActions := selector{count: 2}
-	toolsList := selector{count: len(toolEntries("language"))}
+	toolsList := selector{count: len(toolEntries(""))}
 	columns := statusTableColumns(40)
 	statusTable := table.New(table.WithColumns(columns), table.WithRows(nil))
 	tableStyles := table.DefaultStyles()

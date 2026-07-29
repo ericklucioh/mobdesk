@@ -142,10 +142,35 @@ func TestToolsMouseWheelMovesBubbleList(t *testing.T) {
 	model.width = 44
 	model.height = 12
 	model.resize(model.width, model.height)
-	start := model.toolsList.Index()
-	updated, _ := model.Update(tea.MouseWheelMsg{Button: tea.MouseWheelDown})
-	if updated.(Model).toolsList.Index() <= start {
-		t.Fatal("mouse wheel did not move the apps list")
+	for range toolEntries("") {
+		updated, _ := model.Update(tea.MouseWheelMsg{Button: tea.MouseWheelDown})
+		model = updated.(Model)
+	}
+	if model.toolsList.Index() != len(toolEntries(""))-1 {
+		t.Fatalf("mouse wheel stopped at %d, want last catalog item", model.toolsList.Index())
+	}
+}
+
+func TestToolsCanSelectAndInstallLastCatalogItem(t *testing.T) {
+	model := New()
+	model.screen = toolsScreen
+	model.width = 44
+	model.height = 30
+	entries := toolEntries("")
+	last := len(entries) - 1
+
+	model.toolsList.Select(last)
+	if model.toolsList.Index() != last {
+		t.Fatalf("tools selector stopped at %d, want last catalog item %d", model.toolsList.Index(), last)
+	}
+	if !strings.Contains(ansi.Strip(model.renderTools()), toolAppLabel(entries[last])) {
+		t.Fatalf("tools view does not render last catalog item %q", entries[last].language.Name)
+	}
+
+	updated, cmd := model.installSelectedTool()
+	model = updated.(Model)
+	if cmd == nil || model.installingTool != entries[last].language.Name {
+		t.Fatalf("last catalog item was not installable: cmd=%v installing=%q", cmd != nil, model.installingTool)
 	}
 }
 
