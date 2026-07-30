@@ -1,6 +1,6 @@
 # English-First Localization and Documentation Migration Plan
 
-**Status:** Phase 6 complete; Phase 7 pending.
+**Status:** Phase 7 complete in the automated environment; real Termux validation pending.
 
 **Primary locale:** `en-US`
 
@@ -454,6 +454,21 @@ Acceptance criteria:
 - JSON remains schema-compatible and machine-stable.
 - `make check` passes.
 - Remaining real-device checks are documented explicitly.
+
+#### Phase 7 Result
+
+- `make i18n-check` passed, including catalog completeness, presentation checks
+  and maintained Markdown link validation.
+- Focused `internal/i18n`, `internal/cobra` and `internal/tui` tests passed for
+  both supported locales.
+- `mobdesk --locale en-US --help` and `mobdesk --locale pt-BR --help` produced
+  localized help while preserving command names and flags.
+- `make check` passed with formatting, i18n validation, `go vet`, all tests and
+  the Termux fixture build.
+- `make catalog-test` was intentionally not repeated because the migration did
+  not change the installation catalog, installation strategies or PRoot runtime.
+- Visual and operational validation on real Termux/POCO F6 remains pending and
+  must be completed before claiming device-level release readiness.
 
 ## 7. Documentation Inventory
 
