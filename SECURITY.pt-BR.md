@@ -21,4 +21,7 @@ O mantenedor analisará os relatos enviados para esse endereço e coordenará a
 resposta de forma privada. Não inclua senhas, chaves privadas, tokens ou dados
 pessoais que não sejam necessários.
 
-O SSH do Mobdesk deve ser usado em rede confiável ou por túnel seguro. Não exponha a porta diretamente na internet.
+Use o SSH do Mobdesk apenas em redes confiáveis ou por um túnel seguro. Nunca
+exponha a porta `8022` diretamente à internet.
+
+Veja também a [política de segurança em inglês](SECURITY.md).

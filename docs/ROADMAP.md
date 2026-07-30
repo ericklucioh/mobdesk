@@ -14,8 +14,8 @@ Ubuntu through PRoot remains the primary development environment.
 
 ## Stage 1 - Ubuntu bootstrap
 
-**Status:** initial implementation complete; full real-Termux validation is
-still pending.
+**Status:** initial implementation complete and tested on a real Android/Termux
+device; validation across a broader device matrix is still ongoing.
 
 The goal is to take a Termux installation with Go to persistent Ubuntu
 accessible on the phone and through SSH. Scope includes PRoot-Distro, OpenSSH,
@@ -28,8 +28,9 @@ and port forwarding.
 
 ## Stage 2 - TUI workstation
 
-**Status:** initial implementation in progress; real-Termux validation is still
-pending.
+**Status:** initial implementation in progress and tested on a real
+Android/Termux device; validation across a broader device matrix is still
+ongoing.
 
 The goal is an organized text interface for working in Ubuntu on the phone or
 through SSH. Scope includes status, setup, start, stop and update screens,

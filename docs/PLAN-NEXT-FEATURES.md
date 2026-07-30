@@ -52,7 +52,7 @@ The current code already provides:
 
 The following validation remains external:
 
-- complete manual validation on the real Termux/POCO F6 device;
+- expand manual validation across real Termux/Android devices;
 - clipboard behavior with the target desktop SSH terminal;
 - mobile touch behavior on the target terminal dimensions;
 - ARM64 package availability and installation time for every new profile.
@@ -61,7 +61,7 @@ The following validation remains external:
 
 | Priority | Work | Reason |
 |---|---|---|
-| P0 | Validate the current MVP on real Termux | Do not expand the next roadmap stage without confirming the current flow on the device |
+| P0 | Expand validation across real Termux/Android devices | Do not expand the next roadmap stage without measuring the current flow across supported device variants |
 | P1A | SSH clipboard with OSC 52 | Fixes a concrete daily workflow problem reported in the TODO |
 | P1B | Mobile TUI redesign | The current interface is visually dense and difficult to use by touch |
 | P2 | Multi-package and multi-executable catalogue foundation | Required by Java, Rust, Rails and other profiles |
@@ -97,7 +97,8 @@ Composer and Rails are apps. SQLite is a standalone database command-line tool.
 - External command output is not translated or persisted as a translated
   message.
 - New profiles require storage estimates, aliases, version checks and tests.
-- Real Termux validation is required before claiming device-level readiness.
+- Broader real Termux validation is required before claiming support across a
+  wider device matrix.
 - `make catalog-test` is run when catalogue, installation strategy, PRoot
   behavior or catalogue smoke scripts change.
 
@@ -105,8 +106,8 @@ Composer and Rails are apps. SQLite is a standalone database command-line tool.
 
 ### Objective
 
-Confirm that the already implemented MVP works on the actual POCO F6 before
-adding large new runtime behavior.
+Expand validation of the already implemented MVP across real Android devices
+before adding large new runtime behavior.
 
 ### Manual scenarios
 
@@ -703,4 +704,4 @@ Do not combine clipboard security behavior with unrelated app profiles.
 - `make check` passes.
 - `make i18n-check` passes.
 - Expanded catalogue smoke tests pass where applicable.
-- Real Termux/POCO F6 validation is documented.
+- Real Termux validation and the remaining device matrix are documented.

@@ -2,8 +2,8 @@
 
 Turn an Android phone into a personal Ubuntu development workstation.
 
-> **MVP / experimental:** Mobdesk is functional and tested in a simulated
-> Termux environment, but validation on real Android devices is still in
+> **MVP / experimental:** Mobdesk is functional and has been tested on a real
+> Android device. Validation across a broader device matrix is still in
 > progress. Use it for learning, development and lightweight local services,
 > not production workloads.
 
@@ -47,21 +47,65 @@ Mobdesk does not require root. Performance and reliability depend on the
 phone's memory, temperature, battery and Android/HyperOS background-process
 policies.
 
-## Quick start
+## Installation
 
-Install Termux from a trusted source, then run:
+Install Termux from a trusted source before choosing one of the installation
+methods below. The recommended method uses the published ARM64 binary and does
+not require Go.
+
+### Option 1: released ARM64 binary
+
+The latest stable binary is available through the
+[releases page](https://github.com/ericklucioh/mobdesk/releases). In Termux,
+run:
+
+```bash
+pkg update
+pkg install -y curl coreutils
+
+BASE_URL="https://github.com/ericklucioh/mobdesk/releases/latest/download"
+mkdir -p "$HOME/.local/bin"
+cd "$HOME/.local/bin"
+curl -fL -o mobdesk-linux-arm64 "${BASE_URL}/mobdesk-linux-arm64"
+curl -fL -o SHA256SUMS "${BASE_URL}/SHA256SUMS"
+sha256sum -c SHA256SUMS
+mv mobdesk-linux-arm64 mobdesk
+chmod 0755 mobdesk
+"$HOME/.local/bin/mobdesk" setup
+```
+
+The checksum verifies file integrity. Release signatures are not available
+yet, so this does not independently authenticate a release. The first setup
+installs the required Termux packages, downloads Ubuntu, creates the
+persistent workspace, configures SSH and installs the `mobdesk` launcher.
+
+### Option 2: build with Go
+
+Use this method when you want to build from the latest stable Go module tag.
+The project currently requires Go `1.26.5` or newer:
 
 ```bash
 pkg update
 pkg install -y golang git
+go version
 go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
 ~/go/bin/mobdesk setup
 ```
 
-The first setup installs the required Termux packages, downloads Ubuntu,
-creates the persistent workspace, configures SSH and installs the `mobdesk`
-launcher. Setup can be run again after an interruption without deleting the
-workspace.
+`@latest` means the latest stable semantic-version tag; it does not mean the
+latest untagged commit or a `test-v*` prerelease. For a reproducible
+installation, pin the version explicitly, for example:
+
+```bash
+go install github.com/ericklucioh/mobdesk/cmd/mobdesk@v0.6.0
+```
+
+Running setup through `~/go/bin/mobdesk` on the first run is intentional. Setup
+creates the Termux launcher at `$PREFIX/bin/mobdesk`, so subsequent commands
+can use `mobdesk` normally. Setup can be run again after an interruption
+without deleting the workspace.
+
+## Basic use
 
 Start and inspect the workstation:
 

@@ -1,7 +1,8 @@
 # Contributing to Mobdesk
 
 Thank you for considering a contribution. Mobdesk is building a small,
-verifiable Ubuntu workstation for Android.
+verifiable Ubuntu workstation for Android. The MVP has been tested on a real
+Android device; broader device validation is still ongoing.
 
 ## Before you start
 
@@ -11,17 +12,18 @@ Read:
 - [Mission](../docs/MISSION.md) for the product problem and value;
 - [Architecture](../docs/ARCHITECTURE.md) for the Termux/Ubuntu boundary;
 - [Roadmap](../docs/ROADMAP.md) for future scope;
-- [Decisions](../docs/DECISIONS.md) for current project choices.
+- [Decisions](../docs/DECISIONS.md) for current project choices;
+- [Code of Conduct](../CODE_OF_CONDUCT.md) for community expectations.
 
 ## Development environment
 
 Recommended requirements:
 
-- Go `1.26.5`;
+- Go `1.26.5` or newer;
 - Docker with Docker Compose;
 - Git;
 - a terminal with TTY support;
-- Android/Termux for final integration validation.
+- Android/Termux for changes that affect the device integration.
 
 Prepare and run the project with:
 
@@ -60,7 +62,7 @@ does not replace a device test.
 
 Keep operations idempotent, preserve user data, separate Termux commands from
 Ubuntu commands, use context cancellation for long operations, validate input
-before forming commands, and never write passwords, tokens or keys to code or
+before forming commands and never write passwords, tokens or keys to code or
 logs. Keep user-facing prose in the i18n catalogs. Update documentation when
 scope or architecture changes.
 
@@ -68,7 +70,7 @@ scope or architecture changes.
 
 Use short descriptive commits, preferably `type: short description`. A pull
 request should explain the problem, behavior change, tests, affected Termux,
-Docker or Ubuntu environments, and remaining limitations. Do not combine
+Docker or Ubuntu environments and remaining limitations. Do not combine
 unrelated refactors, architecture changes and fixes.
 
 ## Current scope
@@ -79,15 +81,18 @@ The MVP-1 flow is:
 Termux -> Mobdesk -> SSH -> Ubuntu via PRoot
 ```
 
-Projects, services, persistent sessions, Tailscale workflows, web interfaces
-and other expansion areas remain future scope. Contributions in those areas
-must follow the roadmap or explicitly update the scope decision.
+The current scope includes the CLI, TUI, development tool profiles, app
+configuration profiles and update flow. Projects, services, persistent
+sessions, Tailscale workflows, web interfaces and other expansion areas remain
+future scope. Contributions in those areas must follow the roadmap or
+explicitly update the scope decision.
 
 ## Reporting issues
 
-Include the phone model and Android version, Termux source and version,
-Mobdesk version, command executed, complete error output, and whether the
-problem occurred in Termux, Ubuntu, SSH or Docker. Never publish passwords,
-private keys, tokens or personal data in logs.
+Include the phone model and Android version, Termux source and version, Mobdesk
+version, command executed, complete error output and whether the problem
+occurred in Termux, Ubuntu, SSH or Docker. Never publish passwords, private
+keys, tokens or personal data in logs. Use the [security policy](../SECURITY.md)
+and its private email address for vulnerabilities.
 
 See [the Brazilian Portuguese contributor guide](CONTRIBUTING.pt-BR.md).

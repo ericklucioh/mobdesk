@@ -1,9 +1,13 @@
 # Support
 
-Use a [GitHub issue](https://github.com/ericklucioh/mobdesk/issues) for all
-Mobdesk support requests, including installation questions, bugs, unexpected
-behavior, improvement suggestions, feature requests, questions about project
-decisions, and incorrect documentation.
+Use a [GitHub issue](https://github.com/ericklucioh/mobdesk/issues) for Mobdesk
+support requests, including installation questions, bugs, unexpected behavior,
+improvement suggestions, feature requests, project decisions and incorrect
+documentation.
+
+Do not use a public issue for security vulnerabilities. Follow the
+[security policy](../SECURITY.md) and email
+[contato@ericklucioh.com](mailto:contato@ericklucioh.com) privately instead.
 
 ## Before opening an issue
 
@@ -15,7 +19,7 @@ decisions, and incorrect documentation.
 
 Include what you tried, the expected and actual results, commands and complete
 error output, device and Android/HyperOS versions, Termux and Mobdesk versions,
-device architecture, and reproduction steps.
+device architecture and reproduction steps.
 
 Remove passwords, tokens, SSH keys, personal data and other secrets before
 posting.

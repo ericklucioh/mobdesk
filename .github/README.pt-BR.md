@@ -2,169 +2,147 @@
 
 [Português](README.pt-BR.md) | [English](README.md)
 
-## Leve sua workstation Linux no bolso
+> **MVP / experimental:** o Mobdesk funciona e já foi testado em um aparelho
+> Android real. A validação em uma matriz maior de dispositivos ainda está em
+> andamento. Use-o para estudo, desenvolvimento e serviços locais leves, não
+> para cargas de produção.
 
-O Mobdesk transforma um celular Android em um ambiente pessoal de desenvolvimento. Em vez de depender dos computadores da faculdade, de uma máquina compartilhada ou de várias contas abertas em equipamentos de terceiros, você leva seus projetos, suas ferramentas e seus dados com você.
+## Sua workstation Linux no bolso
 
-Com o Mobdesk, o celular funciona como um pequeno servidor de desenvolvimento:
+O Mobdesk transforma um celular Android em uma workstation Ubuntu pessoal:
 
 ```text
 Android
-└── Termux — controle do aparelho
-    └── Ubuntu persistente — ambiente de trabalho
+  Termux -> Mobdesk -> Ubuntu via PRoot
+                      -> shell local ou SSH na porta 8022
 ```
 
-O Ubuntu roda no próprio celular por meio do PRoot-Distro. Você pode trabalhar diretamente no Termux ou conectar outro computador pela rede local usando SSH. Seus arquivos continuam no aparelho sob seu controle.
+O Ubuntu permanece no celular. Você pode trabalhar localmente ou conectar
+outro computador por uma rede confiável. O Mobdesk não exige root, máquina
+virtual, Docker no celular, systemd ou desktop gráfico.
 
-## Para que serve?
+## O que está disponível
 
-O Mobdesk foi pensado para estudantes, desenvolvedores e profissionais que precisam de um ambiente Linux portátil para:
+- Ubuntu persistente por meio do PRoot-Distro;
+- servidor SSH dedicado na porta `8022`;
+- acesso local ao shell com `mobdesk shell`;
+- TUI com suporte a toque, mouse e teclado;
+- status e saída JSON para automação;
+- perfis de instalação de Go, Python, Node.js, C, C++ e Lua;
+- perfis de configuração de Neovim/LazyVim;
+- atualizações do binário com rollback;
+- apresentação em inglês (`en-US`) e português do Brasil (`pt-BR`).
 
-- estudar programação em C, JavaScript, HTML, React, Java, Go ou Python;
-- criar e executar projetos pequenos e médios para estudo e desenvolvimento;
-- iniciar servidores locais, como `npm run dev`, e acessá-los pelo navegador;
-- usar o celular como uma workstation pessoal durante aulas, viagens ou deslocamentos;
-- acessar o mesmo ambiente pelo celular ou por um computador na mesma rede;
-- manter código, configurações e sessões sem fazer login em computadores compartilhados.
+Projetos, sessões persistentes, serviços e uma interface web permanecem nos
+próximos estágios do roadmap.
 
-O objetivo não é substituir uma máquina de produção, uma VM completa ou um desktop gráfico. O Mobdesk é uma workstation móvel, leve e controlada pelo usuário para desenvolvimento, estudo e servidores locais.
+## Requisitos
 
-## Por que usar o Mobdesk?
+- celular Android ARM64;
+- Termux pelo [F-Droid](https://f-droid.org/packages/com.termux/) ou pelos
+  [releases oficiais](https://github.com/termux/termux-app/releases);
+- aproximadamente 1,5 GB de espaço livre para a instalação base do Ubuntu;
+- rede local confiável para acesso SSH remoto.
 
-### Seu ambiente acompanha você
+## Instalação
 
-O ambiente Ubuntu fica persistente no celular. Você não precisa reconstruir sua configuração sempre que trocar de sala, rede ou computador.
+O método recomendado usa o binário ARM64 publicado e não exige Go. O último
+binário estável está disponível na
+[página de releases](https://github.com/ericklucioh/mobdesk/releases).
 
-### Seus dados permanecem seus
+### Binário ARM64 publicado
 
-Projetos e configurações ficam no aparelho. Isso reduz a necessidade de deixar GitHub, e-mail, mensageiros ou outras contas pessoais conectadas em computadores compartilhados.
+```bash
+pkg update
+pkg install -y curl coreutils
 
-### Um celular, várias possibilidades
+BASE_URL="https://github.com/ericklucioh/mobdesk/releases/latest/download"
+mkdir -p "$HOME/.local/bin"
+cd "$HOME/.local/bin"
+curl -fL -o mobdesk-linux-arm64 "${BASE_URL}/mobdesk-linux-arm64"
+curl -fL -o SHA256SUMS "${BASE_URL}/SHA256SUMS"
+sha256sum -c SHA256SUMS
+mv mobdesk-linux-arm64 mobdesk
+chmod 0755 mobdesk
+"$HOME/.local/bin/mobdesk" setup
+```
 
-Você pode editar código no celular, abrir uma sessão SSH em outro computador e publicar um servidor local para teste no navegador — tudo usando o mesmo ambiente.
+O checksum verifica a integridade. Os releases ainda não possuem assinatura
+independente, portanto o checksum não autentica sua origem.
 
-### Sem root e sem Docker no celular
+### Compilar com Go
 
-O Mobdesk usa Termux e PRoot-Distro. Não exige root, máquina virtual ou Docker real no Android.
-
-## O que está disponível agora?
-
-O MVP atual concentra-se no bootstrap e na TUI do ambiente:
-
-- instalação do Ubuntu persistente via PRoot-Distro;
-- instalação e configuração do OpenSSH no Termux;
-- acesso SSH pela porta `8022`;
-- abertura da sessão diretamente no Ubuntu;
-- detecção do endereço IP local;
-- configuração de senha para o acesso SSH;
-- operações repetíveis, sem reinstalar o que já existe;
-- comandos `setup`, `start`, `stop`, `shell`, `status`, `install`, `update` e
-  `tui`.
-
-A TUI atual oferece status, setup, ferramentas, shell e atualização. Projetos,
-sessões persistentes e a central web permanecem para os próximos estágios.
-Consulte o [roadmap](../docs/ROADMAP.md) para acompanhar essa evolução.
-
-## Instalação para usuários finais
-
-### Requisitos
-
-- um celular Android com arquitetura ARM64, como a maioria dos aparelhos atuais;
-- Termux instalado por uma fonte confiável, preferencialmente [F-Droid](https://f-droid.org/packages/com.termux/) ou pelos [releases oficiais](https://github.com/termux/termux-app/releases);
-- aproximadamente 1,5 GB livres para o Ubuntu base e espaço adicional para seus projetos;
-- uma rede Wi-Fi comum se você quiser acessar o celular por outro computador.
-
-O Mobdesk não requer root. O desempenho depende da memória, temperatura, bateria e das limitações de segundo plano do Android/HyperOS.
-
-### 1. Instale o Mobdesk
-
-Abra o Termux e execute:
+O projeto exige Go `1.26.5` ou mais recente:
 
 ```bash
 pkg update
 pkg install -y golang git
+go version
 go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
-```
-
-### 2. Configure o ambiente
-
-Na primeira execução, use o binário instalado pelo Go:
-
-```bash
 ~/go/bin/mobdesk setup
 ```
 
-O setup instala os componentes necessários no Termux, baixa o Ubuntu, cria o workspace persistente e solicita a senha usada no acesso SSH. Ao final, o comando `mobdesk` fica disponível globalmente.
+`@latest` significa a última tag estável com versionamento semântico. Não
+significa um commit sem tag nem um prerelease `test-v*`. Use `@v0.6.0`, ou outra
+tag explícita, quando a instalação precisar ser reproduzível.
 
-### 3. Inicie sua workstation
+## Primeira execução
+
+O setup instala os pacotes necessários no Termux, baixa o Ubuntu, cria o
+workspace persistente, configura o SSH e instala o launcher `mobdesk`. Depois
+da primeira execução:
 
 ```bash
+mobdesk status
 mobdesk start
-```
-
-O Mobdesk inicia o SSH na porta `8022`, mantém o aparelho acordado durante o uso e abre uma sessão Ubuntu no próprio Termux.
-
-Para acessar a workstation a partir de outro computador conectado à mesma rede, use o comando SSH exibido pelo Mobdesk, por exemplo:
-
-```bash
-ssh -p 8022 android@192.168.1.50
-```
-
-Substitua o endereço pelo IP mostrado no seu aparelho e informe a senha configurada no setup. A conexão SSH será direcionada diretamente para o Ubuntu.
-
-### 4. Pare quando terminar
-
-Para sair apenas da sessão Ubuntu, execute:
-
-```bash
-exit
-```
-
-Para desligar o servidor SSH:
-
-```bash
+mobdesk shell
 mobdesk stop
 ```
 
-## Entenda o fluxo
+`mobdesk start` inicia o SSH e exibe os dados de conexão. Ele não abre
+automaticamente um shell Ubuntu local. Use `mobdesk shell` para acesso local ou
+o comando SSH exibido a partir de outro computador.
 
-```text
-mobdesk setup
-    ↓
-Termux + PRoot-Distro + Ubuntu persistente
-    ↓
-mobdesk start
-    ↓
-SSH :8022 → sessão Ubuntu
-    ↓
-projetos, editores e servidores locais
+## TUI e idioma
+
+Execute `mobdesk tui` no Termux. `Tab` muda o foco, `Enter` ativa uma ação,
+`Esc` volta e `q` inicia a confirmação de saída. A mesma TUI pode ser executada
+dentro do Ubuntu por SSH; nesse modo, as ações exclusivas do host são
+bloqueadas e explicadas.
+
+Inglês é o idioma padrão. Selecione português do Brasil com:
+
+```bash
+mobdesk tui --locale pt-BR
+MOBDESK_LOCALE=pt-BR mobdesk tui
 ```
 
-O Termux é o host de controle. O Ubuntu é o ambiente de desenvolvimento. O PRoot melhora a compatibilidade com ferramentas Linux, mas não cria um kernel separado nem oferece o isolamento de uma VM ou de um container real.
+A TUI ainda não possui um botão interno de idioma; reinicie-a com o locale
+desejado.
 
-## Limites importantes
+## Segurança e limitações
 
-O Mobdesk é adequado para estudo, desenvolvimento e servidores leves. Ele não foi projetado para:
+Use SSH apenas em redes confiáveis ou por um túnel privado. Nunca exponha a
+porta `8022` diretamente à internet. O MVP atual usa autenticação por senha e
+escuta na rede local.
 
-- cargas pesadas de produção;
-- testes de carga ou performance em escala;
-- Docker real, systemd ou uma VM Linux completa;
-- desktop gráfico completo com aceleração garantida;
-- acesso privilegiado a dispositivos ou módulos do kernel.
+PRoot não é uma máquina virtual e não fornece um kernel separado. O Android
+pode suspender o Termux, e o projeto não foi criado para cargas pesadas de
+produção, Docker real, systemd, módulos do kernel ou acesso privilegiado a
+dispositivos.
 
-O Android pode suspender ou encerrar o Termux. Para uma experiência mais estável, permita que o Termux seja executado em segundo plano nas configurações de bateria do aparelho.
+## Mais informações
 
-## Segurança
+O [README da raiz](../README.md) contém a documentação técnica completa.
 
-Use SSH apenas em redes confiáveis. Não exponha a porta `8022` diretamente na internet. Para acesso remoto fora da rede local, prefira uma rede privada como Tailscale ou um túnel SSH. Faça backups dos projetos importantes fora do celular.
-
-## Documentação
-
-- [Missão do produto](../docs/MISSION.md)
+- [Missão](../docs/MISSION.md)
+- [Arquitetura](../docs/ARCHITECTURE.md)
 - [Roadmap](../docs/ROADMAP.md)
-- [Arquitetura e limites](../docs/ARCHITECTURE.md)
+- [Changelog](../CHANGELOG.md)
 - [Contribuição](CONTRIBUTING.pt-BR.md)
-- [README em inglês](README.md)
+- [Código de Conduta](../CODE_OF_CONDUCT.md)
+- [Suporte](SUPPORT.pt-BR.md)
+- [Política de segurança](../SECURITY.pt-BR.md)
 
 ## Licença
 

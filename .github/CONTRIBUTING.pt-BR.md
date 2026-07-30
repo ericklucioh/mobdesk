@@ -1,46 +1,43 @@
 # Contribuindo com o Mobdesk
 
-Obrigado por considerar contribuir com o Mobdesk. O projeto está construindo uma workstation Ubuntu para Android, começando por um MVP pequeno e verificável.
+Obrigado por considerar contribuir com o Mobdesk. O projeto está construindo
+uma workstation Ubuntu pequena e verificável para Android. O MVP já foi testado
+em um aparelho Android real; a validação em uma matriz maior de dispositivos
+continua em andamento.
 
 ## Antes de começar
 
-Leia estes documentos:
+Leia:
 
-- [README](../README.md) para instalar e executar o projeto;
-- [Missão](../docs/MISSION.md) para entender o problema que estamos resolvendo;
-- [Arquitetura](../docs/ARCHITECTURE.md) para entender a separação entre Termux e Ubuntu;
-- [Roadmap](../docs/ROADMAP.md) para saber o que pertence ao futuro;
-- [Decisões](../docs/DECISIONS.md) para respeitar as escolhas atuais do projeto.
+- o [README](../README.pt-BR.md) para instalação e uso;
+- a [Missão](../docs/MISSION.md) para entender o problema e o valor do produto;
+- a [Arquitetura](../docs/ARCHITECTURE.md) para entender a fronteira entre
+  Termux e Ubuntu;
+- o [Roadmap](../docs/ROADMAP.md) para conhecer o escopo futuro;
+- as [Decisões](../docs/DECISIONS.md) para respeitar as escolhas atuais;
+- o [Código de Conduta](../CODE_OF_CONDUCT.md) para conhecer as expectativas da
+  comunidade.
 
 ## Ambiente de desenvolvimento
 
 Requisitos recomendados:
 
-- Go `1.26.5`;
+- Go `1.26.5` ou mais recente;
 - Docker com Docker Compose;
 - Git;
 - terminal com suporte a TTY;
-- Android/Termux para validação definitiva de integrações.
+- Android/Termux para alterações que afetem a integração com o aparelho.
 
-Prepare o ambiente:
+Prepare e execute o projeto com:
 
 ```bash
 git clone https://github.com/ericklucioh/mobdesk.git
 cd mobdesk
 make build-image
-```
-
-Durante o desenvolvimento:
-
-```bash
 make dev
 ```
 
-O Air recompila o programa quando arquivos Go observados são alterados. Para abrir um shell separado:
-
-```bash
-make shell
-```
+Use `make shell` para abrir um shell separado no ambiente.
 
 ## Verificações obrigatórias
 
@@ -50,95 +47,57 @@ Antes de enviar uma alteração:
 make check
 ```
 
-Quando a alteração envolver o ambiente Docker:
+Para alterações no Docker, execute também `docker compose config` e
+`make build-image`. Para alterações em Termux, SSH ou PRoot, valide também no
+Termux real. O Docker não reproduz permissões do Android, rede, comportamento
+da bateria ou restrições do kernel. `make integration-test` valida o fluxo
+descartável no Docker, mas não substitui o teste em um aparelho.
 
-```bash
-docker compose config
-make build-image
-```
-
-Quando a alteração envolver Termux, SSH ou PRoot, valide também no Termux real. O Docker não reproduz completamente Android, permissões, rede, bateria ou restrições do kernel.
-
-Para validar automaticamente o fluxo principal em um userland Termux descartável:
-
-```bash
-make integration-test
-```
-
-Esse smoke test não substitui a validação em um aparelho Android.
-
-## Organização do código
+## Organização do código e regras
 
 - `cmd/mobdesk/`: entrada do executável;
 - `internal/cobra/`: comandos e roteamento da CLI;
 - `internal/tui/`: telas e componentes Bubble Tea;
-- `internal/status/`: coleta e modelo do estado do ambiente;
+- `internal/status/`: coleta do estado do ambiente;
 - `internal/install/`: instalação idempotente de ferramentas;
 - `internal/update/`: consulta e aplicação de atualizações;
-- `docs/`: missão, decisões, arquitetura, roadmap e planos técnicos.
+- `docs/`: missão, arquitetura, decisões, roadmap e planos técnicos.
 
-Introduza novos pacotes apenas quando houver comportamento real para organizar. Prefira a biblioteca padrão antes de adicionar dependências.
-
-## Regras de implementação
-
-- mantenha operações idempotentes;
-- não remova Ubuntu, volumes ou projetos sem confirmação explícita;
-- não misture comandos do Termux com comandos do Ubuntu;
-- use contexto e cancelamento em processos longos;
-- não bloqueie a TUI com instalação ou diagnóstico;
-- valide entradas antes de montar comandos;
-- não grave senhas, tokens ou chaves em código e logs;
-- mantenha mensagens de erro acionáveis;
-- atualize a documentação quando mudar escopo ou arquitetura.
+Mantenha operações idempotentes, preserve os dados do usuário, separe comandos
+do Termux dos comandos do Ubuntu, use cancelamento em processos longos, valide
+entradas antes de formar comandos e nunca grave senhas, tokens ou chaves no
+código ou nos logs. Mantenha textos voltados ao usuário nos catálogos de i18n.
+Atualize a documentação quando o escopo ou a arquitetura mudar.
 
 ## Commits e pull requests
 
-Use commits curtos e descritivos, preferencialmente no formato:
-
-```text
-tipo: descrição curta
-```
-
-Exemplos:
-
-```text
-feat: adiciona diagnóstico do ambiente
-fix: corrige detecção do ip no Termux
-docs: atualiza instruções de instalação
-test: cobre parser de endereços
-```
-
-Uma pull request deve explicar:
-
-- qual problema resolve;
-- qual comportamento foi alterado;
-- como foi testada;
-- se altera o ambiente Termux, Docker ou Ubuntu;
-- quais limitações permanecem.
-
-Não misture refatorações grandes, mudanças de arquitetura e correções não relacionadas na mesma alteração.
+Use commits curtos e descritivos, preferencialmente no formato
+`tipo: descrição curta`. Uma pull request deve explicar o problema, a mudança
+de comportamento, os testes, os ambientes Termux, Docker ou Ubuntu afetados e
+as limitações restantes. Não misture refatorações, mudanças de arquitetura e
+correções não relacionadas.
 
 ## Escopo atual
 
-O MVP-1 concentra-se em:
+O fluxo do MVP-1 é:
 
 ```text
-Termux → Mobdesk → SSH → Ubuntu via PRoot
+Termux -> Mobdesk -> SSH -> Ubuntu via PRoot
 ```
 
-TUI, ferramentas de desenvolvimento, tmux, Tailscale, projetos, serviços e interface web pertencem aos próximos estágios. Uma contribuição nessas áreas deve respeitar o roadmap ou atualizar explicitamente a decisão de escopo.
+O escopo atual inclui a CLI, a TUI, os perfis de ferramentas de desenvolvimento,
+os perfis de configuração de aplicativos e o fluxo de atualização. Projetos,
+serviços, sessões persistentes, workflows com Tailscale, interfaces web e
+outras expansões permanecem para o futuro. Contribuições nessas áreas devem
+seguir o roadmap ou atualizar explicitamente a decisão de escopo.
 
 ## Relatando problemas
 
-Ao abrir uma issue, inclua:
+Inclua o modelo do aparelho e a versão do Android, a origem e a versão do
+Termux, a versão do Mobdesk, o comando executado, a saída completa do erro e se
+o problema ocorreu no Termux, Ubuntu, SSH ou Docker. Nunca publique senhas,
+chaves privadas, tokens ou dados pessoais nos logs. Use a [política de
+segurança](../SECURITY.pt-BR.md) e o e-mail privado indicado nela para
+vulnerabilidades.
 
-- modelo do celular e versão do Android;
-- origem e versão do Termux;
-- versão do Mobdesk;
-- comando executado;
-- saída completa do erro;
-- se o problema ocorreu no Termux, Ubuntu, SSH ou Docker.
-
-Nunca publique senhas, chaves privadas, tokens ou dados pessoais nos logs.
-
-Leia também o [guia de contribuição em inglês](CONTRIBUTING.md).
+Veja também o [guia de contribuição em inglês](CONTRIBUTING.md).

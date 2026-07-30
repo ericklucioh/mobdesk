@@ -50,8 +50,9 @@ code tunnel --accept-server-license-terms --verbose --log trace
 Compare the same HTTPS request in native Termux. A failure only in Ubuntu
 usually points to PRoot DNS, certificates or proxy configuration; a failure in
 both points to Android networking, VPN, DNS, firewall or blocking. A successful
-installation does not prove product readiness: the experiment ended with
-communication working but product validation still pending.
+installation does not prove full product readiness: the experiment ended with
+communication working, while broader product and device validation remain
+ongoing.
 
 References:
 

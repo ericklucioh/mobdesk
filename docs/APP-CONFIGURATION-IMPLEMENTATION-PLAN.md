@@ -1,7 +1,8 @@
 # App and Configuration Implementation Plan
 
-**Status:** Phase 11 completed in the automated fixture; manual validation on
-real Termux remains pending.
+**Status:** Phase 11 completed in the automated fixture and manually validated
+on a real Android/Termux device; broader profile and device validation remains
+ongoing.
 
 **Decision document:** [`APP-CONFIGURATION-REFACTOR-PLAN.md`](APP-CONFIGURATION-REFACTOR-PLAN.md)
 
@@ -148,8 +149,9 @@ declares HTTPS repositories, full fixed revisions and managed Ubuntu paths for
 `lazy.nvim`, LazyVim and nvim-treesitter. `config apply` clones and checks out
 only declared revisions; `config remove` removes only clean managed plugins.
 The profile remains optional, requires Mobdesk-installed Neovim, and refuses
-existing configuration before any write or clone. Headless validation on
-POCO F6/Termux remains pending.
+existing configuration before any write or clone. Manual validation on a real
+Android/Termux device has been performed; broader headless profile validation
+remains ongoing.
 
 ### Phase 8 - CLI and JSON
 
@@ -187,7 +189,8 @@ popup focus, confirmations, conflicts, remote runtime and narrow terminals.
 The catalogue smoke test had already passed for Neovim, Yazi and TUIFI and was
 not repeated because this phase did not alter catalogue, installation or PRoot.
 
-The remaining manual validation is the real Termux/POCO F6 workflow.
+The target real Termux workflow has been manually validated; broader device and
+profile coverage remains for follow-up validation.
 
 ## 7. Manual validation on real Termux
 

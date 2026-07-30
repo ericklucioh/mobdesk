@@ -1,171 +1,145 @@
 # Mobdesk
 
-[English](README.md) | [Português](README.pt-BR.md)
+[English](README.md) | [Portugues](README.pt-BR.md)
 
-## Your Linux workstation, in your pocket
+> **MVP / experimental:** Mobdesk works and has been tested on a real Android
+> device. Validation across a broader device matrix is still in progress. Use
+> it for learning, development and lightweight local services, not production
+> workloads.
 
-Mobdesk turns an Android phone into a personal development environment. Instead of depending on university computers, shared machines, or leaving personal accounts signed in on someone else’s device, you carry your projects, tools, and data with you.
+## Your Linux workstation in your pocket
 
-Mobdesk turns the phone into a small development server:
+Mobdesk turns an Android phone into a personal Ubuntu development workstation:
 
 ```text
 Android
-└── Termux — device control layer
-    └── Persistent Ubuntu — development environment
+  Termux -> Mobdesk -> Ubuntu via PRoot
+                      -> local shell or SSH on port 8022
 ```
 
-Ubuntu runs on the phone through PRoot-Distro. You can work directly in Termux or connect from another computer on the same network over SSH. Your files remain on your own device.
+Ubuntu persists on the phone. You can work locally or connect from another
+computer on a trusted network. Mobdesk does not require root, a virtual
+machine, Docker on the phone, systemd or a graphical desktop.
 
-## What is it for?
+## What is available
 
-Mobdesk is designed for students, developers, and professionals who need a portable Linux environment to:
+- persistent Ubuntu through PRoot-Distro;
+- dedicated SSH server on port `8022`;
+- local shell access with `mobdesk shell`;
+- touch/mouse/keyboard TUI;
+- status and JSON output for automation;
+- Go, Python, Node.js, C, C++ and Lua installation profiles;
+- Neovim/LazyVim configuration profiles;
+- rollback-aware binary updates;
+- English (`en-US`) and Brazilian Portuguese (`pt-BR`) presentation.
 
-- study C, JavaScript, HTML, React, Java, Go, or Python;
-- create and run small and medium-sized projects for learning and development;
-- start local development servers, such as `npm run dev`, and open them in a browser;
-- use a phone as a personal workstation during classes, travel, or commutes;
-- access the same environment from the phone or from a computer on the same network;
-- keep code, configuration, and sessions without signing in to shared computers.
+Projects, persistent sessions, services and a web interface remain future
+roadmap stages.
 
-Mobdesk is not intended to replace a production machine, a full virtual machine, or a graphical desktop. It is a lightweight, user-controlled mobile workstation for development, learning, and local servers.
+## Requirements
 
-## Why Mobdesk?
+- ARM64 Android phone;
+- Termux from [F-Droid](https://f-droid.org/packages/com.termux/) or the
+  [official releases](https://github.com/termux/termux-app/releases);
+- approximately 1.5 GB of free storage for the base Ubuntu installation;
+- a trusted local network for remote SSH access.
 
-### Your environment travels with you
+## Installation
 
-The Ubuntu environment persists on the phone. You do not have to rebuild your setup every time you change rooms, networks, or computers.
+The recommended method uses the published ARM64 binary and does not require
+Go. The latest stable binary is available from the
+[releases page](https://github.com/ericklucioh/mobdesk/releases).
 
-### Your data stays yours
+### Released ARM64 binary
 
-Projects and configuration remain on the device. This reduces the need to leave GitHub, email, messaging, or other personal accounts signed in on shared computers.
+```bash
+pkg update
+pkg install -y curl coreutils
 
-### One phone, many workflows
+BASE_URL="https://github.com/ericklucioh/mobdesk/releases/latest/download"
+mkdir -p "$HOME/.local/bin"
+cd "$HOME/.local/bin"
+curl -fL -o mobdesk-linux-arm64 "${BASE_URL}/mobdesk-linux-arm64"
+curl -fL -o SHA256SUMS "${BASE_URL}/SHA256SUMS"
+sha256sum -c SHA256SUMS
+mv mobdesk-linux-arm64 mobdesk
+chmod 0755 mobdesk
+"$HOME/.local/bin/mobdesk" setup
+```
 
-Edit code on the phone, open an SSH session from another computer, and publish a local development server for browser testing — all from the same environment.
+The checksum verifies integrity. Releases are not independently signed yet,
+so the checksum does not authenticate their origin.
 
-### No root and no Docker on the phone
+### Build with Go
 
-Mobdesk uses Termux and PRoot-Distro. It does not require root access, a virtual machine, or real Docker on Android.
-
-## What is available today?
-
-The current MVP focuses on environment bootstrapping and its TUI:
-
-- persistent Ubuntu installation through PRoot-Distro;
-- OpenSSH installation and configuration in Termux;
-- SSH access on port `8022`;
-- sessions opened directly inside Ubuntu;
-- local IP address detection;
-- password setup for SSH access;
-- repeatable operations that do not reinstall existing components;
-- `setup`, `start`, `stop`, `shell`, `status`, `install`, `update`, and `tui`
-  commands.
-
-The current TUI provides status, setup, tools, shell, and update screens.
-Projects, persistent sessions, and the web control center remain later stages.
-See the [roadmap](../docs/ROADMAP.md) for the planned evolution.
-
-## Installation for end users
-
-### Requirements
-
-- an Android phone with ARM64 architecture, as found on most current devices;
-- Termux installed from a trusted source, preferably [F-Droid](https://f-droid.org/packages/com.termux/) or the [official releases](https://github.com/termux/termux-app/releases);
-- approximately 1.5 GB of free storage for the base Ubuntu installation, plus additional space for your projects;
-- a regular Wi-Fi network if you want to connect from another computer.
-
-Mobdesk does not require root. Performance depends on the phone’s memory, temperature, battery, and Android/HyperOS background-process limits.
-
-### 1. Install Mobdesk
-
-Open Termux and run:
+The project requires Go `1.26.5` or newer:
 
 ```bash
 pkg update
 pkg install -y golang git
+go version
 go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
-```
-
-### 2. Set up the environment
-
-On the first run, use the binary installed by Go:
-
-```bash
 ~/go/bin/mobdesk setup
 ```
 
-Setup installs the required Termux components, downloads Ubuntu, creates the persistent workspace, and asks for the password used for SSH access. At the end, the `mobdesk` command is available globally.
+`@latest` means the latest stable semantic-version tag. It does not mean an
+untagged commit or a `test-v*` prerelease. Pin `@v0.6.0`, or another explicit
+release tag, when reproducibility matters.
 
-### 3. Start your workstation
+## First run
+
+Setup installs the required Termux packages, downloads Ubuntu, creates the
+persistent workspace, configures SSH and installs the `mobdesk` launcher.
+After the first run:
 
 ```bash
+mobdesk status
 mobdesk start
-```
-
-Mobdesk starts SSH on port `8022`, keeps the device awake while it is in use, and opens an Ubuntu session directly in Termux.
-
-To connect from another computer on the same network, use the SSH command displayed by Mobdesk, for example:
-
-```bash
-ssh -p 8022 android@192.168.1.50
-```
-
-Replace the address with the IP shown on your phone and enter the password configured during setup. The SSH connection is forwarded directly into Ubuntu.
-
-### 4. Stop when you are done
-
-To leave only the Ubuntu session, run:
-
-```bash
-exit
-```
-
-To stop the SSH server:
-
-```bash
+mobdesk shell
 mobdesk stop
 ```
 
-## How the flow works
+`mobdesk start` starts SSH and displays connection details. It does not open a
+local Ubuntu shell automatically. Use `mobdesk shell` for local access or the
+displayed SSH command from another computer.
 
-```text
-mobdesk setup
-    ↓
-Termux + PRoot-Distro + persistent Ubuntu
-    ↓
-mobdesk start
-    ↓
-SSH :8022 → Ubuntu session
-    ↓
-projects, editors, and local development servers
+## TUI and language
+
+Run `mobdesk tui` in Termux. `Tab` changes focus, `Enter` activates an action,
+`Esc` goes back and `q` starts the quit confirmation. The same TUI can run
+inside Ubuntu over SSH; host-only actions are blocked and explained there.
+
+English is the default. Select Brazilian Portuguese with:
+
+```bash
+mobdesk tui --locale pt-BR
+MOBDESK_LOCALE=pt-BR mobdesk tui
 ```
 
-Termux is the control host. Ubuntu is the development environment. PRoot improves Linux userland compatibility, but it does not create a separate kernel or provide the isolation of a virtual machine or real container.
+The TUI has no in-app language button yet; restart it with the desired locale.
 
-## Important limitations
+## Security and limitations
 
-Mobdesk is suitable for learning, development, and lightweight servers. It is not designed for:
+Use SSH only on trusted networks or through a private tunnel. Never expose port
+`8022` directly to the public internet. The current MVP uses password
+authentication and local-network listening.
 
-- heavy production workloads;
-- large-scale load or performance testing;
-- real Docker, systemd, or a complete Linux VM;
-- a full graphical desktop with guaranteed acceleration;
-- privileged device access or kernel modules.
+PRoot is not a virtual machine and does not provide a separate kernel. Android
+may suspend Termux, and the project is not designed for heavy production
+workloads, real Docker, systemd, kernel modules or privileged device access.
 
-Android may suspend or terminate Termux. For a more stable experience, allow Termux to run in the background in the phone’s battery settings.
+## More information
 
-## Security
+The [root README](../README.md) contains the complete technical documentation.
 
-Use SSH only on trusted networks. Do not expose port `8022` directly to the public internet. For remote access outside the local network, prefer a private network such as Tailscale or an SSH tunnel. Keep important projects backed up outside the phone.
-
-## Documentation
-
-- [Product mission](../docs/MISSION.md)
+- [Mission](../docs/MISSION.md)
+- [Architecture](../docs/ARCHITECTURE.md)
 - [Roadmap](../docs/ROADMAP.md)
-- [Architecture and limitations](../docs/ARCHITECTURE.md)
+- [Changelog](../CHANGELOG.md)
 - [Contributing](CONTRIBUTING.md)
-
-For Brazilian Portuguese, see [README.pt-BR.md](README.pt-BR.md).
+- [Code of Conduct](../CODE_OF_CONDUCT.md)
+- [Support](SUPPORT.md)
+- [Security policy](../SECURITY.md)
 
 ## License
 

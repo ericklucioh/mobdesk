@@ -1,6 +1,7 @@
 # English-First Localization and Documentation Migration Plan
 
-**Status:** Phase 7 complete in the automated environment; real Termux validation pending.
+**Status:** Phase 7 complete in the automated environment and validated on a
+real Android/Termux device; broader device validation remains ongoing.
 
 **Primary locale:** `en-US`
 
@@ -444,7 +445,8 @@ Tasks:
 - Run `make catalog-test` only if installation, catalog, PRoot or related
   runtime code changed during the migration.
 - Validate the TUI visually with the mock backend in both locales.
-- Validate real Termux/POCO F6 behavior when the device is available.
+- Validate the already tested real Termux flow and expand coverage to additional
+  Android devices when available.
 
 Acceptance criteria:
 
@@ -467,8 +469,9 @@ Acceptance criteria:
   the Termux fixture build.
 - `make catalog-test` was intentionally not repeated because the migration did
   not change the installation catalog, installation strategies or PRoot runtime.
-- Visual and operational validation on real Termux/POCO F6 remains pending and
-  must be completed before claiming device-level release readiness.
+- Visual and operational validation has been completed on a real
+  Android/Termux device; validation across a broader device matrix remains
+  ongoing before claiming broad device-level release readiness.
 
 ## 7. Documentation Inventory
 

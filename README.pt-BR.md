@@ -2,64 +2,172 @@
 
 Transforme seu celular Android em uma workstation Ubuntu pessoal.
 
-O Mobdesk permite levar para a faculdade, viagens ou qualquer lugar um ambiente Linux próprio, sem depender de computadores compartilhados e sem deixar suas contas pessoais conectadas neles.
+> **MVP / experimental:** o Mobdesk funciona e já foi testado em um aparelho
+> Android real. A validação em uma matriz maior de dispositivos ainda está em
+> andamento. Use-o para estudo, desenvolvimento e serviços locais leves, não
+> para cargas de produção.
 
-No MVP atual, o fluxo é simples:
+O Mobdesk usa o Termux como host de controle do Android e mantém um Ubuntu
+persistente por meio do PRoot-Distro como ambiente de desenvolvimento:
 
 ```text
-Termux → Mobdesk → SSH → Ubuntu via PRoot
+Android
+  Termux -> Mobdesk -> Ubuntu via PRoot
+                      -> shell local ou SSH na porta 8022
 ```
 
-O Termux controla o aparelho. O Ubuntu persistente é o ambiente de trabalho. Ao conectar por SSH, você entra diretamente no Ubuntu.
+O projeto não exige root, máquina virtual, Docker no celular, systemd, desktop
+gráfico ou módulos do kernel.
 
-## O que já funciona
+## O que está disponível
 
-- instalação automatizada a partir de um Termux praticamente virgem;
-- Ubuntu persistente via PRoot-Distro;
-- servidor SSH próprio do Mobdesk na porta `8022`;
-- acesso remoto direto ao Ubuntu;
-- detecção do IP local via `ifconfig`;
-- autenticação por senha;
-- comandos `setup`, `start`, `stop`, `shell`, `status`, `install`, `update` e `tui`;
-- instalação idempotente de Go, Python, Node.js, C, C++ e Lua no Ubuntu;
-- status humano e JSON para automação e TUI;
-- TUI com status, setup, ferramentas, shell e atualização;
-- versão local e atualização verificável do binário, com rollback automático;
-- execução no celular ou remotamente pelo computador;
-- ambiente reproduzível para desenvolvimento e testes.
+- setup repetível do Ubuntu, SSH, rede e workspace;
+- servidor SSH dedicado do Mobdesk na porta `8022`;
+- acesso local ao Ubuntu com `mobdesk shell`;
+- saída humana e JSON para automação e para a TUI;
+- instalação idempotente de perfis de Go, Python, Node.js, C, C++ e Lua;
+- telas de status, setup, ferramentas, shell e atualização na TUI;
+- perfis de configuração de aplicativos, começando por Neovim/LazyVim;
+- atualização verificável do binário com rollback e recuperação;
+- apresentação em inglês (`en-US`) e português do Brasil (`pt-BR`).
 
-O MVP continua deliberadamente pequeno. A TUI organiza as operações existentes,
-mas projetos, serviços, sessões persistentes e interface web permanecem para os
-próximos estágios.
+Projetos, sessões persistentes, serviços e uma interface web permanecem fora do
+MVP atual e pertencem aos próximos estágios do roadmap.
 
-Consulte rapidamente o ambiente com:
+## Requisitos
+
+- celular Android com arquitetura ARM64;
+- Termux de uma fonte confiável, preferencialmente o
+  [F-Droid](https://f-droid.org/packages/com.termux/) ou os
+  [releases oficiais](https://github.com/termux/termux-app/releases);
+- aproximadamente 1,5 GB de espaço livre para a instalação base do Ubuntu;
+- espaço adicional para projetos e ferramentas instaladas;
+- rede local confiável se você for conectar outro computador.
+
+O Mobdesk não exige root. O desempenho e a estabilidade dependem da memória,
+temperatura e bateria do aparelho e das políticas de processos em segundo
+plano do Android/HyperOS.
+
+## Instalação
+
+Instale o Termux por uma fonte confiável antes de escolher um dos métodos
+abaixo. O método recomendado usa o binário ARM64 publicado e não exige Go.
+
+### Opção 1: binário ARM64 publicado
+
+O último binário estável está disponível pela
+[página de releases](https://github.com/ericklucioh/mobdesk/releases). No
+Termux, execute:
+
+```bash
+pkg update
+pkg install -y curl coreutils
+
+BASE_URL="https://github.com/ericklucioh/mobdesk/releases/latest/download"
+mkdir -p "$HOME/.local/bin"
+cd "$HOME/.local/bin"
+curl -fL -o mobdesk-linux-arm64 "${BASE_URL}/mobdesk-linux-arm64"
+curl -fL -o SHA256SUMS "${BASE_URL}/SHA256SUMS"
+sha256sum -c SHA256SUMS
+mv mobdesk-linux-arm64 mobdesk
+chmod 0755 mobdesk
+"$HOME/.local/bin/mobdesk" setup
+```
+
+O checksum verifica a integridade do arquivo. Os releases ainda não possuem
+assinatura, portanto essa verificação não autentica independentemente a
+origem do release. O primeiro setup instala os pacotes necessários no Termux,
+baixa o Ubuntu, cria o workspace persistente, configura o SSH e instala o
+launcher `mobdesk`.
+
+### Opção 2: compilar com Go
+
+Use este método quando quiser compilar a partir da última tag estável do
+módulo Go. O projeto exige Go `1.26.5` ou mais recente:
+
+```bash
+pkg update
+pkg install -y golang git
+go version
+go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
+~/go/bin/mobdesk setup
+```
+
+`@latest` significa a última tag estável com versionamento semântico; não
+significa o último commit sem tag nem um prerelease `test-v*`. Para uma
+instalação reproduzível, fixe a versão explicitamente, por exemplo:
+
+```bash
+go install github.com/ericklucioh/mobdesk/cmd/mobdesk@v0.6.0
+```
+
+Executar o setup por `~/go/bin/mobdesk` na primeira vez é intencional. O setup
+cria o launcher do Termux em `$PREFIX/bin/mobdesk`, permitindo usar `mobdesk`
+normalmente nos comandos seguintes. O setup pode ser executado novamente após
+uma interrupção sem apagar o workspace.
+
+## Uso básico
+
+Inicie e consulte a workstation:
 
 ```bash
 mobdesk status
-mobdesk status --json
+mobdesk start
 ```
 
-O status é somente leitura e verifica setup, Ubuntu, SSH, rede, espaço livre
-do dispositivo, bateria e Wi-Fi quando o Termux:API estiver disponível.
+`mobdesk start` inicia o servidor SSH e exibe os dados de conexão. Para abrir o
+Ubuntu localmente sem SSH, use:
+
+```bash
+mobdesk shell
+```
+
+Para conectar de outro computador na mesma rede confiável, use o comando SSH
+mostrado pelo Mobdesk, por exemplo:
+
+```bash
+ssh -p 8022 android@192.168.1.50
+```
+
+Pare o servidor SSH quando terminar:
+
+```bash
+mobdesk stop
+```
+
+Use `mobdesk status --json` para automação. Use `mobdesk logs --name <name>`
+para ler um log limitado de instalação quando uma ferramenta falhar.
+
+## Segurança e uso em rede
+
+O MVP atual usa autenticação por senha e escuta na rede local para permitir SSH
+a partir de outro computador. Use-o apenas em uma rede confiável ou por meio de
+um túnel privado. Nunca exponha a porta `8022` diretamente à internet. Mantenha
+backups dos projetos importantes fora do celular.
+
+As atualizações verificam a integridade SHA-256, mas a autenticidade dos
+releases ainda não é validada por assinatura independente. Trate os binários
+publicados como experimentais até a assinatura de releases ser implementada.
+
+Veja a [política de segurança](SECURITY.pt-BR.md) para relatos privados de
+vulnerabilidades.
 
 ## TUI
 
-Abra a interface textual no Termux com:
+Execute `mobdesk tui` no Termux. A TUI oferece ações visíveis para status, setup,
+ferramentas, shell e atualizações do sistema. As ações importantes funcionam
+com toque/mouse e teclado. `Tab` muda o foco, `Enter` ativa uma ação, `Esc`
+volta e `q` inicia a confirmação de saída.
 
-```bash
-mobdesk tui
-```
-
-A TUI oferece status, setup, instalação de ferramentas, shell Ubuntu e
-atualização do Mobdesk. Quando ela é aberta por SSH, já está dentro do Ubuntu:
-nesse modo, mostra o workspace e permite abrir o shell local, mas não oferece
-ações que exigem o host Termux, como controlar SSH, executar setup, instalar
-ferramentas ou atualizar o binário.
+A TUI também pode ser aberta por uma sessão SSH, dentro do Ubuntu. Nesse modo,
+ela mostra o workspace e permite abrir o shell local, mas bloqueia e explica as
+ações que exigem o host Termux, como setup, controle do SSH, instalação e
+atualização do binário.
 
 ### Idioma
 
-O Mobdesk usa inglês (`en-US`) por padrão e atualmente oferece suporte a
-português do Brasil (`pt-BR`). Escolha o idioma ao iniciar a CLI ou a TUI:
+O Mobdesk usa inglês (`en-US`) por padrão e oferece suporte a português do
+Brasil (`pt-BR`). Escolha o idioma ao iniciar a CLI ou a TUI:
 
 ```bash
 mobdesk tui --locale pt-BR
@@ -77,178 +185,50 @@ filhos. A TUI ainda não possui um botão interno para trocar o idioma; reinicie
 a TUI com o idioma desejado. Identificadores técnicos, como comandos, flags,
 chaves JSON e estados, permanecem em inglês.
 
-Instale uma linguagem no Ubuntu com:
+## Limitações
 
-```bash
-mobdesk install go
-mobdesk install python
-mobdesk install node
-mobdesk install c
-mobdesk install cpp
-mobdesk install lua
-```
-
-Ferramentas instaladas pelo Mobdesk pertencem ao Ubuntu. Execute `mobdesk
-install`, `mobdesk logs` e `mobdesk setup` no Termux; dentro do Ubuntu, use
-diretamente a ferramenta, por exemplo `zellij`. O setup mantém
-`$HOME/.local/bin` no `PATH` do shell Ubuntu para ferramentas instaladas no
-perfil do usuário.
-
-O Mobdesk também configura um shell auxiliar como `$SHELL`. O Zellij usa esse
-shell nos novos painéis, preservando o prompt colorido, o caminho da pasta
-atual e o autocomplete do Bash.
-
-Consulte a versão compilada e verifique atualizações:
-
-```bash
-mobdesk version --json
-mobdesk update --check
-mobdesk update
-```
-
-Builds locais aparecem como `dev` e podem ser atualizados para a última release
-estável. Builds do canal `stage` procuram releases `test-v*`.
-
-O update baixa o binário em arquivo temporário, confere seu SHA-256, testa
-`version --json` e só então o ativa. Se a ativação falhar, a versão anterior é
-restaurada automaticamente. O backup é administrado pelo Mobdesk; não é
-necessário mover ou remover arquivos manualmente. O checksum detecta downloads
-corrompidos, mas não autentica uma release comprometida que publique binário e
-checksum correspondentes.
-
-## Instalação no Termux
-
-Instale o Termux por uma fonte confiável e abra o aplicativo. Depois:
-
-```bash
-pkg update
-pkg install -y golang git
-go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
-./go/bin/mobdesk setup
-```
-
-Na primeira execução, o binário é chamado diretamente pelo caminho criado pelo Go. Depois do setup, o launcher global permite usar `mobdesk` normalmente.
-
-O setup instala apenas as dependências necessárias. Para atualizar todo o ambiente Termux explicitamente, use `mobdesk setup --upgrade-system`.
-
-O setup pode ser executado novamente depois de uma falha. Ele mantém as etapas
-concluídas, recupera a etapa pendente e não apaga Ubuntu, workspace ou projetos.
-Somente uma execução de setup pode modificar o ambiente por vez.
-
-Durante o setup, o Mobdesk irá:
-
-- instalar `proot-distro`, `openssh` e `net-tools`;
-- baixar o Ubuntu base;
-- criar o workspace persistente;
-- configurar a senha SSH;
-- preparar o acesso SSH direto ao Ubuntu.
-
-## Usando o Mobdesk
-
-Inicie a workstation:
-
-```bash
-mobdesk start
-```
-
-Para abrir o Ubuntu localmente sem iniciar o servidor SSH:
-
-```bash
-mobdesk shell
-```
-
-O Mobdesk exibirá um comando parecido com:
-
-```bash
-ssh -p 8022 android@192.168.3.228
-```
-
-Execute esse comando em outro computador conectado à mesma rede. A sessão SSH abrirá diretamente no Ubuntu.
-
-Para encerrar o servidor SSH:
-
-```bash
-mobdesk stop
-```
-
-Para sair do Ubuntu sem parar o servidor:
-
-```bash
-exit
-```
-
-O IP local pode mudar quando o celular troca de rede. O Termux precisa permanecer ativo e o Android não pode suspender o aplicativo durante o uso remoto.
+- PRoot não é uma máquina virtual e não fornece um kernel separado;
+- Docker, systemd, módulos do kernel e acesso privilegiado a dispositivos não
+  estão disponíveis pelo Mobdesk;
+- o Android pode suspender ou encerrar o Termux; quando apropriado, isente o
+  Termux da otimização de bateria;
+- a validação em Docker não reproduz permissões do Android, comportamento da
+  bateria, wake-lock, suspensão de processos pelo HyperOS ou todos os aparelhos
+  ARM64;
+- o projeto não foi criado para cargas pesadas de produção nem exposição
+  pública do SSH.
 
 ## Desenvolvimento
-
-Clone o projeto e entre no diretório:
 
 ```bash
 git clone https://github.com/ericklucioh/mobdesk.git
 cd mobdesk
-```
-
-O ambiente Docker simula o userland do Termux e mantém o workspace e o prefixo em volumes persistentes.
-
-```bash
-make build-image  # constrói a imagem local
-make dev          # inicia o Air com hot-reload
-make termux       # abre um shell Termux com a porta SSH publicada
-make shell        # abre outro shell no ambiente
-```
-
-Verificações:
-
-```bash
+make build-image
 make check
-make integration-test  # smoke test do Termux/SSH no Docker
 ```
 
-O teste de integração cria volumes descartáveis, instala o Ubuntu, testa `setup`, `start`, acesso SSH e `stop`, e os remove ao terminar. Ele não reproduz bateria, permissões, wake-lock ou o kernel do Android.
+Antes de contribuir, leia o [guia de contribuição](.github/CONTRIBUTING.pt-BR.md).
+O repositório usa Docker para verificações reproduzíveis, mas alterações em
+Termux/SSH/PRoot também exigem validação no Termux real quando houver um
+aparelho disponível.
 
-Para apagar o ambiente persistente e começar do zero:
+## Documentação e comunidade
 
-```bash
-make reset-env
-```
-
-Esse comando remove os volumes do Termux/Ubuntu. O código local não é apagado. A instalação do Ubuntu ocupa aproximadamente `1,5 GB` nos volumes persistentes.
-
-Consulte [CONTRIBUTING](.github/CONTRIBUTING.pt-BR.md) antes de enviar alterações.
-
-## Arquitetura
-
-```text
-Android/HyperOS
-└── Termux
-    ├── Mobdesk em Go
-    ├── OpenSSH :8022
-    └── PRoot-Distro
-        └── Ubuntu ARM64 persistente
-```
-
-O projeto não depende de root, VM ou Docker no celular. PRoot melhora a compatibilidade do userland, mas não fornece um kernel Linux separado nem isolamento real de container.
-
-## Próximos estágios
-
-1. consolidar a TUI e validar o fluxo em um aparelho Termux real;
-2. sessões persistentes, projetos, serviços e acesso remoto confiável;
-3. central local de gerenciamento de projetos, sessões e serviços.
-
-Veja o [roadmap em quatro estágios](docs/ROADMAP.md).
-
-## Documentação
-
-- [Missão](docs/MISSION.md) — problema, público e valor;
-- [Roadmap](docs/ROADMAP.md) — evolução do produto;
-- [Arquitetura](docs/ARCHITECTURE.md) — camadas e limites técnicos;
-- [Decisões](docs/DECISIONS.md) — decisões do projeto;
-- [Ferramentas](docs/ideas/TOOL-CATALOG.md) — catálogo técnico em evolução;
-- [Refatoração prioritária](docs/PRIORITY-REFACTORING-PLAN.md) — melhorias estruturais planejadas;
-- [Como contribuir](.github/CONTRIBUTING.pt-BR.md) — fluxo para colaboradores.
-
-Leia também o [README em inglês](README.md).
+- [Missão](docs/MISSION.md)
+- [Arquitetura](docs/ARCHITECTURE.md)
+- [Decisões](docs/DECISIONS.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Plano de refatoração da configuração de apps](docs/APP-CONFIGURATION-REFACTOR-PLAN.md)
+- [Plano de implementação da configuração de apps](docs/APP-CONFIGURATION-IMPLEMENTATION-PLAN.md)
+- [Plano das próximas features](docs/PLAN-NEXT-FEATURES.md)
+- [Catálogo de ferramentas](docs/ideas/TOOL-CATALOG.md)
+- [Changelog](CHANGELOG.md)
+- [Contribuição](.github/CONTRIBUTING.pt-BR.md)
+- [Código de Conduta](CODE_OF_CONDUCT.md)
+- [Suporte](.github/SUPPORT.pt-BR.md)
+- [Política de segurança](SECURITY.pt-BR.md)
+- [README em inglês](README.md)
 
 ## Licença
 
-Distribuído sob a [licença MIT](LICENSE).
+O Mobdesk é distribuído sob a [licença MIT](LICENSE).
