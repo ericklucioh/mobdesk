@@ -55,6 +55,29 @@ if ! go test ./internal/i18n >/dev/null; then
 	failed=1
 fi
 
+check_markdown_links() {
+	local source target path
+	while IFS=$'\t' read -r source target; do
+		case "${target}" in
+			http://*|https://*|mailto:*|\#*|//* ) continue ;;
+		esac
+		target=${target%%\#*}
+		target=${target%%\?*}
+		[[ -z "${target}" ]] && continue
+		path="$(dirname "${source}")/${target}"
+		if [[ ! -e "${path}" ]]; then
+			printf 'i18n-check: broken Markdown link %s -> %s\n' "${source}" "${target}" >&2
+			failed=1
+		fi
+	done < <(
+		while IFS= read -r source; do
+			perl -ne 'while (/\[[^]]+\]\(([^)[:space:]]+)/g) { print "$ARGV\t$1\n" }' "${source}"
+		done < <(git ls-files '*.md' 'AGENTS.md')
+	)
+}
+
+check_markdown_links
+
 if (( failed != 0 )); then
 	exit 1
 fi

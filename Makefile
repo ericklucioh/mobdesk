@@ -13,7 +13,7 @@ help:
 		'make termux          - open an interactive shell in the environment' \
 		'make shell           - open a shell in the existing container' \
 		'make test            - run go test ./...' \
-		'make i18n-check      - validate catalogs and presentation literals' \
+		'make i18n-check      - validate catalogs, presentation and documentation links' \
 		'make check           - format, validate and build the project' \
 		'make integration-test - test the Termux/SSH flow in Docker' \
 		'make catalog-test    - test apps in the cached Ubuntu fixture' \

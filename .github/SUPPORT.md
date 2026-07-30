@@ -1,37 +1,26 @@
-# Suporte
+# Support
 
-Todo assunto relacionado ao Mobdesk deve ser tratado por meio de uma [GitHub Issue](https://github.com/ericklucioh/mobdesk/issues).
+Use a [GitHub issue](https://github.com/ericklucioh/mobdesk/issues) for all
+Mobdesk support requests, including installation questions, bugs, unexpected
+behavior, improvement suggestions, feature requests, questions about project
+decisions, and incorrect documentation.
 
-Isso inclui:
+## Before opening an issue
 
-- dúvidas sobre instalação ou uso;
-- problemas, erros e comportamentos inesperados;
-- sugestões de melhoria;
-- solicitações de novas funcionalidades;
-- pedidos de esclarecimento sobre decisões do projeto;
-- documentação desatualizada ou incorreta.
+1. Search the [existing issues](https://github.com/ericklucioh/mobdesk/issues).
+2. Comment on an existing issue instead of creating a duplicate.
+3. Open a new issue with a concise title when no matching issue exists.
 
-## Antes de abrir uma Issue
+## Useful information
 
-1. Pesquise nas [Issues existentes](https://github.com/ericklucioh/mobdesk/issues) para verificar se o assunto já foi registrado.
-2. Se já existir uma Issue, adicione um comentário nela em vez de criar uma duplicata.
-3. Se o assunto ainda não existir, abra uma nova Issue com um título objetivo.
+Include what you tried, the expected and actual results, commands and complete
+error output, device and Android/HyperOS versions, Termux and Mobdesk versions,
+device architecture, and reproduction steps.
 
-## Informações recomendadas
+Remove passwords, tokens, SSH keys, personal data and other secrets before
+posting.
 
-Inclua o máximo possível das informações abaixo:
+Mobdesk is maintained asynchronously. An issue is the official channel so that
+the report remains recorded, searchable and trackable.
 
-- o que você tentou fazer;
-- o resultado esperado;
-- o que aconteceu de fato;
-- os comandos executados e a mensagem de erro completa;
-- modelo do aparelho e versão do Android/HyperOS;
-- versão do Termux e do Mobdesk;
-- arquitetura do dispositivo, quando relevante;
-- passos para reproduzir o problema.
-
-Não publique senhas, tokens, chaves SSH, dados pessoais ou outros segredos. Substitua essas informações antes de enviar a Issue.
-
-## Solicitações urgentes
-
-O Mobdesk é mantido de forma assíncrona. A abertura de uma Issue é o canal oficial para que o assunto fique registrado, pesquisável e acompanhado.
+See [the Brazilian Portuguese support guide](SUPPORT.pt-BR.md).

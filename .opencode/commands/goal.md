@@ -6,12 +6,11 @@ agent: build
 Execute the Mobdesk English-first localization and documentation migration plan
 end to end.
 
-Read `AGENTS.md` and `docs/PLAN-I18N-EN-PTBR.md` before changing code. Until the
-documentation migration phase renames the existing Portuguese paths, also read
-the current mission, architecture, decisions and app implementation documents:
-`docs/MISSAO.md`, `docs/ARQUITETURA.md`, `docs/DECISOES.md`,
-`docs/PLANO-REFATORACAO-APPS-E-CONFIGURACOES.md`, and
-`docs/PLANO-IMPLEMENTACAO-APPS-E-CONFIGURACOES.md`.
+Read `AGENTS.md` and `docs/PLAN-I18N-EN-PTBR.md` before changing code. Also read
+the canonical mission, architecture, decisions and app implementation
+documents: `docs/MISSION.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`,
+`docs/APP-CONFIGURATION-REFACTOR-PLAN.md`, and
+`docs/APP-CONFIGURATION-IMPLEMENTATION-PLAN.md`.
 
 Treat the localization plan, existing locked product decisions and JSON
 contract rules as authoritative. Do not reopen decisions already marked as

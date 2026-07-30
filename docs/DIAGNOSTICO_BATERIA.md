@@ -1,93 +1,48 @@
-# Diagnóstico de Consumo de Bateria
+# Battery Consumption Diagnostics
 
-## Resumo
+**Status:** operational investigation; no cleanup behavior is changed by this
+document.
 
-O Ubuntu via PRoot não é um serviço que fica rodando sozinho. Ele é um
-userland persistente: cada processo `proot-distro login ubuntu ...` existe
-enquanto o comando, shell ou sessão que o iniciou estiver ativo.
+Ubuntu through PRoot is a persistent userland, not an independently running
+service. A `proot-distro login ubuntu ...` process exists while its command,
+shell or session remains active. Mobdesk starts Termux SSH and may enable
+`termux-wake-lock`; SSH/PRoot sessions can create child processes.
 
-O risco atual está no ciclo de vida das sessões e processos filhos. O Mobdesk
-inicia um servidor SSH no Termux e ativa o `termux-wake-lock`. Uma sessão SSH
-pode iniciar um shell Ubuntu via PRoot, e esse shell pode iniciar processos
-adicionais.
+## Current behavior
 
-## Comportamento Atual
+- `mobdesk start` checks Ubuntu, configures SSH, enables wake-lock and starts
+  `sshd` on port `8022`;
+- `mobdesk stop` signals the main `sshd` PID and releases wake-lock;
+- `mobdesk shell` starts an interactive PRoot session;
+- the TUI cancels commands it starts through `context.Context`;
+- an installed Ubuntu filesystem consumes no CPU or battery without processes.
 
-- `mobdesk start` verifica o Ubuntu, configura o SSH, ativa o wake-lock e
-  inicia o `sshd` na porta 8022.
-- `mobdesk stop` envia `SIGTERM` ao processo principal do `sshd` e libera o
-  wake-lock.
-- `mobdesk shell` inicia uma sessão interativa com `proot-distro`.
-- A TUI cancela os comandos que ela iniciou por meio de `context.Context`.
-- O filesystem do Ubuntu permanece instalado, mas não consome CPU ou bateria
-  quando não há processos ativos.
+## Risk
 
-## Risco Identificado
+The stop path directly controls the main SSH PID but has no complete inventory
+of children. SSH/PRoot shells, tmux/Zellij sessions, `nohup` processes,
+development servers and long builds may survive the TUI or SSH session and
+consume CPU, memory, network and battery. A global `pkill proot` is unsafe
+because unrelated processes may be affected.
 
-O `stop` controla diretamente apenas o PID principal do `sshd`. O projeto não
-mantém um inventário explícito dos processos filhos das sessões SSH/PRoot.
-
-Podem continuar ativos após o fechamento da TUI ou de uma sessão:
-
-- shells SSH ou PRoot;
-- sessões `tmux` ou `zellij`;
-- processos iniciados com `nohup` ou `&`;
-- servidores locais;
-- builds e ferramentas de desenvolvimento de longa duração.
-
-Esses processos podem consumir CPU, memória, rede e impedir a suspensão
-profunda do Android. O `wake-lock` ativo aumenta o impacto da bateria.
-
-Não se deve encerrar todos os processos chamados `proot` globalmente, porque
-isso poderia matar processos que não pertencem ao Mobdesk.
-
-## Verificação no Dispositivo
-
-Executar no Termux:
+Inspect processes and status in Termux:
 
 ```sh
 ps -ef | grep -E 'sshd|proot|ubuntu|tmux|zellij|go build|node|python' | grep -v grep
-```
-
-Verificar o estado reportado pelo Mobdesk:
-
-```sh
 mobdesk status --json
-```
-
-Consultar o PID registrado do SSH:
-
-```sh
 cat "$HOME/.local/share/mobdesk/ssh/sshd.pid" 2>/dev/null
-```
-
-Parar a workstation:
-
-```sh
 mobdesk stop
 ```
 
-Também é necessário fechar sessões SSH e sessões `tmux`/`zellij` abertas.
+Close SSH, tmux and Zellij sessions explicitly.
 
-## Correção Proposta
+## Proposed safe correction
 
-O comando `stop` deve:
+Future `stop` should prove that the registered PID is Mobdesk `sshd`, identify
+only descendants and their sessions, signal them in order, wait for PRoot and
+the port to close, release wake-lock on every error path, and report processes
+that could not be stopped. It must continue protecting external processes.
 
-1. validar que o PID registrado pertence ao `sshd` do Mobdesk;
-2. identificar apenas os processos descendentes desse servidor e suas sessões;
-3. enviar sinais de encerramento de forma ordenada;
-4. aguardar o fechamento das sessões e do PRoot;
-5. confirmar que a porta 8022 foi liberada;
-6. liberar o wake-lock mesmo em caminhos de erro;
-7. reportar processos que não puderam ser encerrados.
-
-A implementação deve continuar protegendo processos externos e não pode usar
-um `pkill proot` genérico.
-
-## Conclusão
-
-Há uma lacuna de ciclo de vida que pode explicar consumo elevado de bateria:
-processos filhos de sessões SSH/PRoot podem sobreviver ao encerramento da TUI
-ou do `sshd`. A confirmação deve começar pela inspeção de processos no aparelho
-e pelo estado do wake-lock. Depois disso, o `stop` deve ganhar limpeza segura e
-verificável das sessões pertencentes ao Mobdesk.
+The current conclusion is a lifecycle gap, not permission to kill all PRoot
+processes. Confirm the device process list and wake-lock state before changing
+cleanup behavior.

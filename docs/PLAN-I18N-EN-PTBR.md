@@ -1,6 +1,6 @@
 # English-First Localization and Documentation Migration Plan
 
-**Status:** Phase 5 complete; Phase 6 pending.
+**Status:** Phase 6 complete; Phase 7 pending.
 
 **Primary locale:** `en-US`
 
@@ -412,6 +412,25 @@ Acceptance criteria:
 - No internal link points to a removed Portuguese path.
 - Product decisions and out-of-scope boundaries are unchanged by translation.
 
+#### Phase 6 Result
+
+- `AGENTS.md`, maintained product plans, security/operations documents and
+  active research are English canonical documents; retained personal and
+  historical notes are explicitly marked non-authoritative.
+- Portuguese document paths named by this phase were renamed with `git mv`:
+  mission, architecture, decisions, app plans, `docs/ideas/` research and
+  `vscode-test.md`.
+- `README.md`, `.github/README.md`, contributor onboarding, support and security
+  are English, with public `README.pt-BR.md`, `.github/README.pt-BR.md`,
+  `.github/CONTRIBUTING.pt-BR.md`, `.github/SUPPORT.pt-BR.md` and
+  `SECURITY.pt-BR.md` mirrors.
+- Relative links, README/contributor path inconsistencies and the OpenCode goal
+  command now use the final canonical names. `make i18n-check` also validates
+  local Markdown links.
+- Product decisions, scope boundaries, historical statuses, JSON contracts and
+  persisted runtime paths were preserved. TODO files were intentionally not
+  edited.
+
 ### Phase 7: Release Validation
 
 **Commit:** `test: validate english first localization rollout`
@@ -463,11 +482,21 @@ Acceptance criteria:
 
 ### Operational and research documentation
 
-- Security audit and pre-release guidance.
-- SSH authentication and battery diagnostics.
-- Active ideas, research, tool catalogs and future plans.
-- Personal or historical notes, which must be marked as non-authoritative if
-  retained.
+- `docs/AUDITORIA-SEGURANCA-2026-07-25.md` — English historical audit with
+  follow-up statuses.
+- `docs/GUIA-CORRECOES-PRE-LANCAMENTO.md` — English active remediation guidance.
+- `docs/AUTENTICACAO-SSH.md` and `docs/DIAGNOSTICO_BATERIA.md` — English future
+  security and operational notes.
+- `docs/PLANO-DOCTOR.md` and `docs/PLANO-REFATORACAO-PRIORITARIA.md` — English
+  future/historical implementation plans.
+- `docs/ideas/TOOL-CATALOG.md`, `REMOTE-BROWSER-RESEARCH.md` and
+  `GLOBAL-TUI-REFRESH-PLAN.md` — English active research and ideas.
+- `docs/ideas/AROZOS-PROPOSAL.md`, `docs/ideas/CODE-SERVER.md` and
+  `vscode-test.md` — English personal or historical notes explicitly marked
+  non-authoritative.
+- `docs/ideas/todo.md` and `docs/TODO-AUDITORIA-SEGURANCA.md` — retained without
+  content changes by explicit instruction; these are the only maintained-note
+  exceptions to the English-content rule.
 
 ## 8. Validation Matrix
 

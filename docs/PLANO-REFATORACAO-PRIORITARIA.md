@@ -1,132 +1,49 @@
-# Refatoracao Prioritaria
+# Priority Refactoring Plan
 
-Este documento registra as tres primeiras frentes de refatoracao do Mobdesk.
-O objetivo e reduzir riscos reais de execucao e facilitar a evolucao do MVP sem
-reestruturar o projeto inteiro.
+**Status:** the three original workstreams are complete in the current code;
+future runtime centralization may still reduce duplication.
 
-## Principio
+This historical implementation plan records incremental refactors that preserve
+existing commands and tests. Packages are extracted only for real reusable
+behavior.
 
-As mudancas devem ser incrementais, preservando os comandos existentes e seus
-testes. Nao criar todos os pacotes previstos pela arquitetura antecipadamente.
-Cada extracao deve existir porque passou a concentrar comportamento reutilizavel
-ou regras que hoje estao duplicadas.
+## 1. Separate Termux and Ubuntu in the TUI
 
-## 1. Separar as fronteiras Termux e Ubuntu na TUI
+**Status:** completed in the current TUI.
 
-**Status:** concluído na TUI atual. A centralização futura das operações de
-runtime continua necessária para reduzir duplicação entre CLI e serviços.
+The project has two process environments: Termux, which owns PRoot, SSH and
+wake-lock, and Ubuntu through PRoot, which is the development environment and
+SSH session destination. A TUI started through SSH therefore cannot offer
+`start`, `stop`, `setup` or `update` as host actions.
 
-### Problema
+The completed direction detects runtime explicitly, keeps workspace and local
+shell actions available remotely, blocks host operations with an objective
+explanation, preserves the CLI JSON contract, and tests both runtimes.
 
-O Mobdesk possui dois ambientes de execucao:
+## 2. Centralize paths and persistent state
 
-- Termux: host de controle, com `proot-distro`, SSH e wake-lock;
-- Ubuntu via PRoot: ambiente de desenvolvimento e destino das sessoes SSH.
+**Status:** completed. `internal/paths` is the canonical source for the current
+layout and migrated consumers preserve existing files and directories.
 
-Uma TUI iniciada em uma sessao SSH roda dentro do Ubuntu. Mesmo assim, a TUI
-real chama o binario local para executar acoes como `start`, `stop`, `setup` e
-`update`. Essas acoes dependem do host Termux e nao devem ser oferecidas como
-se estivessem disponiveis no Ubuntu remoto.
+Paths include `$HOME/.local/share/mobdesk`, `$HOME/.config/mobdesk`, logs,
+setup markers, installation records, SSH configuration and `/root/workspace`.
+Consumers receive explicit HOME, PREFIX and path dependencies where needed.
+The persisted layout is not changed by this refactor, and temporary-directory
+tests do not depend on the real HOME.
 
-### Risco atual
+## 3. Move start and setup orchestration out of Cobra
 
-O usuario pode selecionar uma acao visivel na TUI, receber uma falha de
-processo e nao entender que a restricao e do ambiente, nao da configuracao da
-workstation.
+**Status:** completed. `internal/workstation.Service` orchestrates `start`,
+`stop` and setup phases with explicit paths and dependencies. Cobra adapts
+flags, streams and human/JSON rendering.
 
-### Direcao
+The service boundary keeps PID, port, lock, SSH, wake-lock, filesystem and
+process rules testable without real `sshd`, PRoot or Termux. External behavior
+of `mobdesk start`, `stop` and `setup` remains compatible.
 
-- Detectar explicitamente se a TUI esta no Termux ou no Ubuntu/PRoot.
-- No modo Ubuntu remoto, manter apenas acoes que funcionam naquele ambiente,
-  como consultar o workspace e abrir o shell local.
-- Desabilitar ou substituir acoes de host por uma explicacao objetiva de que
-  elas devem ser executadas no Termux.
-- Preservar o contrato JSON da CLI usado pela TUI, mas nao assumir que todo
-  comando esta disponivel em ambos os runtimes.
+## Historical sequence
 
-### Concluido quando
-
-- A TUI nao tenta iniciar, parar ou configurar SSH/PRoot a partir do Ubuntu.
-- A interface deixa claro quais acoes exigem o host Termux.
-- Existem testes para os dois modos de runtime.
-
-## 2. Centralizar paths e estado persistente
-
-**Status:** concluído. `internal/paths` é a fonte canônica do layout atual e
-os consumidores migrados preservam os diretórios e arquivos existentes.
-
-### Problema
-
-Paths como `$HOME/.local/share/mobdesk`, `$HOME/.config/mobdesk`, logs,
-marcadores de setup, registros de instalacao, configuracao SSH e
-`/root/workspace` sao montados diretamente em mais de um pacote.
-
-### Risco atual
-
-Uma alteracao no layout de diretorios pode deixar setup, status, instalacao e
-SSH discordando entre si. Tambem fica mais dificil testar fluxos com diretorios
-temporarios, pois parte das regras depende diretamente do ambiente.
-
-### Direcao
-
-- Criar uma pequena fonte unica para os paths do Mobdesk e seus arquivos de
-  estado.
-- Receber `HOME`, `PREFIX` e, quando necessario, paths explicitamente em vez
-  de espalhar leituras de variaveis de ambiente.
-- Definir caminhos distintos para estado do Termux e dados no Ubuntu apenas
-  onde isso for necessario.
-- Migrar gradualmente `cobra`, `status`, `install` e `logs` para essa fonte,
-  sem mudar o layout persistido nesta etapa.
-
-### Concluido quando
-
-- Cada path persistente tem uma definicao canonica.
-- Nao existem montagens repetidas dos diretorios base do Mobdesk nos pacotes
-  consumidores.
-- Os testes conseguem usar um diretorio temporario sem depender do `HOME` real.
-
-## 3. Tirar a orquestracao de start e setup da camada Cobra
-
-**Status:** concluído. `internal/workstation.Service` orquestra `start`,
-`stop` e todas as fases de `setup` com paths e dependências explícitos; Cobra
-adapta flags, streams e renderização humana/JSON.
-
-### Problema
-
-`internal/cobra/start.go` e `internal/cobra/setup.go` concentram regras de
-negocio, acesso a processos, SSH, PRoot, wake-lock, arquivos, locks, saida de
-terminal e formato JSON. Isso torna os comandos extensos e dificulta testar
-fluxos sem executar comandos reais do sistema.
-
-### Risco atual
-
-Novos recursos aumentarao o acoplamento: uma alteracao em SSH, setup ou estado
-exige editar o comando Cobra e pode afetar tanto a CLI humana quanto a TUI.
-
-### Direcao
-
-- Comecar por `start` e `stop`, que concentram PID, porta, lock, SSH e
-  wake-lock.
-- Extrair operacoes para um servico testavel, recebendo dependencias como
-  executor de comandos, paths e relogio quando necessario.
-- Manter Cobra como adaptador fino: ler flags, chamar o servico e renderizar
-  saida humana ou JSON.
-- Aplicar o mesmo padrao ao `setup` somente depois que `start/stop` estiverem
-  estaveis.
-
-### Concluido quando
-
-- A logica de iniciar e parar a workstation pode ser testada sem `sshd`,
-  `proot-distro` ou Termux reais.
-- Os comandos Cobra ficam responsaveis apenas por flags, entrada e saida.
-- O comportamento externo de `mobdesk start`, `stop` e `setup` permanece
-  compativel.
-
-## Ordem de execucao
-
-1. Corrigir o teste atual da TUI e alinhar a documentacao com a implementacao.
-2. Implementar a separacao Termux/Ubuntu na TUI.
-3. Extrair `start/stop`; depois aplicar o mesmo desenho ao `setup`.
-
-Esta ordem reduz primeiro um erro de experiencia e de runtime, depois elimina
-duplicacao estrutural e, por ultimo, torna a orquestracao testavel.
+The original work was ordered as: fix the TUI/documentation mismatch, separate
+Termux and Ubuntu behavior, then extract `start`/`stop` and apply the same
+design to setup. This record is retained for project history; the current
+architecture and [`ROADMAP.md`](ROADMAP.md) are authoritative.

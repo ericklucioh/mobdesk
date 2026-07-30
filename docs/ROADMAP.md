@@ -1,122 +1,77 @@
-# Roadmap do Mobdesk
+# Mobdesk Roadmap
 
-O Mobdesk evolui em quatro estágios. Termux continua sendo o host de controle, enquanto Ubuntu via PRoot permanece como o ambiente principal de desenvolvimento.
+Mobdesk evolves through four stages. Termux remains the control host and
+Ubuntu through PRoot remains the primary development environment.
 
-## Visão geral
+## Overview
 
-| Estágio | Categoria | Nome | Resultado |
+| Stage | Category | Name | Result |
 |---|---|---|---|
-| 1 | MVP | Bootstrap Ubuntu | Instalar e acessar Ubuntu persistente por shell e SSH |
-| 2 | MVP | Workstation TUI | Trabalhar com ferramentas textuais organizadas |
-| 3 | MVP | Ambiente persistente | Recuperar sessões, serviços e acesso remoto |
-| 4 | Aplicação | Mobdesk Manager | Administrar projetos, sessões e serviços |
+| 1 | MVP | Ubuntu bootstrap | Install and access persistent Ubuntu by shell and SSH |
+| 2 | MVP | TUI workstation | Work with organized terminal tools |
+| 3 | MVP | Persistent environment | Recover sessions, services and remote access |
+| 4 | Application | Mobdesk Manager | Manage projects, sessions and services |
 
-## Estágio 1 - Bootstrap Ubuntu
+## Stage 1 - Ubuntu bootstrap
 
-**Status:** implementação inicial concluída; validação completa em Termux real ainda pendente.
+**Status:** initial implementation complete; full real-Termux validation is
+still pending.
 
-### Objetivo
+The goal is to take a Termux installation with Go to persistent Ubuntu
+accessible on the phone and through SSH. Scope includes PRoot-Distro, OpenSSH,
+diagnostic tools, Ubuntu ARM64, workspace and local state, dedicated SSH,
+safe start/stop, `mobdesk shell`, `mobdesk status`, initial tool profiles,
+local addresses, wake-lock when available, and resumable setup.
 
-Levar o usuário de um Termux com Go instalado a um Ubuntu persistente acessível pelo celular e por SSH.
+Out of scope: TUI, projects, services, persistent sessions, `doctor`, Tailscale
+and port forwarding.
 
-### Escopo
+## Stage 2 - TUI workstation
 
-- instalar `proot-distro`, OpenSSH e ferramentas de diagnóstico;
-- instalar ou verificar Ubuntu ARM64 persistente;
-- criar workspace e estado local;
-- configurar SSH dedicado do Mobdesk;
-- iniciar e parar o servidor com segurança;
-- abrir o shell Ubuntu local com `mobdesk shell`;
-- consultar o estado do ambiente com `mobdesk status`;
-- instalar os perfis iniciais de desenvolvimento com `mobdesk install`;
-- detectar endereços locais e manter o wake-lock quando disponível;
-- repetir e retomar o setup sem apagar dados.
+**Status:** initial implementation in progress; real-Termux validation is still
+pending.
 
-### Fora deste estágio
+The goal is an organized text interface for working in Ubuntu on the phone or
+through SSH. Scope includes status, setup, start, stop and update screens,
+initial tool profiles, keyboard/mouse/mobile terminal support, remote-session
+identification and host-action blocking, optional app configuration profiles
+starting with Neovim/LazyVim, versioned JSON CLI operations, separate app and
+configuration states, and touch-first details/actions/confirmation popups.
 
-- TUI;
-- projetos, serviços e sessões persistentes;
-- `doctor`;
-- Tailscale e encaminhamento de portas.
+The criterion is that users can study and develop without a long sequence of
+internal commands.
 
-## Estágio 2 - Workstation TUI
+## Stage 3 - Persistent and remote environment
 
-**Status:** implementação inicial em andamento; validação em Termux real ainda
-pendente.
+The goal is to reconnect and continue after a network change, disconnect or
+screen-off event. Planned scope includes tmux sessions, automatic recovery,
+complete `status` and `doctor`, logs and health checks, optional Tailscale, port
+forwarding, backups, and battery/background guidance for HyperOS.
 
-### Objetivo
+The criterion is that a project can be started, stopped, reconnected and
+continued without rebuilding its environment.
 
-Oferecer uma interface textual organizada para trabalhar no Ubuntu pelo celular ou por SSH.
+## Stage 4 - Mobdesk Manager
 
-### Escopo
+The goal is a local management center for Termux, PRoot and Ubuntu. Planned
+scope includes projects, environments, installed tools, sessions, services,
+ports, tunnels, logs, diagnostics, recovery, backups, controlled updates and
+observable persisted configuration.
 
-- TUI para status, setup, start, stop, shell e atualização;
-- catálogo e instalação dos perfis iniciais de ferramentas;
-- suporte a teclado, mouse e terminais móveis;
-- identificação da sessão SSH no Ubuntu e bloqueio das ações exclusivas do
-  host Termux.
-- perfis opcionais de configuração para apps, começando por Neovim/LazyVim.
-- comandos CLI para instalar, desinstalar e aplicar/remover configurações com
-  contrato JSON versionado.
-- status distingue apps detectados, apps gerenciados e configuração aplicada,
-  modificada ou em conflito.
-- popup touch-first para detalhes, ações e confirmações destrutivas dos apps.
+## Evolution principles
 
-### Critério
+1. Each stage preserves the previous stage.
+2. CLI and TUI use the same internal services.
+3. Plugins, Nix and multiple users are not anticipated without validated need.
+4. The next stage starts only after the current flow is validated on real
+   Termux.
 
-O usuário consegue estudar e desenvolver no ambiente sem depender de uma sequência extensa de comandos internos.
+## Outside the core
 
-## Estágio 3 - Ambiente persistente e remoto
-
-### Objetivo
-
-Permitir reconectar e continuar o trabalho após troca de rede, desconexão ou tela desligada.
-
-### Escopo
-
-- sessões persistentes com tmux;
-- inicialização automática e recuperação;
-- `status` e `doctor` completos;
-- logs e health checks;
-- Tailscale opcional;
-- encaminhamento de portas;
-- backups;
-- orientações de bateria e execução em segundo plano no HyperOS.
-
-### Critério
-
-O usuário consegue iniciar, parar, reconectar e continuar um projeto sem reconstruir o ambiente.
-
-## Estágio 4 - Mobdesk Manager
-
-### Objetivo
-
-Transformar os comandos do Termux, PRoot e Ubuntu em uma central local de gerenciamento.
-
-### Escopo
-
-- projetos e ambientes;
-- ferramentas instaladas;
-- sessões e serviços;
-- portas, túneis e logs;
-- diagnóstico e recuperação;
-- backups;
-- atualização e remoção controladas;
-- configuração persistida e observável.
-
-## Princípios de evolução
-
-1. Cada estágio deve preservar o funcionamento do anterior.
-2. A CLI e a TUI devem usar os mesmos serviços internos.
-3. Não antecipar plugins, Nix ou múltiplos usuários sem necessidade validada.
-4. O próximo estágio só começa depois de o fluxo atual ser validado no Termux real.
-
-## Fora do núcleo
-
-- Docker real;
-- VM Linux;
-- desktop gráfico completo;
-- Nix como requisito;
-- Neko como requisito;
-- múltiplos usuários;
-- cargas de produção pesada.
+- real Docker;
+- a Linux VM;
+- a complete graphical desktop;
+- Nix as a requirement;
+- Neko as a requirement;
+- multiple users;
+- heavy production workloads.

@@ -1,84 +1,84 @@
 # Mobdesk
 
-[Português](README.md) | [English](README.en.md)
+[English](README.md) | [Português](README.pt-BR.md)
 
-## Leve sua workstation Linux no bolso
+## Your Linux workstation, in your pocket
 
-O Mobdesk transforma um celular Android em um ambiente pessoal de desenvolvimento. Em vez de depender dos computadores da faculdade, de uma máquina compartilhada ou de várias contas abertas em equipamentos de terceiros, você leva seus projetos, suas ferramentas e seus dados com você.
+Mobdesk turns an Android phone into a personal development environment. Instead of depending on university computers, shared machines, or leaving personal accounts signed in on someone else’s device, you carry your projects, tools, and data with you.
 
-Com o Mobdesk, o celular funciona como um pequeno servidor de desenvolvimento:
+Mobdesk turns the phone into a small development server:
 
 ```text
 Android
-└── Termux — controle do aparelho
-    └── Ubuntu persistente — ambiente de trabalho
+└── Termux — device control layer
+    └── Persistent Ubuntu — development environment
 ```
 
-O Ubuntu roda no próprio celular por meio do PRoot-Distro. Você pode trabalhar diretamente no Termux ou conectar outro computador pela rede local usando SSH. Seus arquivos continuam no aparelho sob seu controle.
+Ubuntu runs on the phone through PRoot-Distro. You can work directly in Termux or connect from another computer on the same network over SSH. Your files remain on your own device.
 
-## Para que serve?
+## What is it for?
 
-O Mobdesk foi pensado para estudantes, desenvolvedores e profissionais que precisam de um ambiente Linux portátil para:
+Mobdesk is designed for students, developers, and professionals who need a portable Linux environment to:
 
-- estudar programação em C, JavaScript, HTML, React, Java, Go ou Python;
-- criar e executar projetos pequenos e médios para estudo e desenvolvimento;
-- iniciar servidores locais, como `npm run dev`, e acessá-los pelo navegador;
-- usar o celular como uma workstation pessoal durante aulas, viagens ou deslocamentos;
-- acessar o mesmo ambiente pelo celular ou por um computador na mesma rede;
-- manter código, configurações e sessões sem fazer login em computadores compartilhados.
+- study C, JavaScript, HTML, React, Java, Go, or Python;
+- create and run small and medium-sized projects for learning and development;
+- start local development servers, such as `npm run dev`, and open them in a browser;
+- use a phone as a personal workstation during classes, travel, or commutes;
+- access the same environment from the phone or from a computer on the same network;
+- keep code, configuration, and sessions without signing in to shared computers.
 
-O objetivo não é substituir uma máquina de produção, uma VM completa ou um desktop gráfico. O Mobdesk é uma workstation móvel, leve e controlada pelo usuário para desenvolvimento, estudo e servidores locais.
+Mobdesk is not intended to replace a production machine, a full virtual machine, or a graphical desktop. It is a lightweight, user-controlled mobile workstation for development, learning, and local servers.
 
-## Por que usar o Mobdesk?
+## Why Mobdesk?
 
-### Seu ambiente acompanha você
+### Your environment travels with you
 
-O ambiente Ubuntu fica persistente no celular. Você não precisa reconstruir sua configuração sempre que trocar de sala, rede ou computador.
+The Ubuntu environment persists on the phone. You do not have to rebuild your setup every time you change rooms, networks, or computers.
 
-### Seus dados permanecem seus
+### Your data stays yours
 
-Projetos e configurações ficam no aparelho. Isso reduz a necessidade de deixar GitHub, e-mail, mensageiros ou outras contas pessoais conectadas em computadores compartilhados.
+Projects and configuration remain on the device. This reduces the need to leave GitHub, email, messaging, or other personal accounts signed in on shared computers.
 
-### Um celular, várias possibilidades
+### One phone, many workflows
 
-Você pode editar código no celular, abrir uma sessão SSH em outro computador e publicar um servidor local para teste no navegador — tudo usando o mesmo ambiente.
+Edit code on the phone, open an SSH session from another computer, and publish a local development server for browser testing — all from the same environment.
 
-### Sem root e sem Docker no celular
+### No root and no Docker on the phone
 
-O Mobdesk usa Termux e PRoot-Distro. Não exige root, máquina virtual ou Docker real no Android.
+Mobdesk uses Termux and PRoot-Distro. It does not require root access, a virtual machine, or real Docker on Android.
 
-## O que está disponível agora?
+## What is available today?
 
-O MVP atual concentra-se no bootstrap e na TUI do ambiente:
+The current MVP focuses on environment bootstrapping and its TUI:
 
-- instalação do Ubuntu persistente via PRoot-Distro;
-- instalação e configuração do OpenSSH no Termux;
-- acesso SSH pela porta `8022`;
-- abertura da sessão diretamente no Ubuntu;
-- detecção do endereço IP local;
-- configuração de senha para o acesso SSH;
-- operações repetíveis, sem reinstalar o que já existe;
-- comandos `setup`, `start`, `stop`, `shell`, `status`, `install`, `update` e
-  `tui`.
+- persistent Ubuntu installation through PRoot-Distro;
+- OpenSSH installation and configuration in Termux;
+- SSH access on port `8022`;
+- sessions opened directly inside Ubuntu;
+- local IP address detection;
+- password setup for SSH access;
+- repeatable operations that do not reinstall existing components;
+- `setup`, `start`, `stop`, `shell`, `status`, `install`, `update`, and `tui`
+  commands.
 
-A TUI atual oferece status, setup, ferramentas, shell e atualização. Projetos,
-sessões persistentes e a central web permanecem para os próximos estágios.
-Consulte o [roadmap](../docs/ROADMAP.md) para acompanhar essa evolução.
+The current TUI provides status, setup, tools, shell, and update screens.
+Projects, persistent sessions, and the web control center remain later stages.
+See the [roadmap](../docs/ROADMAP.md) for the planned evolution.
 
-## Instalação para usuários finais
+## Installation for end users
 
-### Requisitos
+### Requirements
 
-- um celular Android com arquitetura ARM64, como a maioria dos aparelhos atuais;
-- Termux instalado por uma fonte confiável, preferencialmente [F-Droid](https://f-droid.org/packages/com.termux/) ou pelos [releases oficiais](https://github.com/termux/termux-app/releases);
-- aproximadamente 1,5 GB livres para o Ubuntu base e espaço adicional para seus projetos;
-- uma rede Wi-Fi comum se você quiser acessar o celular por outro computador.
+- an Android phone with ARM64 architecture, as found on most current devices;
+- Termux installed from a trusted source, preferably [F-Droid](https://f-droid.org/packages/com.termux/) or the [official releases](https://github.com/termux/termux-app/releases);
+- approximately 1.5 GB of free storage for the base Ubuntu installation, plus additional space for your projects;
+- a regular Wi-Fi network if you want to connect from another computer.
 
-O Mobdesk não requer root. O desempenho depende da memória, temperatura, bateria e das limitações de segundo plano do Android/HyperOS.
+Mobdesk does not require root. Performance depends on the phone’s memory, temperature, battery, and Android/HyperOS background-process limits.
 
-### 1. Instale o Mobdesk
+### 1. Install Mobdesk
 
-Abra o Termux e execute:
+Open Termux and run:
 
 ```bash
 pkg update
@@ -86,85 +86,87 @@ pkg install -y golang git
 go install github.com/ericklucioh/mobdesk/cmd/mobdesk@latest
 ```
 
-### 2. Configure o ambiente
+### 2. Set up the environment
 
-Na primeira execução, use o binário instalado pelo Go:
+On the first run, use the binary installed by Go:
 
 ```bash
 ~/go/bin/mobdesk setup
 ```
 
-O setup instala os componentes necessários no Termux, baixa o Ubuntu, cria o workspace persistente e solicita a senha usada no acesso SSH. Ao final, o comando `mobdesk` fica disponível globalmente.
+Setup installs the required Termux components, downloads Ubuntu, creates the persistent workspace, and asks for the password used for SSH access. At the end, the `mobdesk` command is available globally.
 
-### 3. Inicie sua workstation
+### 3. Start your workstation
 
 ```bash
 mobdesk start
 ```
 
-O Mobdesk inicia o SSH na porta `8022`, mantém o aparelho acordado durante o uso e abre uma sessão Ubuntu no próprio Termux.
+Mobdesk starts SSH on port `8022`, keeps the device awake while it is in use, and opens an Ubuntu session directly in Termux.
 
-Para acessar a workstation a partir de outro computador conectado à mesma rede, use o comando SSH exibido pelo Mobdesk, por exemplo:
+To connect from another computer on the same network, use the SSH command displayed by Mobdesk, for example:
 
 ```bash
 ssh -p 8022 android@192.168.1.50
 ```
 
-Substitua o endereço pelo IP mostrado no seu aparelho e informe a senha configurada no setup. A conexão SSH será direcionada diretamente para o Ubuntu.
+Replace the address with the IP shown on your phone and enter the password configured during setup. The SSH connection is forwarded directly into Ubuntu.
 
-### 4. Pare quando terminar
+### 4. Stop when you are done
 
-Para sair apenas da sessão Ubuntu, execute:
+To leave only the Ubuntu session, run:
 
 ```bash
 exit
 ```
 
-Para desligar o servidor SSH:
+To stop the SSH server:
 
 ```bash
 mobdesk stop
 ```
 
-## Entenda o fluxo
+## How the flow works
 
 ```text
 mobdesk setup
     ↓
-Termux + PRoot-Distro + Ubuntu persistente
+Termux + PRoot-Distro + persistent Ubuntu
     ↓
 mobdesk start
     ↓
-SSH :8022 → sessão Ubuntu
+SSH :8022 → Ubuntu session
     ↓
-projetos, editores e servidores locais
+projects, editors, and local development servers
 ```
 
-O Termux é o host de controle. O Ubuntu é o ambiente de desenvolvimento. O PRoot melhora a compatibilidade com ferramentas Linux, mas não cria um kernel separado nem oferece o isolamento de uma VM ou de um container real.
+Termux is the control host. Ubuntu is the development environment. PRoot improves Linux userland compatibility, but it does not create a separate kernel or provide the isolation of a virtual machine or real container.
 
-## Limites importantes
+## Important limitations
 
-O Mobdesk é adequado para estudo, desenvolvimento e servidores leves. Ele não foi projetado para:
+Mobdesk is suitable for learning, development, and lightweight servers. It is not designed for:
 
-- cargas pesadas de produção;
-- testes de carga ou performance em escala;
-- Docker real, systemd ou uma VM Linux completa;
-- desktop gráfico completo com aceleração garantida;
-- acesso privilegiado a dispositivos ou módulos do kernel.
+- heavy production workloads;
+- large-scale load or performance testing;
+- real Docker, systemd, or a complete Linux VM;
+- a full graphical desktop with guaranteed acceleration;
+- privileged device access or kernel modules.
 
-O Android pode suspender ou encerrar o Termux. Para uma experiência mais estável, permita que o Termux seja executado em segundo plano nas configurações de bateria do aparelho.
+Android may suspend or terminate Termux. For a more stable experience, allow Termux to run in the background in the phone’s battery settings.
 
-## Segurança
+## Security
 
-Use SSH apenas em redes confiáveis. Não exponha a porta `8022` diretamente na internet. Para acesso remoto fora da rede local, prefira uma rede privada como Tailscale ou um túnel SSH. Faça backups dos projetos importantes fora do celular.
+Use SSH only on trusted networks. Do not expose port `8022` directly to the public internet. For remote access outside the local network, prefer a private network such as Tailscale or an SSH tunnel. Keep important projects backed up outside the phone.
 
-## Documentação
+## Documentation
 
-- [Missão do produto](../docs/MISSAO.md)
+- [Product mission](../docs/MISSION.md)
 - [Roadmap](../docs/ROADMAP.md)
-- [Arquitetura e limites](../docs/ARQUITETURA.md)
-- [Contribuição](CONTRIBUTING.md)
+- [Architecture and limitations](../docs/ARCHITECTURE.md)
+- [Contributing](CONTRIBUTING.md)
 
-## Licença
+For Brazilian Portuguese, see [README.pt-BR.md](README.pt-BR.md).
 
-O Mobdesk é distribuído sob a [licença MIT](../LICENSE).
+## License
+
+Mobdesk is distributed under the [MIT license](../LICENSE).

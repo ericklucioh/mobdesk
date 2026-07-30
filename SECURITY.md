@@ -1,18 +1,25 @@
-# Segurança
+# Security Policy
 
-## Relatar uma vulnerabilidade
+## Reporting a vulnerability
 
-Não publique detalhes de vulnerabilidades envolvendo SSH, autenticação, execução de comandos, scripts de instalação ou exposição de portas em issues públicas.
+Do not publish details of vulnerabilities involving SSH, authentication,
+command execution, installation scripts, updates, or exposed ports in public
+issues.
 
-Envie o relato por uma comunicação privada aos mantenedores do repositório, incluindo:
+Use a private communication channel with the repository maintainers. Include:
 
-- versão do Mobdesk;
-- versão do Android e do Termux;
-- modelo do dispositivo;
-- passos para reproduzir;
-- impacto observado;
-- logs sem senhas, chaves privadas ou tokens.
+- Mobdesk version;
+- Android and Termux versions;
+- device model;
+- reproduction steps;
+- observed impact;
+- logs with passwords, private keys and tokens removed.
 
-Até existir uma política de versões suportadas, as correções são aplicadas à versão em desenvolvimento e à release estável mais recente quando tecnicamente possível.
+Until a supported-version policy exists, fixes are applied to the development
+version and, when technically possible, the latest stable release.
 
-O SSH do Mobdesk deve ser usado em rede confiável ou por túnel seguro. Não exponha a porta diretamente na internet.
+Use Mobdesk SSH only on trusted networks or through a secure tunnel. Never
+expose port `8022` directly to the public internet.
+
+See [the Brazilian Portuguese security policy](SECURITY.pt-BR.md) for the
+translated public version.
