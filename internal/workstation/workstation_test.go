@@ -46,7 +46,7 @@ func TestStartOrchestratesWorkstationWithoutSystemCommands(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !ran || !configured || !locked || !started {
-		t.Fatalf("orquestração incompleta: run=%t config=%t lock=%t start=%t", ran, configured, locked, started)
+		t.Fatalf("incomplete orchestration: run=%t config=%t lock=%t start=%t", ran, configured, locked, started)
 	}
 	if len(info.Addresses) != 1 || info.Addresses[0] != "192.168.1.2" || info.Username != "termux" {
 		t.Fatalf("dados de acesso inesperados: %+v", info)
@@ -73,7 +73,7 @@ func TestRenderSSHConfigIsDedicatedToMobdesk(t *testing.T) {
 	config := renderSSHConfig(p)
 	for _, expected := range []string{"Port 8022", "PidFile /home/user/.local/share/mobdesk/ssh/sshd.pid", "ForceCommand /home/user/.local/share/mobdesk/ssh/mobdesk-ssh-shell", "PasswordAuthentication yes"} {
 		if !strings.Contains(config, expected) {
-			t.Fatalf("configuração não contém %q:\n%s", expected, config)
+			t.Fatalf("configuration does not contain %q:\n%s", expected, config)
 		}
 	}
 }
@@ -89,7 +89,7 @@ func TestSSHWrapperUsesConfiguredInteractiveBash(t *testing.T) {
 	}
 	for _, expected := range []string{"bash --rcfile /root/.config/mobdesk/bashrc -i", p.UbuntuShellConfig()} {
 		if !strings.Contains(string(contents), expected) {
-			t.Fatalf("wrapper não contém %q:\n%s", expected, contents)
+			t.Fatalf("wrapper does not contain %q:\n%s", expected, contents)
 		}
 	}
 }
@@ -99,14 +99,14 @@ func TestRenderUbuntuShellConfigEnablesCompletionAndPurplePrompt(t *testing.T) {
 	config := renderUbuntuShellConfig(p)
 	for _, expected := range []string{"/usr/share/bash-completion/bash_completion", `export PATH="$HOME/.local/bin:$PATH"`, `export SHELL="$HOME/.config/mobdesk/shell"`, `PS1='\[\e[35m\]`, `\u@\h`, p.UbuntuShellLauncher()} {
 		if !strings.Contains(config, expected) {
-			t.Fatalf("configuração não contém %q:\n%s", expected, config)
+			t.Fatalf("configuration does not contain %q:\n%s", expected, config)
 		}
 	}
 	if !strings.Contains(config, "exec /bin/bash --rcfile \"/root/.config/mobdesk/bashrc\" -i \"$@\"") {
-		t.Fatalf("launcher do shell não foi configurado:\n%s", config)
+		t.Fatalf("shell launcher was not configured:\n%s", config)
 	}
 }
 
 type fakeProcess struct{}
 
-func (fakeProcess) Signal(os.Signal) error { return errors.New("não deve receber sinal") }
+func (fakeProcess) Signal(os.Signal) error { return errors.New("signal must not be received") }

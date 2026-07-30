@@ -55,9 +55,9 @@ func runLogsOptions(jsonOutput bool, name string, lines int, localizers ...i18n.
 	}
 	if len(snapshot.Logs) == 0 {
 		if name != "" {
-			return fmt.Errorf("%s", localized(localizers, i18n.OutputLogsNameEmpty, map[string]any{"Name": name}, fmt.Sprintf("nenhum log encontrado para %q", name)))
+			return fmt.Errorf("%s", localized(localizers, i18n.OutputLogsNameEmpty, map[string]any{"Name": name}))
 		}
-		fmt.Println(localized(localizers, i18n.OutputLogsEmpty, nil, "Nenhum log de instalação registrado."))
+		fmt.Println(localized(localizers, i18n.OutputLogsEmpty, nil))
 		return nil
 	}
 	for index, record := range snapshot.Logs {
@@ -69,16 +69,16 @@ func runLogsOptions(jsonOutput bool, name string, lines int, localizers ...i18n.
 			version = record.State
 		}
 		fmt.Printf("[%s] %s (%s)\n", record.State, record.Name, version)
-		fmt.Println(localized(localizers, i18n.OutputLogsLabel, map[string]any{"Path": record.LogPath}, "Log: "+record.LogPath))
+		fmt.Println(localized(localizers, i18n.OutputLogsLabel, map[string]any{"Path": record.LogPath}))
 		if record.LastError != "" {
-			fmt.Println(localized(localizers, i18n.OutputLogsError, map[string]any{"Detail": record.LastError}, "Erro: "+record.LastError))
+			fmt.Println(localized(localizers, i18n.OutputLogsError, map[string]any{"Detail": record.LastError}))
 		}
 		if record.Missing {
-			fmt.Println(localized(localizers, i18n.OutputLogsMissing, nil, "Conteúdo: arquivo ausente"))
+			fmt.Println(localized(localizers, i18n.OutputLogsMissing, nil))
 			continue
 		}
 		if strings.TrimSpace(record.Content) == "" {
-			fmt.Println(localized(localizers, i18n.OutputLogsContentEmpty, nil, "Conteúdo: vazio"))
+			fmt.Println(localized(localizers, i18n.OutputLogsContentEmpty, nil))
 			continue
 		}
 		fmt.Println(record.Content)

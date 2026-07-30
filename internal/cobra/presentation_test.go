@@ -18,7 +18,7 @@ func TestRootHelpUsesSelectedLocale(t *testing.T) {
 		avoid  string
 	}{
 		{name: "english", locale: "en-US", want: "Usage:", avoid: "Uso:"},
-		{name: "portuguese", locale: "pt-BR", want: "Uso:", avoid: "Usage:"},
+		{name: "brazilian portuguese", locale: "pt-BR", want: "Uso:", avoid: "Usage:"},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -47,10 +47,11 @@ func TestRootHelpUsesSelectedLocale(t *testing.T) {
 }
 
 func TestTextOutputUsesSelectedLocale(t *testing.T) {
-	english := localized([]i18n.Localizer{i18n.New(i18n.LocaleENUS)}, i18n.OutputUpdateAvailable, map[string]any{"Current": "1", "Latest": "2"}, "")
-	portuguese := localized([]i18n.Localizer{i18n.New(i18n.LocalePTBR)}, i18n.OutputUpdateAvailable, map[string]any{"Current": "1", "Latest": "2"}, "")
-	if english == portuguese || !strings.Contains(english, "Update available") || !strings.Contains(portuguese, "Atualização disponível") {
-		t.Fatalf("localized text = %q and %q", english, portuguese)
+	data := map[string]any{"Current": "1", "Latest": "2"}
+	english := localized([]i18n.Localizer{i18n.New(i18n.LocaleENUS)}, i18n.OutputUpdateAvailable, data)
+	brazilianPortuguese := localized([]i18n.Localizer{i18n.New(i18n.LocalePTBR)}, i18n.OutputUpdateAvailable, data)
+	if english != i18n.New(i18n.LocaleENUS).Text(i18n.OutputUpdateAvailable, data) || brazilianPortuguese != i18n.New(i18n.LocalePTBR).Text(i18n.OutputUpdateAvailable, data) || english == brazilianPortuguese {
+		t.Fatalf("localized text = %q and %q", english, brazilianPortuguese)
 	}
 }
 
@@ -93,16 +94,16 @@ func TestInvalidLocaleJSONIsValidAndLocalizedByFallback(t *testing.T) {
 
 func TestRootCommandsDoNotShareLocaleState(t *testing.T) {
 	english := NewRootCmdWithEnv(func(string) string { return "en-US" })
-	portuguese := NewRootCmdWithEnv(func(string) string { return "pt-BR" })
+	brazilianPortuguese := NewRootCmdWithEnv(func(string) string { return "pt-BR" })
 	var englishOutput, portugueseOutput bytes.Buffer
 	english.SetOut(&englishOutput)
 	english.SetArgs([]string{"--help"})
-	portuguese.SetOut(&portugueseOutput)
-	portuguese.SetArgs([]string{"--help"})
+	brazilianPortuguese.SetOut(&portugueseOutput)
+	brazilianPortuguese.SetArgs([]string{"--help"})
 	if err := english.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	if err := portuguese.Execute(); err != nil {
+	if err := brazilianPortuguese.Execute(); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(englishOutput.String(), "Usage:") || !strings.Contains(portugueseOutput.String(), "Uso:") {

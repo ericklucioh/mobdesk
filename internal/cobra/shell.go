@@ -32,7 +32,7 @@ func runShell(ctx context.Context, p paths.Paths, localizers ...i18n.Localizer) 
 		return err
 	}
 	if err := command.Run(); err != nil {
-		return fmt.Errorf("%s", localized(localizers, i18n.ErrorUbuntuUnavailable, map[string]any{"Detail": err.Error()}, "ubuntu não está disponível; execute mobdesk setup: "+err.Error()))
+		return fmt.Errorf("%s", localized(localizers, i18n.ErrorUbuntuUnavailable, map[string]any{"Detail": err.Error()}))
 	}
 	return runInteractive(ctx, "proot-distro", "login", "ubuntu", "--", "bash", "--rcfile", p.UbuntuShellConfig(), "-i")
 }
@@ -41,9 +41,9 @@ func ensureSetupCompleted(p paths.Paths, localizers ...i18n.Localizer) error {
 	path := p.SetupDone()
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("%s", localized(localizers, i18n.ErrorSetupIncomplete, nil, "setup ainda não foi concluído; execute: mobdesk setup"))
+			return fmt.Errorf("%s", localized(localizers, i18n.ErrorSetupIncomplete, nil))
 		}
-		return fmt.Errorf("verificar estado do setup: %w", err)
+		return fmt.Errorf("check setup state: %w", err)
 	}
 	return nil
 }
@@ -56,7 +56,7 @@ func runInteractive(ctx context.Context, name string, args ...string) error {
 	}
 	ptmx, err := pty.Start(command)
 	if err != nil {
-		return fmt.Errorf("iniciar PTY para %q: %w", name, err)
+		return fmt.Errorf("start PTY for %q: %w", name, err)
 	}
 	defer func() { _ = ptmx.Close() }()
 	_ = pty.InheritSize(os.Stdin, ptmx)
@@ -79,10 +79,10 @@ func runInteractive(ctx context.Context, name string, args ...string) error {
 		return ctx.Err()
 	}
 	if waitErr := command.Wait(); waitErr != nil {
-		return fmt.Errorf("comando interativo %q falhou: %w", name, waitErr)
+		return fmt.Errorf("interactive command %q failed: %w", name, waitErr)
 	}
 	if copyErr != nil {
-		return fmt.Errorf("ler saída interativa %q: %w", name, copyErr)
+		return fmt.Errorf("read interactive output %q: %w", name, copyErr)
 	}
 	select {
 	case <-inputDone:

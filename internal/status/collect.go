@@ -702,7 +702,7 @@ func directoryExists(path string) bool {
 }
 
 func detectTermuxRuntime(prefix string) bool {
-	// A raiz visível do PRoot é mais confiável que variáveis do host herdadas.
+	// The visible PRoot root is more reliable than inherited host variables.
 	osRelease, err := os.ReadFile("/etc/os-release")
 	if err == nil && strings.Contains(string(osRelease), "ID=ubuntu") {
 		return false

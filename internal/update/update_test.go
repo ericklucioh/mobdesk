@@ -156,7 +156,7 @@ func TestApplyRestoresBackupWhenActiveBinaryFailsValidation(t *testing.T) {
 		}
 		return nil
 	}})
-	if err == nil || !strings.Contains(err.Error(), "versão anterior restaurada") {
+	if err == nil || !strings.Contains(err.Error(), "previous version restored") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	active, readErr := os.ReadFile(path)
@@ -286,8 +286,8 @@ func TestApplyRejectsEmptyBinary(t *testing.T) {
 				},
 			}})
 		case "/download/mobdesk":
-			// O checksum corresponde ao conteúdo vazio; mesmo assim o updater
-			// deve recusar substituir um executável válido por zero bytes.
+			// The checksum matches empty content, but the updater must still
+			// refuse to replace a valid executable with zero bytes.
 		case "/download/checksums":
 			_, _ = fmt.Fprintf(response, "%s  mobdesk-linux-arm64\n", strings.Repeat("0", sha256.Size*2))
 		}
@@ -306,7 +306,7 @@ func TestApplyRejectsEmptyBinary(t *testing.T) {
 		GOOS:           "linux",
 		GOARCH:         "arm64",
 	})
-	if err == nil || !strings.Contains(err.Error(), "download do binário vazio") {
+	if err == nil || !strings.Contains(err.Error(), "binary download is empty") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	unchanged, readErr := os.ReadFile(path)
@@ -326,7 +326,7 @@ func TestDownloadChecksumRejectsAmbiguousManifestLine(t *testing.T) {
 	defer server.Close()
 
 	_, err := downloadChecksum(context.Background(), server.Client(), server.URL, "mobdesk-linux-arm64")
-	if err == nil || !strings.Contains(err.Error(), "não encontrado") {
+	if err == nil || !strings.Contains(err.Error(), "not found") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

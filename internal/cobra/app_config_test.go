@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +19,7 @@ func TestConfigOperationResultIncludesConfigContract(t *testing.T) {
 		Success:       true,
 		State:         install.ConfigStateApplied,
 		Changed:       true,
-		Message:       "Configuração aplicada",
+		Message:       "Configuration applied",
 		Paths:         []string{"/root/.config/nvim"},
 		StorageEstimate: &install.StorageEstimate{
 			ConfigMinMB: 100,
@@ -46,7 +47,8 @@ func TestConfigEmitsValidJSONWhenRuntimeIsBlocked(t *testing.T) {
 	defer func() { configApplyJSON = previous }()
 
 	output, err := captureStdout(func() error { return runConfigOperation(context.Background(), "neovim", "apply", true, false) })
-	if err == nil || !strings.Contains(err.Error(), "deve ser executado no Termux") {
+	wantError := i18n.New(i18n.LocaleENUS).Text(i18n.ErrorTermuxRequired, map[string]any{"Operation": "mobdesk config apply"})
+	if err == nil || err.Error() != wantError {
 		t.Fatalf("unexpected runtime error: %v", err)
 	}
 	var result operationResult

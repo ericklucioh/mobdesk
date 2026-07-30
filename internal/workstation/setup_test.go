@@ -36,21 +36,21 @@ func TestSetupOrchestratesAllPhasesWithExplicitPaths(t *testing.T) {
 	}
 	for _, phase := range result.Phases {
 		if _, err := os.Stat(p.SetupPhase(phase)); err != nil {
-			t.Fatalf("marker %s ausente: %v", phase, err)
+			t.Fatalf("marker %s missing: %v", phase, err)
 		}
 	}
 	if _, err := os.Stat(p.SetupDone()); err != nil {
-		t.Fatalf("setup.done ausente: %v", err)
+		t.Fatalf("setup.done missing: %v", err)
 	}
 	wantPrefix := []string{"pkg update", "pkg upgrade -y -o Dpkg::Options::=--force-confold", "pkg install -y -o Dpkg::Options::=--force-confold proot-distro openssh net-tools", "proot-distro login ubuntu -- true", "proot-distro install ubuntu", "proot-distro login ubuntu -- mkdir -p /root/workspace /root/.config/mobdesk /root/.local/share/mobdesk", "passwd "}
 	if len(commands) != len(wantPrefix)+2 || strings.Join(commands[:len(wantPrefix)], "\n") != strings.Join(wantPrefix, "\n") {
 		t.Fatalf("ordem de comandos inesperada:\n%v", commands)
 	}
 	if commands[7] != "proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
-		t.Fatalf("instalação do autocomplete inesperada: %q", commands[7])
+		t.Fatalf("unexpected completion installation: %q", commands[7])
 	}
 	if !strings.Contains(commands[8], "bash_completion") || !strings.Contains(commands[8], "PATH=\"$HOME/.local/bin:$PATH\"") || !strings.Contains(commands[8], "PS1=") {
-		t.Fatalf("configuração do shell ausente: %q", commands[8])
+		t.Fatalf("shell configuration missing: %q", commands[8])
 	}
 }
 
@@ -83,10 +83,10 @@ func TestSetupReconcilesShellConfigForExistingSetup(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(p.SetupDone()); err != nil {
-		t.Fatalf("setup.done ausente: %v", err)
+		t.Fatalf("setup.done missing: %v", err)
 	}
 	if !reconciled {
-		t.Fatal("configuração do shell existente não foi reconciliada")
+		t.Fatal("existing shell configuration was not reconciled")
 	}
 }
 
@@ -133,7 +133,7 @@ func TestSetupRefusesSymlinkedPhaseMarker(t *testing.T) {
 	}
 
 	err := service.markSetupPhase("directories")
-	if err == nil || !strings.Contains(err.Error(), "link simbólico") {
+	if err == nil || !strings.Contains(err.Error(), "symbolic link") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	contents, readErr := os.ReadFile(target)

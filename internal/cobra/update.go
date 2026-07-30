@@ -64,14 +64,14 @@ func runUpdateOptions(ctx context.Context, checkOnly, jsonOutput bool, localizer
 		return err
 	}
 	if !result.Updated {
-		fmt.Println(localized(localizers, i18n.OutputUpdateCurrent, map[string]any{"Version": result.CurrentVersion}, fmt.Sprintf("Mobdesk %s já está atualizado.", result.CurrentVersion)))
+		fmt.Println(localized(localizers, i18n.OutputUpdateCurrent, map[string]any{"Version": result.CurrentVersion}))
 		return nil
 	}
 	if checkOnly {
-		fmt.Println(localized(localizers, i18n.OutputUpdateAvailable, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion}, fmt.Sprintf("Atualização disponível: %s → %s", result.CurrentVersion, result.LatestVersion)))
+		fmt.Println(localized(localizers, i18n.OutputUpdateAvailable, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion}))
 		return nil
 	}
-	fmt.Println(localized(localizers, i18n.OutputUpdateUpdated, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion}, fmt.Sprintf("Mobdesk atualizado: %s → %s", result.CurrentVersion, result.LatestVersion)))
+	fmt.Println(localized(localizers, i18n.OutputUpdateUpdated, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion}))
 	return nil
 }
 
@@ -91,15 +91,15 @@ func updateOperationResult(result update.Result, updateErr error, checkOnly bool
 	}
 	if !result.Updated {
 		response.State = "current"
-		response.Message = localized(localizers, i18n.OutputUpdateCurrent, map[string]any{"Version": result.CurrentVersion}, fmt.Sprintf("Mobdesk %s já está atualizado", result.CurrentVersion))
+		response.Message = localized(localizers, i18n.OutputUpdateCurrent, map[string]any{"Version": result.CurrentVersion})
 		return decorateResult(response, localizers, i18n.OutputUpdateCurrent, nil)
 	}
 	if checkOnly {
 		response.State = "available"
-		response.Message = localized(localizers, i18n.OutputUpdateAvailable, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion}, fmt.Sprintf("Atualização disponível: %s → %s", result.CurrentVersion, result.LatestVersion))
+		response.Message = localized(localizers, i18n.OutputUpdateAvailable, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion})
 		return decorateResult(response, localizers, i18n.OutputUpdateAvailable, nil)
 	}
 	response.State = "updated"
-	response.Message = localized(localizers, i18n.OutputUpdateUpdated, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion}, fmt.Sprintf("Mobdesk atualizado: %s → %s", result.CurrentVersion, result.LatestVersion))
+	response.Message = localized(localizers, i18n.OutputUpdateUpdated, map[string]any{"Current": result.CurrentVersion, "Latest": result.LatestVersion})
 	return decorateResult(response, localizers, i18n.OutputUpdateUpdated, nil)
 }

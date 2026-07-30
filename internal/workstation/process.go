@@ -37,15 +37,15 @@ func processCommandLine(pid int) (string, error) {
 
 func acquireLock(path string) (func(), error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
-		return nil, fmt.Errorf("criar lock do SSH: %w", err)
+		return nil, fmt.Errorf("create SSH lock: %w", err)
 	}
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_RDWR, 0o600)
 	if err != nil {
-		return nil, fmt.Errorf("abrir lock do SSH: %w", err)
+		return nil, fmt.Errorf("open SSH lock: %w", err)
 	}
 	if err := syscall.Flock(int(file.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
 		_ = file.Close()
-		return nil, fmt.Errorf("outro comando do Mobdesk já está em execução: %w", err)
+		return nil, fmt.Errorf("another Mobdesk command is already running: %w", err)
 	}
 	return func() { _ = syscall.Flock(int(file.Fd()), syscall.LOCK_UN); _ = file.Close() }, nil
 }

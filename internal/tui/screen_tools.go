@@ -13,5 +13,5 @@ func (m Model) renderTools() string {
 	return tagStyle.Render(m.text(i18n.TUIToolsTag, nil)) + "\n" + titleStyle.Render(m.text(i18n.TUIToolsTitle, nil)) + "\n" + wrapText(m.text(i18n.TUIToolsBody, nil), width) + "\n\n" + view
 }
 
-// renderToolsBubbles preserva o nome usado por integrações e testes antigos.
+// renderToolsBubbles preserves the name used by older integrations and tests.
 func (m Model) renderToolsBubbles() string { return m.renderTools() }

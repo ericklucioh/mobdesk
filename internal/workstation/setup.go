@@ -28,7 +28,7 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupR
 	result = SetupResult{}
 	release, err := s.Deps.AcquireLock(s.Paths.SetupLock())
 	if err != nil {
-		return result, fmt.Errorf("iniciar setup: %w", err)
+		return result, fmt.Errorf("start setup: %w", err)
 	}
 	defer release()
 	complete := func(phase string) error {
@@ -40,10 +40,10 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupR
 	}
 	if !s.setupPhaseDone("directories") {
 		if err := s.ensurePrivateDir(filepath.Join(s.Paths.DataDir(), "logs")); err != nil {
-			return result, fmt.Errorf("criar diretórios do Mobdesk: %w", err)
+			return result, fmt.Errorf("create Mobdesk directories: %w", err)
 		}
 		if err := s.ensurePrivateDir(s.Paths.DataConfigDir()); err != nil {
-			return result, fmt.Errorf("criar configuração do Mobdesk: %w", err)
+			return result, fmt.Errorf("create Mobdesk configuration: %w", err)
 		}
 		if err := complete("directories"); err != nil {
 			return result, err
@@ -92,16 +92,16 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupR
 	if !s.setupPhaseDone("password-configured") {
 		if _, err := s.Deps.Stat(s.Paths.PasswordDone()); err != nil {
 			if !os.IsNotExist(err) {
-				return result, fmt.Errorf("verificar senha SSH: %w", err)
+				return result, fmt.Errorf("check SSH password: %w", err)
 			}
 			if !options.AllowPasswordPrompt {
-				return result, fmt.Errorf("senha SSH ainda não configurada; execute mobdesk setup sem --json para configurar a senha")
+				return result, fmt.Errorf("SSH password is not configured; run mobdesk setup without --json to configure it")
 			}
 			if err := s.run(ctx, "passwd"); err != nil {
-				return result, fmt.Errorf("configurar senha SSH: %w", err)
+				return result, fmt.Errorf("configure SSH password: %w", err)
 			}
 			if err := s.writePrivateFile(s.Paths.PasswordDone(), []byte("senha configurada\n")); err != nil {
-				return result, fmt.Errorf("registrar senha SSH configurada: %w", err)
+				return result, fmt.Errorf("record configured SSH password: %w", err)
 			}
 		}
 		if err := complete("password-configured"); err != nil {
@@ -118,15 +118,15 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupR
 	}
 	if !s.setupPhaseDone("shell-configured") {
 		if err := s.runUbuntu(ctx, "apt-get", "-o", "DPkg::Lock::Timeout=300", "install", "-y", "bash-completion"); err != nil {
-			return result, fmt.Errorf("instalar autocomplete do Bash: %w", err)
+			return result, fmt.Errorf("install Bash completion: %w", err)
 		}
 	}
 	// Reconcile generated shell configuration so updates also repair existing setups.
 	if err := s.runUbuntu(ctx, "sh", "-ec", renderUbuntuShellConfig(s.Paths)); err != nil {
-		return result, fmt.Errorf("configurar shell do Ubuntu: %w", err)
+		return result, fmt.Errorf("configure Ubuntu shell: %w", err)
 	}
 	if !s.setupPhaseDone("shell-configured") {
-		// Reescreve o wrapper mesmo quando o setup antigo já tinha SSH configurado.
+		// Rewrite the wrapper even when an older setup already configured SSH.
 		if err := s.Deps.EnsureSSHConfigured(s.Paths); err != nil {
 			return result, err
 		}
@@ -143,7 +143,7 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupR
 		}
 	}
 	if err := s.writePrivateFile(s.Paths.SetupDone(), []byte("setup concluido\n")); err != nil {
-		return result, fmt.Errorf("registrar setup concluído: %w", err)
+		return result, fmt.Errorf("record completed setup: %w", err)
 	}
 	return result, nil
 }
@@ -182,40 +182,40 @@ func (s Service) setupPhaseDone(phase string) bool {
 
 func (s Service) markSetupPhase(phase string) error {
 	if err := s.ensurePrivateDir(s.Paths.StateDir()); err != nil {
-		return fmt.Errorf("criar estado da etapa %s: %w", phase, err)
+		return fmt.Errorf("create state for phase %s: %w", phase, err)
 	}
 	if err := s.writePrivateFile(s.Paths.SetupPhase(phase), []byte("concluida\n")); err != nil {
-		return fmt.Errorf("registrar etapa %s: %w", phase, err)
+		return fmt.Errorf("record phase %s: %w", phase, err)
 	}
 	return nil
 }
 
 func (s Service) ensurePrivateDir(path string) error {
 	if info, err := s.Deps.Lstat(path); err == nil && info.Mode()&os.ModeSymlink != 0 {
-		return fmt.Errorf("recusar diretório privado que é link simbólico: %s", path)
+		return fmt.Errorf("refuse private directory that is a symbolic link: %s", path)
 	} else if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("verificar diretório privado: %w", err)
+		return fmt.Errorf("check private directory: %w", err)
 	}
 	if err := s.Deps.MkdirAll(path, 0o700); err != nil {
 		return err
 	}
 	if err := s.Deps.Chmod(path, 0o700); err != nil {
-		return fmt.Errorf("definir permissões privadas: %w", err)
+		return fmt.Errorf("set private permissions: %w", err)
 	}
 	return nil
 }
 
 func (s Service) writePrivateFile(path string, contents []byte) error {
 	if info, err := s.Deps.Lstat(path); err == nil && info.Mode()&os.ModeSymlink != 0 {
-		return fmt.Errorf("recusar arquivo privado que é link simbólico: %s", path)
+		return fmt.Errorf("refuse private file that is a symbolic link: %s", path)
 	} else if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("verificar arquivo privado: %w", err)
+		return fmt.Errorf("check private file: %w", err)
 	}
 	if err := s.Deps.WriteFile(path, contents, 0o600); err != nil {
 		return err
 	}
 	if err := s.Deps.Chmod(path, 0o600); err != nil {
-		return fmt.Errorf("definir permissões privadas: %w", err)
+		return fmt.Errorf("set private permissions: %w", err)
 	}
 	return nil
 }
@@ -234,37 +234,37 @@ func (s Service) runUbuntu(ctx context.Context, args ...string) error {
 func (s Service) installLauncher() error {
 	executable, err := s.Deps.Executable()
 	if err != nil {
-		return fmt.Errorf("detectar executável do Mobdesk: %w", err)
+		return fmt.Errorf("detect Mobdesk executable: %w", err)
 	}
 	executable, err = s.Deps.Abs(executable)
 	if err != nil {
-		return fmt.Errorf("resolver caminho do executável do Mobdesk: %w", err)
+		return fmt.Errorf("resolve Mobdesk executable path: %w", err)
 	}
 	executable, err = s.Deps.EvalSymlinks(executable)
 	if err != nil {
-		return fmt.Errorf("resolver link do executável do Mobdesk: %w", err)
+		return fmt.Errorf("resolve Mobdesk executable link: %w", err)
 	}
 	launcher := s.Paths.Launcher()
 	if err := s.Deps.MkdirAll(filepath.Dir(launcher), 0o755); err != nil {
-		return fmt.Errorf("criar diretório do comando mobdesk: %w", err)
+		return fmt.Errorf("create mobdesk command directory: %w", err)
 	}
 	if info, err := s.Deps.Lstat(launcher); err == nil {
 		if info.Mode()&os.ModeSymlink == 0 {
-			return fmt.Errorf("não foi possível criar o comando mobdesk: %s já existe e não é um link", launcher)
+			return fmt.Errorf("could not create mobdesk command: %s already exists and is not a link", launcher)
 		}
 		target, err := s.Deps.Readlink(launcher)
 		if err != nil {
-			return fmt.Errorf("ler comando mobdesk existente: %w", err)
+			return fmt.Errorf("read existing mobdesk command: %w", err)
 		}
 		if target == executable {
 			return nil
 		}
-		return fmt.Errorf("não foi possível substituir o comando mobdesk: %s aponta para %s", launcher, target)
+		return fmt.Errorf("could not replace mobdesk command: %s points to %s", launcher, target)
 	} else if !os.IsNotExist(err) {
-		return fmt.Errorf("verificar comando mobdesk: %w", err)
+		return fmt.Errorf("check mobdesk command: %w", err)
 	}
 	if err := s.Deps.Symlink(executable, launcher); err != nil {
-		return fmt.Errorf("criar comando mobdesk: %w", err)
+		return fmt.Errorf("create mobdesk command: %w", err)
 	}
 	return nil
 }

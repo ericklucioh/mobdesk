@@ -6,9 +6,9 @@ import (
 	"errors"
 	"io"
 	"os"
-	"strings"
 	"testing"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
 )
 
@@ -16,7 +16,7 @@ func TestUninstallOperationResultKeepsStructuredFailure(t *testing.T) {
 	result := uninstallOperationResult(install.Result{
 		Language: "neovim", State: "failed", Source: "detected",
 		Conflicts: []string{"/root/.local/bin/nvim"},
-	}, "nvim", errors.New("instalação apenas detectada"))
+	}, "nvim", errors.New("installation was only detected"))
 	if result.Success || result.Target != "nvim" || result.Action != "uninstall" || result.State != "failed" || result.Source != "detected" {
 		t.Fatalf("unexpected uninstall result: %+v", result)
 	}
@@ -42,7 +42,8 @@ func TestUninstallEmitsValidJSONWhenRuntimeIsBlocked(t *testing.T) {
 	defer func() { uninstallJSON = previous }()
 
 	output, err := captureStdout(func() error { return runUninstall(context.Background(), "neovim") })
-	if err == nil || !strings.Contains(err.Error(), "deve ser executado no Termux") {
+	wantError := i18n.New(i18n.LocaleENUS).Text(i18n.ErrorTermuxRequired, map[string]any{"Operation": "mobdesk uninstall"})
+	if err == nil || err.Error() != wantError {
 		t.Fatalf("unexpected runtime error: %v", err)
 	}
 	var result operationResult

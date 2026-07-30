@@ -22,7 +22,7 @@ func TestUpdateOperationResult(t *testing.T) {
 			result:  update.Result{CurrentVersion: "v1.0.0", LatestVersion: "v1.0.0"},
 			success: true,
 			state:   "current",
-			message: "Mobdesk v1.0.0 já está atualizado",
+			message: "Mobdesk v1.0.0 is already up to date.",
 		},
 		{
 			name:      "update available",
@@ -30,22 +30,22 @@ func TestUpdateOperationResult(t *testing.T) {
 			checkOnly: true,
 			success:   true,
 			state:     "available",
-			message:   "Atualização disponível: v1.0.0 → v1.1.0",
+			message:   "Update available: v1.0.0 -> v1.1.0",
 		},
 		{
 			name:    "updated",
 			result:  update.Result{CurrentVersion: "v1.0.0", LatestVersion: "v1.1.0", Updated: true},
 			success: true,
 			state:   "updated",
-			message: "Mobdesk atualizado: v1.0.0 → v1.1.0",
+			message: "Mobdesk updated: v1.0.0 -> v1.1.0",
 		},
 		{
 			name:    "failure",
 			result:  update.Result{CurrentVersion: "v1.0.0"},
-			err:     errors.New("rede indisponível"),
+			err:     errors.New("network unavailable"),
 			success: false,
 			state:   "failed",
-			message: "rede indisponível",
+			message: "operation failed: network unavailable",
 		},
 	}
 

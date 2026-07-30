@@ -5,26 +5,27 @@ SERVICE ?= termux
 TERMUX_ARCH ?= latest
 CATALOG_TIMEOUT ?= 30m
 
-.PHONY: help termux build-image catalog-image shell test integration-test catalog-test leetgo-test vet build run dev clean-env reset-env clean-image arm64-image fmt check
+.PHONY: help termux build-image catalog-image shell test integration-test catalog-test leetgo-test vet build run dev clean-env reset-env clean-image arm64-image fmt i18n-check check
 
 help:
 	@printf '%s\n' \
-		'make build-image  - constrói a imagem local do Termux' \
-		'make termux       - abre um shell interativo no ambiente' \
-		'make shell        - abre um shell no container existente' \
-		'make test         - executa go test ./...' \
-		'make check        - formata, valida e compila o projeto' \
-		'make integration-test - testa o fluxo Termux/SSH no Docker' \
-		'make catalog-test - testa apps no Ubuntu fixture em cache' \
-		'make leetgo-test  - testa Leetgo com cache Go persistente' \
-		'make vet          - executa go vet ./...' \
-		'make build        - compila o Mobdesk dentro do container' \
-		'make run          - executa o binário do Mobdesk' \
-		'make dev          - inicia o Air com hot-reload' \
-		'make clean-env    - apaga os volumes persistentes do Termux' \
-		'make reset-env    - recria o ambiente do Termux do zero' \
-		'make arm64-image  - constrói a imagem Termux para linux/arm64' \
-		'make clean-image  - remove a imagem local do ambiente'
+		'make build-image     - build the local Termux image' \
+		'make termux          - open an interactive shell in the environment' \
+		'make shell           - open a shell in the existing container' \
+		'make test            - run go test ./...' \
+		'make i18n-check      - validate catalogs and presentation literals' \
+		'make check           - format, validate and build the project' \
+		'make integration-test - test the Termux/SSH flow in Docker' \
+		'make catalog-test    - test apps in the cached Ubuntu fixture' \
+		'make leetgo-test     - test Leetgo with a persistent Go cache' \
+		'make vet             - run go vet ./...' \
+		'make build           - build Mobdesk inside the container' \
+		'make run             - run the Mobdesk binary' \
+		'make dev             - start Air with hot reload' \
+		'make clean-env       - remove persistent Termux volumes' \
+		'make reset-env       - recreate the Termux environment from scratch' \
+		'make arm64-image     - build the Termux image for linux/arm64' \
+		'make clean-image     - remove the local environment image'
 
 build-image:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) build
@@ -66,7 +67,7 @@ clean-env:
 	$(COMPOSE) down --volumes --remove-orphans
 
 reset-env: clean-env build-image
-	@printf '%s\n' 'Ambiente Termux recriado. Execute make termux, make test ou make dev.'
+	@printf '%s\n' 'Termux environment recreated. Run make termux, make test or make dev.'
 
 arm64-image:
 	docker buildx build --platform linux/arm64 --build-arg TERMUX_ARCH=aarch64 -f Dockerfile.termux -t mobdesk-termux:aarch64 --load .
@@ -77,4 +78,7 @@ clean-image:
 fmt:
 	go fmt ./...
 	
-check: fmt vet test build
+i18n-check:
+	./scripts/i18n-check.sh
+
+check: fmt i18n-check vet test build

@@ -195,15 +195,17 @@ func TestRenderTextAndJSON(t *testing.T) {
 
 func TestRenderTextUsesSelectedLocale(t *testing.T) {
 	value := SystemStatus{Overall: StateHealthy, Host: HostStatus{State: CheckOK, Termux: true}, GeneratedAt: time.Unix(0, 0).UTC(), Storage: StorageStatus{DeviceFree: 1, DeviceTotal: 2}, Setup: SetupStatus{State: CheckOK}, Ubuntu: UbuntuStatus{State: CheckOK}, SSH: SSHStatus{State: CheckOK}, Network: NetworkStatus{State: CheckOK}, Battery: BatteryStatus{State: CheckMissing}, WiFi: WiFiStatus{State: CheckMissing}}
-	var english, portuguese bytes.Buffer
+	var english, brazilianPortuguese bytes.Buffer
 	if err := RenderText(&english, value, i18n.New(i18n.LocaleENUS)); err != nil {
 		t.Fatal(err)
 	}
-	if err := RenderText(&portuguese, value, i18n.New(i18n.LocalePTBR)); err != nil {
+	if err := RenderText(&brazilianPortuguese, value, i18n.New(i18n.LocalePTBR)); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(english.String(), "Summary:") || !strings.Contains(portuguese.String(), "Resumo:") || english.String() == portuguese.String() {
-		t.Fatalf("status locales were not presented independently: %q / %q", english.String(), portuguese.String())
+	englishSummary := i18n.New(i18n.LocaleENUS).Text(i18n.StatusSummary, map[string]any{"Value": localizedOverall(i18n.New(i18n.LocaleENUS), value.Overall)})
+	brazilianPortugueseSummary := i18n.New(i18n.LocalePTBR).Text(i18n.StatusSummary, map[string]any{"Value": localizedOverall(i18n.New(i18n.LocalePTBR), value.Overall)})
+	if !strings.Contains(english.String(), englishSummary) || !strings.Contains(brazilianPortuguese.String(), brazilianPortugueseSummary) || english.String() == brazilianPortuguese.String() {
+		t.Fatalf("status locales were not presented independently: %q / %q", english.String(), brazilianPortuguese.String())
 	}
 }
 

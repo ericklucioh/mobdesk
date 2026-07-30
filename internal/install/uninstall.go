@@ -125,29 +125,29 @@ func uninstallStrategy(ctx context.Context, runner CommandRunner, options Option
 	switch strategy {
 	case "apt", "node":
 		if record.Package == "" {
-			return nil, nil, fmt.Errorf("pacote ausente no registro de %s", record.Name)
+			return nil, nil, fmt.Errorf("package missing from %s record", record.Name)
 		}
 		result := runAptLogged(ctx, runner, options.CommandTimeout, record.LogPath, "remove", "-y", record.Package)
 		return nil, nil, result.Err
 	case "npm":
 		if record.Package == "" {
-			return nil, nil, fmt.Errorf("pacote ausente no registro de %s", record.Name)
+			return nil, nil, fmt.Errorf("package missing from %s record", record.Name)
 		}
 		result := runUbuntuLogged(ctx, runner, options.CommandTimeout, record.LogPath, "env", "NPM_CONFIG_PREFIX=/root/.local", "npm", "uninstall", "-g", record.Package)
 		return nil, nil, result.Err
 	case "pipx":
 		if record.Package == "" {
-			return nil, nil, fmt.Errorf("pacote ausente no registro de %s", record.Name)
+			return nil, nil, fmt.Errorf("package missing from %s record", record.Name)
 		}
 		result := runUbuntuLogged(ctx, runner, options.CommandTimeout, record.LogPath, "pipx", "uninstall", record.Package)
 		return nil, nil, result.Err
 	case "script", "go", "ttt", "cargo", "gh-extension":
 		if len(record.InstalledFiles) == 0 {
-			return nil, nil, fmt.Errorf("não há arquivos comprovados para remover %s", record.Name)
+			return nil, nil, fmt.Errorf("no verified files to remove for %s", record.Name)
 		}
 		return removeTrackedFiles(ctx, runner, options, record)
 	default:
-		return nil, nil, fmt.Errorf("estratégia de desinstalação não suportada %q", strategy)
+		return nil, nil, fmt.Errorf("unsupported uninstall strategy %q", strategy)
 	}
 }
 
@@ -188,7 +188,7 @@ func currentFileHash(ctx context.Context, runner CommandRunner, options Options,
 	}
 	fields := strings.Fields(string(result.Stdout))
 	if len(fields) == 0 {
-		return "", fmt.Errorf("hash vazio para %s", path)
+		return "", fmt.Errorf("empty hash for %s", path)
 	}
 	return fields[0], nil
 }
@@ -196,7 +196,7 @@ func currentFileHash(ctx context.Context, runner CommandRunner, options Options,
 func validateManagedPath(path string) error {
 	clean := filepath.Clean(path)
 	if clean != path || (!strings.HasPrefix(path, "/root/.local/bin/") && !strings.HasPrefix(path, "/usr/local/bin/")) {
-		return fmt.Errorf("arquivo gerenciado inválido %q", path)
+		return fmt.Errorf("invalid managed file %q", path)
 	}
 	return nil
 }

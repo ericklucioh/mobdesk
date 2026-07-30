@@ -44,13 +44,13 @@ func runSetupOptions(ctx context.Context, p paths.Paths, upgradeSystem bool, loc
 	if err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputSetupCompleted, nil, "\nSetup concluído.")); err != nil {
+	if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputSetupCompleted, nil)); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputSetupBase, nil, "Ubuntu base instalado e pronto para o MVP.")); err != nil {
+	if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputSetupBase, nil)); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputSetupSSH, nil, "SSH preparado. Execute: mobdesk start")); err != nil {
+	if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputSetupSSH, nil)); err != nil {
 		return err
 	}
 	return nil
@@ -72,7 +72,7 @@ func runSetupJSONOptions(ctx context.Context, p paths.Paths, upgradeSystem bool,
 			err = quietErr
 		}
 	}
-	result := operationResult{SchemaVersion: 1, Command: "setup", Success: err == nil, State: "completed", Message: localized(localizers, i18n.OutputSetupCompleted, nil, "Setup concluído")}
+	result := operationResult{SchemaVersion: 1, Command: "setup", Success: err == nil, State: "completed", Message: localized(localizers, i18n.OutputSetupCompleted, nil)}
 	if err != nil {
 		result.State, result.Message = "failed", operationErrorMessage(localizers, err)
 	}

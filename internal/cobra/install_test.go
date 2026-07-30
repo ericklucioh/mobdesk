@@ -7,14 +7,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
 )
 
 func TestInstallOperationResultReportsFailureAsJSON(t *testing.T) {
-	installErr := errors.New("apt-get falhou")
+	installErr := errors.New("apt-get failed")
 	result := installOperationResult(install.Result{Language: "go", State: "installing", LogPath: "/private/install.log"}, installErr)
 
-	if result.Success || result.State != "failed" || result.Message != installErr.Error() || result.Language != "go" || result.LogPath != "/private/install.log" {
+	wantMessage := i18n.New(i18n.LocaleENUS).Text(i18n.ErrorOperationFailed, map[string]any{"Detail": installErr.Error()})
+	if result.Success || result.State != "failed" || result.Message != wantMessage || result.Language != "go" || result.LogPath != "/private/install.log" {
 		t.Fatalf("unexpected result: %+v", result)
 	}
 }
@@ -66,7 +68,8 @@ func TestInstallRejectsUbuntuRuntime(t *testing.T) {
 	t.Setenv("TERMUX_VERSION", "")
 
 	err := runInstall(context.Background(), "zellij")
-	if err == nil || !strings.Contains(err.Error(), "deve ser executado no Termux") {
+	wantError := i18n.New(i18n.LocaleENUS).Text(i18n.ErrorTermuxRequired, map[string]any{"Operation": "mobdesk install"})
+	if err == nil || err.Error() != wantError {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

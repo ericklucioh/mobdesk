@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var ErrStatusStrict = errors.New("status incompleto em modo strict")
+var ErrStatusStrict = errors.New("incomplete status in strict mode")
 
 var (
 	statusJSON   bool
@@ -39,11 +39,11 @@ func runStatusOptions(ctx context.Context, jsonOutput, strict bool, localizers .
 	value := status.Collect(ctx, status.Options{Paths: paths.Current()})
 	if jsonOutput {
 		if err := status.EncodeJSON(os.Stdout, value); err != nil {
-			return fmt.Errorf("%s", localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}, "emitir status JSON: "+err.Error()))
+			return fmt.Errorf("%s", localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}))
 		}
 	} else {
 		if err := status.RenderText(os.Stdout, value, localizers...); err != nil {
-			return fmt.Errorf("%s", localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}, "emitir status: "+err.Error()))
+			return fmt.Errorf("%s", localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}))
 		}
 	}
 	if strict && (value.Alerts.Warnings > 0 || value.Alerts.Errors > 0 || value.Alerts.Missing > 0 || value.Alerts.Unknown > 0) {

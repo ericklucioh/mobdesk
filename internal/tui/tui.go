@@ -44,9 +44,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m.updateMouseDrag(mouse)
 	case tea.MouseReleaseMsg:
-		// No fallback X10, usado por alguns terminais móveis, o release do
-		// botão esquerdo é codificado como MouseNone. O clique inicial ainda
-		// precisa ser MouseLeft; aqui basta confirmar que havia um toque ativo.
+		// In the X10 fallback used by some mobile terminals, the left-button
+		// release is encoded as MouseNone. The initial click still needs to be
+		// MouseLeft; here it is enough to confirm an active touch.
 		if msg.Button != tea.MouseLeft && msg.Button != tea.MouseNone || !m.pointerDown {
 			return m, nil
 		}
@@ -132,8 +132,8 @@ func (m *Model) applyOperationState(msg operationMessage) {
 }
 
 func (m Model) canManageHost() bool {
-	// Enquanto o status inicial ainda carrega, preserve as ações do host em vez
-	// de tratá-las como indisponíveis por causa do valor zero do modelo.
+	// While the initial status is loading, preserve host actions instead of
+	// treating them as unavailable because the model still has zero values.
 	return !m.statusLoaded || m.status.Host.Termux
 }
 
@@ -150,7 +150,7 @@ func (m Model) runHostOperation(operation string, args ...string) (tea.Model, te
 		return m, nil
 	}
 	m.operationID++
-	m.statusID++ // Invalida snapshots iniciados antes da operação mutável.
+	m.statusID++ // Invalidate snapshots started before the mutating operation.
 	m.busy, m.operation = true, operation
 	m.operationProgress = ""
 	if operation == "install" && len(args) > 1 {
@@ -174,7 +174,7 @@ func operationCommand(operationID int, operation string, command tea.Cmd) tea.Cm
 			value.next = operationCommand(operationID, operation, value.next)
 			return value
 		default:
-			return operationMessage{command: operation, id: operationID, err: fmt.Errorf("resposta inesperada da operação")}
+			return operationMessage{command: operation, id: operationID, err: fmt.Errorf("unexpected operation response")}
 		}
 	}
 }
@@ -188,7 +188,7 @@ func (m Model) statusCommand(statusID int) tea.Cmd {
 	return func() tea.Msg {
 		message, ok := m.backend.StatusCmd()().(statusMessage)
 		if !ok {
-			return statusMessage{id: statusID, err: fmt.Errorf("resposta inesperada do status")}
+			return statusMessage{id: statusID, err: fmt.Errorf("unexpected status response")}
 		}
 		message.id = statusID
 		return message
@@ -225,8 +225,8 @@ func (m *Model) resize(width, height int) {
 	m.setupActions.SetSize(max(1, contentWidth(width)-4), max(3, min(5, height)))
 	m.statusTable.SetColumns(statusTableColumns(width, m.localizer))
 	m.statusTable.SetWidth(contentWidth(width))
-	// As linhas seguintes pertencem ao resumo da tela, não à tabela. Limitar a
-	// altura evita que o componente reserve um painel vazio até o rodapé.
+	// The following lines belong to the screen summary, not the table. Limiting
+	// the height prevents the component from reserving an empty panel to the footer.
 	m.statusTable.SetHeight(min(height, 10))
 	m.viewport.SetWidth(contentWidth(width))
 	m.viewport.SetHeight(max(1, m.height-3))
@@ -538,9 +538,9 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 func (m Model) View() tea.View {
 	view := tea.NewView(m.render())
 	view.AltScreen = true
-	// CellMotion habilita clique, release, roda e movimento durante o arraste.
-	// É o modo mais compatível com terminais móveis como o Termux: não envia
-	// eventos de movimento contínuos quando o dedo está apenas parado na tela.
+	// CellMotion enables click, release, wheel and movement during dragging.
+	// This is the most compatible mode for mobile terminals such as Termux: it
+	// does not send continuous movement events when a finger is idle on screen.
 	if m.closing {
 		view.MouseMode = tea.MouseModeNone
 	} else {
@@ -560,9 +560,9 @@ func (m Model) render() string {
 	bodyModel.viewport.Style = lipgloss.NewStyle().Align(lipgloss.Left)
 	bodyModel.viewport.SetWidth(bodyWidth)
 	bodyModel.viewport.SetHeight(max(1, m.height-3))
-	// A TUI mobile não deve manter deslocamento horizontal entre telas. Linhas
-	// longas são tratadas pela própria tela, enquanto o viewport fica ancorado
-	// na borda esquerda.
+	// The mobile TUI must not retain horizontal scrolling between screens. Long
+	// lines are handled by the screen itself while the viewport stays anchored
+	// at the left border.
 	bodyModel.viewport.SetXOffset(0)
 	bodyModel.viewport.SetContent(bodyModel.renderScreen())
 	body := bodyModel.viewport.View()

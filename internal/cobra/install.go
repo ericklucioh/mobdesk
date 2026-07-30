@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/install"
@@ -66,19 +65,11 @@ func runInstallOptions(ctx context.Context, name string, jsonOutput, progressOut
 		return err
 	}
 
-	state := "já estava instalada"
+	id := i18n.OutputInstallAlready
 	if result.Changed {
-		state = "instalada"
+		id = i18n.OutputInstallInstalled
 	}
-	if len(localizers) > 0 {
-		id := i18n.OutputInstallAlready
-		if result.Changed {
-			id = i18n.OutputInstallInstalled
-		}
-		fmt.Println(localized(localizers, id, map[string]any{"Name": result.Language, "Executable": result.Executable, "Version": result.Version}, ""))
-	} else {
-		fmt.Printf("%s %s no Ubuntu (%s): %s\n", strings.ToUpper(result.Language[:1])+result.Language[1:], state, result.Executable, result.Version)
-	}
+	fmt.Println(localized(localizers, id, map[string]any{"Name": result.Language, "Executable": result.Executable, "Version": result.Version}))
 	return nil
 }
 
@@ -101,7 +92,7 @@ func installOperationResult(result install.Result, installErr error, localizers 
 		LogPath:         result.LogPath,
 		Source:          result.Source,
 		StorageEstimate: result.StorageEstimate,
-		Message:         localized(localizers, i18n.OutputInstallInstalled, nil, "Ferramenta instalada"),
+		Message:         localized(localizers, i18n.OutputInstallInstalled, nil),
 	}
 	if installErr != nil {
 		response.State = "failed"

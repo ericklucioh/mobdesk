@@ -80,7 +80,7 @@ x86_64|amd64)
     checksum=%q
     ;;
 *)
-    printf 'arquitetura nao suportada: %%s\n' "$(uname -m)" >&2
+    printf 'unsupported architecture: %%s\n' "$(uname -m)" >&2
     exit 1
     ;;
 esac
@@ -105,7 +105,7 @@ x86_64|amd64)
     checksum=1c9096f0a83b8102c194385f644cdeff93cc8269426163c9d033041ebd537bd2
     ;;
 *)
-    printf 'arquitetura nao suportada: %s\n' "$(uname -m)" >&2
+    printf 'unsupported architecture: %s\n' "$(uname -m)" >&2
     exit 1
     ;;
 esac
@@ -494,7 +494,7 @@ func failInstallation(directory string, record InstallationRecord, result Result
 	record.LastError = installErr.Error()
 	record.LastErrorCode = i18n.ErrorCode(installErr)
 	if err := saveRecord(directory, record); err != nil {
-		return result, fmt.Errorf("%v; registrar falha da instalação: %w", installErr, err)
+		return result, fmt.Errorf("%v; record installation failure: %w", installErr, err)
 	}
 	return result, installErr
 }

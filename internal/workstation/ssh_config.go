@@ -40,49 +40,49 @@ func renderSSHConfig(p paths.Paths) string {
 
 func writeSSHWrapper(p paths.Paths) error {
 	if err := os.MkdirAll(p.SSHRuntimeDir(), 0o700); err != nil {
-		return fmt.Errorf("criar runtime SSH do Mobdesk: %w", err)
+		return fmt.Errorf("create Mobdesk SSH runtime: %w", err)
 	}
 	wrapper := fmt.Sprintf("#!%s\nexec %s login ubuntu -- bash --rcfile %s -i\n", filepath.Join(p.Prefix, "bin", "sh"), filepath.Join(p.Prefix, "bin", "proot-distro"), p.UbuntuShellConfig())
 	if err := os.WriteFile(p.SSHWrapper(), []byte(wrapper), 0o700); err != nil {
-		return fmt.Errorf("criar shell SSH do Ubuntu: %w", err)
+		return fmt.Errorf("create Ubuntu SSH shell: %w", err)
 	}
 	return nil
 }
 
 func writeSSHConfig(p paths.Paths) error {
 	if err := os.MkdirAll(filepath.Dir(p.SSHConfig()), 0o700); err != nil {
-		return fmt.Errorf("criar diretório da configuração SSH: %w", err)
+		return fmt.Errorf("create SSH configuration directory: %w", err)
 	}
 	if err := os.MkdirAll(p.SSHRuntimeDir(), 0o700); err != nil {
-		return fmt.Errorf("criar runtime SSH do Mobdesk: %w", err)
+		return fmt.Errorf("create Mobdesk SSH runtime: %w", err)
 	}
 	temporary, err := os.CreateTemp(filepath.Dir(p.SSHConfig()), "sshd_config.*.tmp")
 	if err != nil {
-		return fmt.Errorf("criar configuração SSH temporária: %w", err)
+		return fmt.Errorf("create temporary SSH configuration: %w", err)
 	}
 	temporaryPath := temporary.Name()
 	defer func() { _ = os.Remove(temporaryPath) }()
 	if err := temporary.Chmod(0o600); err != nil {
 		_ = temporary.Close()
-		return fmt.Errorf("proteger configuração SSH temporária: %w", err)
+		return fmt.Errorf("protect temporary SSH configuration: %w", err)
 	}
 	if _, err := temporary.WriteString(renderSSHConfig(p)); err != nil {
 		_ = temporary.Close()
-		return fmt.Errorf("escrever configuração SSH temporária: %w", err)
+		return fmt.Errorf("write temporary SSH configuration: %w", err)
 	}
 	if err := temporary.Close(); err != nil {
-		return fmt.Errorf("fechar configuração SSH temporária: %w", err)
+		return fmt.Errorf("close temporary SSH configuration: %w", err)
 	}
 	command, err := executil.Command("sshd", "-t", "-f", temporaryPath)
 	if err != nil {
-		return fmt.Errorf("resolver sshd: %w", err)
+		return fmt.Errorf("resolve sshd: %w", err)
 	}
 	command.Stdout, command.Stderr = os.Stdout, os.Stderr
 	if err := command.Run(); err != nil {
-		return fmt.Errorf("configuração do sshd inválida: %w", err)
+		return fmt.Errorf("invalid sshd configuration: %w", err)
 	}
 	if err := os.Rename(temporaryPath, p.SSHConfig()); err != nil {
-		return fmt.Errorf("instalar configuração SSH do Mobdesk: %w", err)
+		return fmt.Errorf("install Mobdesk SSH configuration: %w", err)
 	}
 	return nil
 }

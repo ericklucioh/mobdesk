@@ -21,7 +21,7 @@ func (s Service) Start(ctx context.Context) (info StartInfo, err error) {
 	}()
 	info = StartInfo{Username: s.Deps.Username()}
 	if info.Username == "" {
-		info.Username = "usuario"
+		info.Username = "user"
 	}
 	if _, err := s.Deps.Stat(s.Paths.SetupDone()); err != nil {
 		if os.IsNotExist(err) {

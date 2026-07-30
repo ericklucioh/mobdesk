@@ -9,16 +9,17 @@ import (
 
 func commandLocalizer(state *commandState, cmd *cobra.Command) i18n.Localizer {
 	if state == nil {
-		return i18n.New(i18n.LocalePTBR)
+		return i18n.New(i18n.LocaleENUS)
 	}
 	return state.localizer(cmd)
 }
 
-func localized(localizers []i18n.Localizer, id i18n.MessageID, data any, fallback string) string {
-	if len(localizers) == 0 {
-		return fallback
+func localized(localizers []i18n.Localizer, id i18n.MessageID, data any) string {
+	localizer := i18n.New(i18n.LocaleENUS)
+	if len(localizers) > 0 {
+		localizer = localizers[0]
 	}
-	return localizers[0].Text(id, data)
+	return localizer.Text(id, data)
 }
 
 func operationErrorMessage(localizers []i18n.Localizer, err error) string {
@@ -28,7 +29,7 @@ func operationErrorMessage(localizers []i18n.Localizer, err error) string {
 	if len(localizers) > 0 && i18n.ErrorMessageID(err) != "" {
 		return localizers[0].Error(err)
 	}
-	return localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}, err.Error())
+	return localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()})
 }
 
 func localizedExactArgs(state *commandState, count int) cobra.PositionalArgs {

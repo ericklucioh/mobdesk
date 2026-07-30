@@ -57,19 +57,19 @@ func runStart(ctx context.Context, localizers ...i18n.Localizer) error {
 		if len(localizers) > 0 {
 			message = localizers[0].Error(warning)
 		}
-		if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartWarning, map[string]any{"Detail": message}, "Warning: "+message)); err != nil {
+		if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartWarning, map[string]any{"Detail": message})); err != nil {
 			return err
 		}
 	}
-	if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartCompleted, nil, "\nSERVIDOR INICIADO!")); err != nil {
+	if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartCompleted, nil)); err != nil {
 		return err
 	}
 	if len(info.Addresses) == 0 {
-		if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartLocalSSH, map[string]any{"Port": workstation.SSHPort, "User": info.Username}, fmt.Sprintf("ACESSO LOCAL VIA SSH\nssh -p %d %s@localhost", workstation.SSHPort, info.Username))); err != nil {
+		if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartLocalSSH, map[string]any{"Port": workstation.SSHPort, "User": info.Username})); err != nil {
 			return err
 		}
 	} else {
-		if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartRemoteSSH, nil, "ACESSO REMOTO VIA SSH")); err != nil {
+		if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartRemoteSSH, nil)); err != nil {
 			return err
 		}
 		for _, address := range info.Addresses {
@@ -78,7 +78,7 @@ func runStart(ctx context.Context, localizers ...i18n.Localizer) error {
 			}
 		}
 	}
-	if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartReady, nil, "\nWorkstation pronta. Use mobdesk shell para abrir o Ubuntu.")); err != nil {
+	if _, err := fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStartReady, nil)); err != nil {
 		return err
 	}
 	return nil
@@ -92,11 +92,11 @@ func runStop(ctx context.Context, localizers ...i18n.Localizer) error {
 		return err
 	}
 	if info.StaleState {
-		_, err = fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStopStale, nil, "Servidor SSH já estava parado; estado obsoleto removido."))
+		_, err = fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStopStale, nil))
 	} else if info.AlreadyStopped {
-		_, err = fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStopAlready, nil, "Servidor SSH já está parado."))
+		_, err = fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStopAlready, nil))
 	} else {
-		_, err = fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStopCompleted, nil, "Servidor SSH parado."))
+		_, err = fmt.Fprintln(os.Stdout, localized(localizers, i18n.OutputStopCompleted, nil))
 	}
 	return err
 }
@@ -110,7 +110,7 @@ func runStartJSON(ctx context.Context, localizers ...i18n.Localizer) error {
 			err = quietErr
 		}
 	}
-	result := operationResult{SchemaVersion: 1, Command: "start", Success: err == nil, State: "running", Message: localized(localizers, i18n.OutputStartCompleted, nil, "Workstation iniciada"), Port: workstation.SSHPort, Addresses: workstation.LocalIPv4Addresses()}
+	result := operationResult{SchemaVersion: 1, Command: "start", Success: err == nil, State: "running", Message: localized(localizers, i18n.OutputStartCompleted, nil), Port: workstation.SSHPort, Addresses: workstation.LocalIPv4Addresses()}
 	if err != nil {
 		result.State, result.Message = "failed", operationErrorMessage(localizers, err)
 	}
@@ -130,7 +130,7 @@ func runStopJSON(ctx context.Context, localizers ...i18n.Localizer) error {
 			err = quietErr
 		}
 	}
-	result := operationResult{SchemaVersion: 1, Command: "stop", Success: err == nil, State: "stopped", Message: localized(localizers, i18n.OutputStopCompleted, nil, "Workstation parada"), Port: workstation.SSHPort}
+	result := operationResult{SchemaVersion: 1, Command: "stop", Success: err == nil, State: "stopped", Message: localized(localizers, i18n.OutputStopCompleted, nil), Port: workstation.SSHPort}
 	if err != nil {
 		result.State, result.Message = "failed", operationErrorMessage(localizers, err)
 	}

@@ -24,9 +24,9 @@ const (
 	systemScreen
 )
 
-// Model coordena navegação e estado compartilhado. Cada tela mantém sua
-// renderização em um arquivo próprio; componentes Bubbles ficam reutilizados
-// no estado central para que Update e View continuem leves.
+// Model coordinates navigation and shared state. Each screen keeps its
+// rendering in its own file; Bubbles components are reused in the central
+// state so Update and View remain lightweight.
 type Model struct {
 	backend           Backend
 	localizer         i18n.Localizer
@@ -109,7 +109,7 @@ func newLocalizedModel(backend Backend, localizer i18n.Localizer, p paths.Paths)
 	tableStyles := table.DefaultStyles()
 	tableStyles.Header = tagStyle.Padding(0, 1)
 	tableStyles.Cell = bodyStyle.Padding(0, 1)
-	// Status é uma tabela informativa; não há seleção de linha para destacar.
+	// Status is an informational table; it has no selectable row to highlight.
 	tableStyles.Selected = bodyStyle.Padding(0, 1).Foreground(lipgloss.Color(colorLilac)).Bold(true)
 	statusTable.SetStyles(tableStyles)
 

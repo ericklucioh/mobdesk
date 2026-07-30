@@ -453,10 +453,10 @@ func TestSystemRendersPersistentUpdateResult(t *testing.T) {
 	model.height = 30
 
 	for _, result := range []operationResult{
-		{Success: true, State: "current", Message: "Mobdesk v1.0.0 já está atualizado"},
-		{Success: true, State: "available", Message: "Atualização disponível: v1.0.0 → v1.1.0"},
-		{Success: true, State: "updated", Message: "Mobdesk atualizado: v1.0.0 → v1.1.0"},
-		{Success: false, State: "failed", Message: "rede indisponível"},
+		{Success: true, State: "current", Message: model.text(i18n.OutputUpdateCurrent, map[string]any{"Version": "v1.0.0"})},
+		{Success: true, State: "available", Message: model.text(i18n.OutputUpdateAvailable, map[string]any{"Current": "v1.0.0", "Latest": "v1.1.0"})},
+		{Success: true, State: "updated", Message: model.text(i18n.OutputUpdateUpdated, map[string]any{"Current": "v1.0.0", "Latest": "v1.1.0"})},
+		{Success: false, State: "failed", Message: model.text(i18n.ErrorOperationFailed, map[string]any{"Detail": "network unavailable"})},
 	} {
 		updated, _ := model.Update(operationMessage{command: "update", result: result})
 		model = updated.(Model)
@@ -472,10 +472,10 @@ func TestSystemRendersPersistentUpdateResult(t *testing.T) {
 func TestSystemUpdateResultUsesFailureForProcessError(t *testing.T) {
 	model := New()
 	model.screen = systemScreen
-	updated, _ := model.Update(operationMessage{command: "update", err: errors.New("falha de rede")})
+	updated, _ := model.Update(operationMessage{command: "update", err: errors.New("network failure")})
 	model = updated.(Model)
 
-	if model.systemState != "failed" || model.systemMessage != model.text(i18n.ErrorOperationFailed, map[string]any{"Detail": "falha de rede"}) {
+	if model.systemState != "failed" || model.systemMessage != model.text(i18n.ErrorOperationFailed, map[string]any{"Detail": "network failure"}) {
 		t.Fatalf("system failure = state %q, message %q", model.systemState, model.systemMessage)
 	}
 }
@@ -553,9 +553,8 @@ func TestMouseClickOnHomeRightColumnOpensShell(t *testing.T) {
 	if targetLine < 0 {
 		t.Fatal("shell card was not rendered in the right column")
 	}
-	// Clica no padding esquerdo do botão, não no texto, para validar o
-	// contorno inteiro como área interativa.
-	// A borda superior do botão também deve ser interativa.
+	// Click the button's left padding, not its text, to validate the entire
+	// outline as an interactive area. The top border must also be interactive.
 	updatedClick, _ := model.Update(tea.MouseClickMsg{X: targetX - 2, Y: targetLine + 3, Button: tea.MouseLeft})
 	model = updatedClick.(Model)
 	updated, _ := model.Update(tea.MouseReleaseMsg{X: targetX - 2, Y: targetLine + 3, Button: tea.MouseLeft})
@@ -724,7 +723,7 @@ func TestConfirmationButtonsAreClickable(t *testing.T) {
 		t.Fatal("clicking cancel unexpectedly produced a command")
 	}
 	if updated.(Model).confirmExit {
-		t.Fatal("confirm modal remained open after clicking NÃO")
+		t.Fatal("confirm modal remained open after clicking NO")
 	}
 }
 

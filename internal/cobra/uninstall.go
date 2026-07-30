@@ -81,9 +81,9 @@ func emitUninstallResult(name string, result install.Result, operationErr error,
 		return operationErr
 	}
 	if result.Changed {
-		fmt.Println(localized(localizers, i18n.OutputUninstallRemoved, map[string]any{"Name": result.Language}, result.Language+" desinstalado do Ubuntu."))
+		fmt.Println(localized(localizers, i18n.OutputUninstallRemoved, map[string]any{"Name": result.Language}))
 	} else {
-		fmt.Println(localized(localizers, i18n.OutputUninstallAlready, map[string]any{"Name": result.Language}, result.Language+" já estava desinstalado."))
+		fmt.Println(localized(localizers, i18n.OutputUninstallAlready, map[string]any{"Name": result.Language}))
 	}
 	return nil
 }
@@ -104,7 +104,7 @@ func uninstallOperationResult(result install.Result, target string, operationErr
 		Paths:           result.Paths,
 		Conflicts:       result.Conflicts,
 		StorageEstimate: result.StorageEstimate,
-		Message:         localized(localizers, i18n.OutputUninstallRemoved, map[string]any{"Name": target}, "App desinstalado"),
+		Message:         localized(localizers, i18n.OutputUninstallRemoved, map[string]any{"Name": target}),
 	}
 	if response.State == "" {
 		response.State = "failed"

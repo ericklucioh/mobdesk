@@ -22,7 +22,7 @@ func newVersionCmd(state *commandState) *cobra.Command {
 			return json.NewEncoder(os.Stdout).Encode(info)
 		}
 		localizer := commandLocalizer(state, cmd)
-		fmt.Println(localized([]i18n.Localizer{localizer}, i18n.OutputVersion, map[string]any{"Version": info.Version, "Channel": info.Channel, "OS": info.OS, "Architecture": info.Architecture}, fmt.Sprintf("Mobdesk %s (%s) %s/%s", info.Version, info.Channel, info.OS, info.Architecture)))
+		fmt.Println(localized([]i18n.Localizer{localizer}, i18n.OutputVersion, map[string]any{"Version": info.Version, "Channel": info.Channel, "OS": info.OS, "Architecture": info.Architecture}))
 		return nil
 	}}
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "")

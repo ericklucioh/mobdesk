@@ -123,12 +123,12 @@ func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
 
 func TestCatalogProfilesUseSelectedLocale(t *testing.T) {
 	english := Tools(i18n.New(i18n.LocaleENUS))[0].Description
-	portuguese := Tools(i18n.New(i18n.LocalePTBR))[0].Description
-	if english == portuguese || english != "compiled language" || portuguese != "Linguagem compilada" {
-		t.Fatalf("localized descriptions = %q / %q", english, portuguese)
+	brazilianPortuguese := Tools(i18n.New(i18n.LocalePTBR))[0].Description
+	if english != i18n.New(i18n.LocaleENUS).Text(i18n.AppGoDescription, nil) || brazilianPortuguese != i18n.New(i18n.LocalePTBR).Text(i18n.AppGoDescription, nil) || english == brazilianPortuguese {
+		t.Fatalf("localized descriptions = %q / %q", english, brazilianPortuguese)
 	}
 	profile := DefaultConfigProfiles(i18n.New(i18n.LocalePTBR))["lazyvim"]
-	if !strings.Contains(profile.Description, "LazyVim versionado") {
+	if profile.Description != i18n.New(i18n.LocalePTBR).Text(i18n.ProfileLazyVimDescription, nil) {
 		t.Fatalf("localized config profile description = %q", profile.Description)
 	}
 }

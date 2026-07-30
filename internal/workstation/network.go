@@ -19,7 +19,7 @@ func ensureIfconfig(ctx context.Context, out io.Writer, run func(context.Context
 	if _, err := executil.Resolve("ifconfig"); err == nil {
 		return nil
 	}
-	if _, err := fmt.Fprintln(out, "ifconfig não encontrado; instalando net-tools..."); err != nil {
+	if _, err := fmt.Fprintln(out, "ifconfig not found; installing net-tools..."); err != nil {
 		return err
 	}
 	return run(ctx, "pkg", "install", "-y", "-o", "Dpkg::Options::=--force-confold", "net-tools")

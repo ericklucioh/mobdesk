@@ -25,7 +25,7 @@ func renderToolItem(value toolListItem, index, selected, width int) string {
 func renderToolItemLocalized(value toolListItem, index, selected, width int, localizer i18n.Localizer) string {
 	width = max(20, width)
 	innerWidth := max(1, width-4)
-	contentWidth := max(1, innerWidth-4) // borda e padding horizontal
+	contentWidth := max(1, innerWidth-4) // border and horizontal padding
 	stateWidth := 10
 	if width < 32 {
 		stateWidth = 9

@@ -64,16 +64,16 @@ if test -f "$PREFIX/etc/ssh/sshd_config"; then
 fi
 
 if grep -q '\$ pkg upgrade' "$TEST_DIR/mobdesk-setup.log" 2>/dev/null; then
-    printf '%s\n' 'setup executou pkg upgrade inesperadamente' >&2
+    printf '%s\n' 'setup unexpectedly ran pkg upgrade' >&2
     exit 1
 fi
 
-# A segunda execução deve usar as etapas persistidas e não reinstalar tudo.
+# The second run must use persisted phases and avoid reinstalling everything.
 mobdesk setup > "$TEST_DIR/mobdesk-setup-second.log" 2>&1
 ! grep -q '\$ pkg update' "$TEST_DIR/mobdesk-setup-second.log"
 ! grep -q '\$ pkg upgrade' "$TEST_DIR/mobdesk-setup-second.log"
 
-# As três primeiras linguagens devem ser instaláveis no Ubuntu e utilizáveis.
+# The first three languages must be installable and usable in Ubuntu.
 mobdesk install go > "$TEST_DIR/install-go.log"
 mobdesk install python > "$TEST_DIR/install-python.log"
 mobdesk install node > "$TEST_DIR/install-node.log"
@@ -99,19 +99,19 @@ test "$(proot-distro login ubuntu -- /tmp/mobdesk-hello-c)" = "hello-c"
 test "$(proot-distro login ubuntu -- /tmp/mobdesk-hello-cpp)" = "hello-cpp"
 test "$(proot-distro login ubuntu -- lua5.4 /root/workspace/hello.lua)" = "hello-lua"
 
-# Repetir a instalação não deve atualizar índices nem reinstalar pacotes.
+# Repeating installation must not update indexes or reinstall packages.
 mobdesk install go > "$TEST_DIR/install-go-second.log"
 mobdesk install python > "$TEST_DIR/install-python-second.log"
 mobdesk install node > "$TEST_DIR/install-node-second.log"
 mobdesk install c > "$TEST_DIR/install-c-second.log"
 mobdesk install cpp > "$TEST_DIR/install-cpp-second.log"
 mobdesk install lua > "$TEST_DIR/install-lua-second.log"
-grep -q 'já estava instalada' "$TEST_DIR/install-go-second.log"
-grep -q 'já estava instalada' "$TEST_DIR/install-python-second.log"
-grep -q 'já estava instalada' "$TEST_DIR/install-node-second.log"
-grep -q 'já estava instalada' "$TEST_DIR/install-c-second.log"
-grep -q 'já estava instalada' "$TEST_DIR/install-cpp-second.log"
-grep -q 'já estava instalada' "$TEST_DIR/install-lua-second.log"
+grep -q 'was already installed' "$TEST_DIR/install-go-second.log"
+grep -q 'was already installed' "$TEST_DIR/install-python-second.log"
+grep -q 'was already installed' "$TEST_DIR/install-node-second.log"
+grep -q 'was already installed' "$TEST_DIR/install-c-second.log"
+grep -q 'was already installed' "$TEST_DIR/install-cpp-second.log"
+grep -q 'was already installed' "$TEST_DIR/install-lua-second.log"
 test -f "$HOME/.local/share/mobdesk/state/installations/go.json"
 test -f "$HOME/.local/share/mobdesk/state/installations/python.json"
 test -f "$HOME/.local/share/mobdesk/state/installations/node.json"
@@ -168,11 +168,11 @@ grep -q 'ubuntu-ok' "$TEST_DIR/mobdesk-ssh.log"
 
 mobdesk stop
 if ssh-keyscan -T 1 -p 8022 127.0.0.1 >/dev/null 2>&1; then
-    printf '%s\n' 'a porta SSH continuou aberta após mobdesk stop' >&2
+    printf '%s\n' 'SSH port remained open after mobdesk stop' >&2
     exit 1
 fi
 
-# Um PID obsoleto não deve ser sinalizado nem bloquear a limpeza do estado.
+# A stale PID must not be signaled or block state cleanup.
 printf '%s\n' "$$" > "$HOME/.local/share/mobdesk/ssh/sshd.pid"
 mobdesk stop
 test ! -e "$HOME/.local/share/mobdesk/ssh/sshd.pid"

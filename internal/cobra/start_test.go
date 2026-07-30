@@ -27,7 +27,7 @@ func TestExtractIPv4AddressesIgnoresLoopback(t *testing.T) {
 
 	got := workstation.ExtractIPv4Addresses(output)
 	if len(got) != 0 {
-		t.Fatalf("esperava nenhum endereço, recebeu %v", got)
+		t.Fatalf("expected no addresses, got %v", got)
 	}
 }
 
@@ -43,18 +43,18 @@ func TestExtractIPv4AddressesUsesOtherInterfacesAsFallback(t *testing.T) {
 
 func TestExtractIPv4AddressesHandlesEmptyOutput(t *testing.T) {
 	if got := workstation.ExtractIPv4Addresses(""); len(got) != 0 {
-		t.Fatalf("esperava nenhum endereço, recebeu %v", got)
+		t.Fatalf("expected no addresses, got %v", got)
 	}
 }
 
 func assertAddresses(t *testing.T, got, want []string) {
 	t.Helper()
 	if len(got) != len(want) {
-		t.Fatalf("endereços diferentes: got %v, want %v", got, want)
+		t.Fatalf("addresses differ: got %v, want %v", got, want)
 	}
 	for index := range want {
 		if got[index] != want[index] {
-			t.Fatalf("endereço diferente na posição %d: got %q, want %q", index, got[index], want[index])
+			t.Fatalf("address differs at position %d: got %q, want %q", index, got[index], want[index])
 		}
 	}
 }

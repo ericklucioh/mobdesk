@@ -91,7 +91,7 @@ func emitConfigResult(result install.ConfigOperationResult, operationErr error, 
 	if result.Action == "remove" {
 		messageID = i18n.OutputConfigRemoved
 	}
-	fmt.Println(localized(localizers, messageID, nil, result.Message))
+	fmt.Println(localized(localizers, messageID, nil))
 	return nil
 }
 
@@ -104,7 +104,7 @@ func configOperationResult(result install.ConfigOperationResult, operationErr er
 		Success:         result.Success && operationErr == nil,
 		State:           string(result.State),
 		Changed:         result.Changed,
-		Message:         localized(localizers, configMessageID(result.Action, result.Success), nil, result.Message),
+		Message:         localized(localizers, configMessageID(result.Action, result.Success), nil),
 		ConfigState:     string(result.State),
 		Conflicts:       result.Conflicts,
 		Paths:           result.Paths,

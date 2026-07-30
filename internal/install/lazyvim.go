@@ -18,7 +18,7 @@ var lazyVimFiles embed.FS
 func profileFile(name string) string {
 	content, err := lazyVimFiles.ReadFile("profiles/neovim/" + name)
 	if err != nil {
-		panic(fmt.Sprintf("arquivo do perfil LazyVim ausente: %s: %v", name, err))
+		panic(fmt.Sprintf("LazyVim profile file missing: %s: %v", name, err))
 	}
 	return string(content)
 }
@@ -89,7 +89,7 @@ func lazyVimConfigFiles(configRoot string) []ConfigFile {
 		if filepath.Ext(file.name) == ".json" {
 			var document map[string]any
 			if err := json.Unmarshal([]byte(content), &document); err != nil {
-				panic(fmt.Sprintf("perfil LazyVim inválido: %s: %v", file.name, err))
+				panic(fmt.Sprintf("invalid LazyVim profile: %s: %v", file.name, err))
 			}
 		}
 		result = append(result, ConfigFile{Path: file.path, Content: content, Mode: file.mode})

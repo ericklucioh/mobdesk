@@ -99,9 +99,9 @@ func runeSliceIndex(value, needle []rune) int {
 	return -1
 }
 
-// blockContainsAtAny é usado quando uma tela repete um rótulo, como "Status"
-// no cartão da Home e no resumo da workstation. Ele testa todas as ocorrências
-// antes de desistir, mantendo a validação horizontal do alvo.
+// blockContainsAtAny is used when a screen repeats a label, such as "Status"
+// in the Home card and workstation summary. It tests every occurrence before
+// giving up while preserving horizontal target validation.
 func blockContainsAtAny(lines []string, index, x int, text string) bool {
 	for position, line := range lines {
 		plain := ansi.Strip(line)

@@ -1,6 +1,6 @@
 # English-First Localization and Documentation Migration Plan
 
-**Status:** Phase 4 complete; Phase 5 pending.
+**Status:** Phase 5 complete; Phase 6 pending.
 
 **Primary locale:** `en-US`
 
@@ -359,6 +359,19 @@ Acceptance criteria:
 - No Portuguese identifier or comment remains in production code.
 - No direct user-visible string remains in presentation code outside approved
   catalogs and external command fixtures.
+
+#### Phase 5 Result
+
+- Remaining Go identifiers, helper names, test names and comments are English;
+  technical values and persisted machine contracts remain unchanged.
+- Makefile and shell-script help, comments and diagnostics are English.
+- CLI and TUI presentation paths render through message IDs with English as the
+  no-localizer fallback; tests verify stable states, IDs and both locale catalogs.
+- `scripts/i18n-check.sh`, exposed as `make i18n-check`, checks source comments
+  and literals, script diagnostics and catalog completeness without scanning
+  documentation, external command fixtures or machine values.
+- TUI child-command locale forwarding and the SSH/runtime restriction remain
+  covered by focused bilingual tests.
 
 ### Phase 6: Migrate Documentation to English
 

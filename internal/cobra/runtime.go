@@ -12,5 +12,5 @@ func requireTermuxRuntime(operation string, localizers ...i18n.Localizer) error 
 	if status.IsTermuxRuntime(paths.Current().Prefix) {
 		return nil
 	}
-	return fmt.Errorf("%s", localized(localizers, i18n.ErrorTermuxRequired, map[string]any{"Operation": operation}, operation+" deve ser executado no Termux; saia da sessão Ubuntu e execute o comando no host"))
+	return fmt.Errorf("%s", localized(localizers, i18n.ErrorTermuxRequired, map[string]any{"Operation": operation}))
 }
