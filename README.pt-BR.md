@@ -56,6 +56,27 @@ nesse modo, mostra o workspace e permite abrir o shell local, mas não oferece
 ações que exigem o host Termux, como controlar SSH, executar setup, instalar
 ferramentas ou atualizar o binário.
 
+### Idioma
+
+O Mobdesk usa inglês (`en-US`) por padrão e atualmente oferece suporte a
+português do Brasil (`pt-BR`). Escolha o idioma ao iniciar a CLI ou a TUI:
+
+```bash
+mobdesk tui --locale pt-BR
+mobdesk --locale en-US status
+```
+
+Também é possível definir o idioma com `MOBDESK_LOCALE`:
+
+```bash
+MOBDESK_LOCALE=pt-BR mobdesk tui
+```
+
+O idioma selecionado é repassado para as operações da TUI e para os comandos
+filhos. A TUI ainda não possui um botão interno para trocar o idioma; reinicie
+a TUI com o idioma desejado. Identificadores técnicos, como comandos, flags,
+chaves JSON e estados, permanecem em inglês.
+
 Instale uma linguagem no Ubuntu com:
 
 ```bash

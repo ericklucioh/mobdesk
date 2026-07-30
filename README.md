@@ -66,6 +66,27 @@ where it is running inside Ubuntu. In that remote mode it can show the
 workspace and open the local shell, but host-only actions such as setup, SSH
 control, installation and binary updates are blocked and explained.
 
+### Language
+
+Mobdesk uses English (`en-US`) by default and currently supports Brazilian
+Portuguese (`pt-BR`). Select the language when starting the CLI or TUI:
+
+```bash
+mobdesk tui --locale pt-BR
+mobdesk --locale en-US status
+```
+
+You can also set the language with `MOBDESK_LOCALE`:
+
+```bash
+MOBDESK_LOCALE=pt-BR mobdesk tui
+```
+
+The selected locale is passed to TUI operations and child commands. The TUI
+does not yet have an in-app language button, so restart it with the desired
+locale to change languages. Technical identifiers such as commands, flags,
+JSON keys and state values remain in English.
+
 Tools installed by Mobdesk belong to Ubuntu. Run control and installation
 commands in Termux; use the installed tools directly inside Ubuntu.
 
