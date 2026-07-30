@@ -303,6 +303,32 @@ func TestSetupRendersResponsiveSections(t *testing.T) {
 	}
 }
 
+func TestSetupRendersPersistedPhaseStates(t *testing.T) {
+	model := New()
+	model.width = 40
+	model.height = 40
+	model.statusLoaded = true
+	model.status.Host.Termux = true
+	model.status.Setup.Phases = map[string]string{
+		"directories":         "done",
+		"packages-installed":  "done",
+		"ubuntu-installed":    "pending",
+		"workspace-created":   "pending",
+		"password-configured": "pending",
+		"ssh-configured":      "pending",
+		"shell-configured":    "pending",
+		"launcher-installed":  "pending",
+	}
+
+	view := ansi.Strip(model.renderSetup())
+	if strings.Count(view, "✓") != 2 {
+		t.Fatalf("setup rendered incorrect completed markers: %s", view)
+	}
+	if !strings.Contains(view, "warning") || !strings.Contains(view, "○") {
+		t.Fatalf("setup did not render pending phase state: %s", view)
+	}
+}
+
 func TestShellRendersLargeTouchActions(t *testing.T) {
 	model := New()
 	model.width = 40
@@ -781,6 +807,21 @@ func TestTabFocusAndEnterOpenTools(t *testing.T) {
 	updated, _ := model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyEnter}))
 	if updated.(Model).screen != toolsScreen {
 		t.Fatalf("focused home control did not open tools screen: %v", updated.(Model).screen)
+	}
+}
+
+func TestHomeTabFocusCoversOnlyRenderedControls(t *testing.T) {
+	model := New()
+	if count := model.controlCount(); count != 6 {
+		t.Fatalf("home control count = %d, want 6", count)
+	}
+	for index := 0; index < model.controlCount(); index++ {
+		updated, _ := model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyTab}))
+		model = updated.(Model)
+		want := (index + 1) % 6
+		if model.focus != want {
+			t.Fatalf("tab %d moved focus to %d, want %d", index+1, model.focus, want)
+		}
 	}
 }
 

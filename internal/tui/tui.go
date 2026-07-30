@@ -443,7 +443,7 @@ func (m Model) controlCount() int {
 		if !m.canManageHost() {
 			return 2
 		}
-		return 7
+		return 6
 	case statusScreen, shellScreen:
 		return 2
 	case systemScreen:
