@@ -497,21 +497,20 @@ Acceptance criteria:
 
 ### Operational and research documentation
 
-- `docs/AUDITORIA-SEGURANCA-2026-07-25.md` — English historical audit with
+- `docs/SECURITY-AUDIT-2026-07-25.md` — English historical audit with
   follow-up statuses.
-- `docs/GUIA-CORRECOES-PRE-LANCAMENTO.md` — English active remediation guidance.
-- `docs/AUTENTICACAO-SSH.md` and `docs/DIAGNOSTICO_BATERIA.md` — English future
+- `docs/PRE-RELEASE-FIX-GUIDE.md` — English active remediation guidance.
+- `docs/SSH-AUTHENTICATION.md` and `docs/BATTERY-DIAGNOSTICS.md` — English future
   security and operational notes.
-- `docs/PLANO-DOCTOR.md` and `docs/PLANO-REFATORACAO-PRIORITARIA.md` — English
+- `docs/DOCTOR-PLAN.md` and `docs/PRIORITY-REFACTORING-PLAN.md` — English
   future/historical implementation plans.
 - `docs/ideas/TOOL-CATALOG.md`, `REMOTE-BROWSER-RESEARCH.md` and
   `GLOBAL-TUI-REFRESH-PLAN.md` — English active research and ideas.
 - `docs/ideas/AROZOS-PROPOSAL.md`, `docs/ideas/CODE-SERVER.md` and
   `vscode-test.md` — English personal or historical notes explicitly marked
   non-authoritative.
-- `docs/ideas/todo.md` and `docs/TODO-AUDITORIA-SEGURANCA.md` — retained without
-  content changes by explicit instruction; these are the only maintained-note
-  exceptions to the English-content rule.
+- `docs/ideas/TODO.md` and `docs/SECURITY-AUDIT-TODO.md` — English translated
+  planning notes retained as non-authoritative documents.
 
 ## 8. Validation Matrix
 

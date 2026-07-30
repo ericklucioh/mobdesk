@@ -5,8 +5,8 @@ that the corresponding application behavior is already implemented.
 
 This guide addresses release authenticity, update recovery, SSH defaults and
 the Termux/Ubuntu boundary. It complements the historical
-[`AUDITORIA-SEGURANCA-2026-07-25.md`](AUDITORIA-SEGURANCA-2026-07-25.md) and
-[`AUTENTICACAO-SSH.md`](AUTENTICACAO-SSH.md).
+[`SECURITY-AUDIT-2026-07-25.md`](SECURITY-AUDIT-2026-07-25.md) and
+[`SSH-AUTHENTICATION.md`](SSH-AUTHENTICATION.md).
 
 ## Recommended order
 

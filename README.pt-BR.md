@@ -223,7 +223,7 @@ Veja o [roadmap em quatro estágios](docs/ROADMAP.md).
 - [Arquitetura](docs/ARCHITECTURE.md) — camadas e limites técnicos;
 - [Decisões](docs/DECISIONS.md) — decisões do projeto;
 - [Ferramentas](docs/ideas/TOOL-CATALOG.md) — catálogo técnico em evolução;
-- [Refatoração prioritária](docs/PLANO-REFATORACAO-PRIORITARIA.md) — melhorias estruturais planejadas;
+- [Refatoração prioritária](docs/PRIORITY-REFACTORING-PLAN.md) — melhorias estruturais planejadas;
 - [Como contribuir](.github/CONTRIBUTING.pt-BR.md) — fluxo para colaboradores.
 
 Leia também o [README em inglês](README.md).
