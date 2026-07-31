@@ -43,14 +43,17 @@ func TestSetupOrchestratesAllPhasesWithExplicitPaths(t *testing.T) {
 		t.Fatalf("setup.done missing: %v", err)
 	}
 	wantPrefix := []string{"pkg update", "pkg upgrade -y -o Dpkg::Options::=--force-confold", "pkg install -y -o Dpkg::Options::=--force-confold proot-distro openssh net-tools", "proot-distro login ubuntu -- true", "proot-distro install ubuntu", "proot-distro login ubuntu -- mkdir -p /root/workspace /root/.config/mobdesk /root/.local/share/mobdesk", "passwd "}
-	if len(commands) != len(wantPrefix)+2 || strings.Join(commands[:len(wantPrefix)], "\n") != strings.Join(wantPrefix, "\n") {
+	if len(commands) != len(wantPrefix)+3 || strings.Join(commands[:len(wantPrefix)], "\n") != strings.Join(wantPrefix, "\n") {
 		t.Fatalf("ordem de comandos inesperada:\n%v", commands)
 	}
-	if commands[7] != "proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
-		t.Fatalf("unexpected completion installation: %q", commands[7])
+	if commands[7] != "proot-distro login ubuntu -- apt-get update" {
+		t.Fatalf("unexpected Ubuntu package update: %q", commands[7])
 	}
-	if !strings.Contains(commands[8], "bash_completion") || !strings.Contains(commands[8], "PATH=\"$HOME/.local/bin:$PATH\"") || !strings.Contains(commands[8], "PS1=") {
-		t.Fatalf("shell configuration missing: %q", commands[8])
+	if commands[8] != "proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
+		t.Fatalf("unexpected completion installation: %q", commands[8])
+	}
+	if !strings.Contains(commands[9], "bash_completion") || !strings.Contains(commands[9], "PATH=\"$HOME/.local/bin:$PATH\"") || !strings.Contains(commands[9], "PS1=") {
+		t.Fatalf("shell configuration missing: %q", commands[9])
 	}
 }
 
