@@ -132,6 +132,7 @@ PIPX_BIN_DIR=/usr/local/bin pipx install --force TUIFIManager==5.2.6`
 type Options struct {
 	Paths          paths.Paths
 	Runner         CommandRunner
+	Interactive    bool
 	Now            func() time.Time
 	CommandTimeout time.Duration
 	LockTimeout    time.Duration
@@ -194,10 +195,7 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	if !ok {
 		return Result{}, i18n.NewError(i18n.ServiceInstallUnsupported, "install_unsupported", map[string]any{"Name": name}, nil)
 	}
-	runner := options.Runner
-	if runner == nil {
-		runner = ExecRunner{}
-	}
+	runner := runnerFor(options)
 	for _, prerequisite := range language.Requires {
 		progress(options, i18n.ServiceInstallDependency, map[string]any{"Dependency": prerequisite, "Name": language.Name})
 		if _, err := install(ctx, prerequisite, options); err != nil {

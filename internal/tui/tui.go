@@ -163,6 +163,12 @@ func (m Model) runHostOperation(operation string, args ...string) (tea.Model, te
 }
 
 func operationCommand(operationID int, operation string, command tea.Cmd) tea.Cmd {
+	if operation == "install" || operation == "setup" || operation == "setup-upgrade" {
+		// ExecProcess must be returned directly to Bubble Tea. Wrapping it in
+		// another command would consume its internal exec message before the
+		// program can suspend the terminal.
+		return command
+	}
 	return func() tea.Msg {
 		message := command()
 		switch value := message.(type) {
@@ -338,7 +344,7 @@ func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 	case "e":
 		if m.screen == setupScreen {
-			return m.runHostOperation("setup-upgrade", "setup", "--upgrade-system", "--json")
+			return m.runHostOperation("setup-upgrade", "setup", "--upgrade-system")
 		}
 	case "i":
 		if m.screen == toolsScreen {
@@ -412,7 +418,7 @@ func (m Model) installSelectedTool() (tea.Model, tea.Cmd) {
 	}
 	m.selectedTool = index
 	m.installingTool = entries[index].profile.Name
-	return m.runHostOperation("install", "install", entries[index].profile.Name, "--json", "--progress")
+	return m.runHostOperation("install", "install", entries[index].profile.Name)
 }
 
 func (m Model) toggleWorkstation() (tea.Model, tea.Cmd) {
@@ -498,12 +504,12 @@ func (m *Model) activateFocusedControl() (tea.Cmd, bool) {
 		return nil, true
 	case setupScreen:
 		if m.focus == 0 {
-			updated, cmd := m.runHostOperation("setup", "setup", "--json")
+			updated, cmd := m.runHostOperation("setup", "setup")
 			*m = updated.(Model)
 			return cmd, true
 		}
 		if m.focus == 1 {
-			updated, cmd := m.runHostOperation("setup-upgrade", "setup", "--upgrade-system", "--json")
+			updated, cmd := m.runHostOperation("setup-upgrade", "setup", "--upgrade-system")
 			*m = updated.(Model)
 			return cmd, true
 		}

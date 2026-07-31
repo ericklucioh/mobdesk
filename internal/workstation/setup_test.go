@@ -93,6 +93,36 @@ func TestSetupReconcilesShellConfigForExistingSetup(t *testing.T) {
 	}
 }
 
+func TestSetupUsesNonInteractiveAPTForHeadlessMode(t *testing.T) {
+	p := paths.New(t.TempDir(), t.TempDir())
+	service := New(p)
+	var commands []string
+	service.Deps.Run = func(_ context.Context, name string, args ...string) error {
+		commands = append(commands, name+" "+strings.Join(args, " "))
+		return nil
+	}
+	service.Deps.EnsureSSHConfigured = func(paths.Paths) error { return nil }
+	service.Deps.Executable = func() (string, error) { return "/bin/mobdesk", nil }
+	service.Deps.Abs = func(path string) (string, error) { return path, nil }
+	service.Deps.EvalSymlinks = func(path string) (string, error) { return path, nil }
+
+	if err := os.MkdirAll(p.StateDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, phase := range []string{"directories", "packages-updated", "packages-installed", "ubuntu-installed", "workspace-created", "password-configured", "ssh-configured"} {
+		if err := os.WriteFile(p.SetupPhase(phase), []byte("done"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if _, err := service.Setup(context.Background(), SetupOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if len(commands) < 2 || commands[1] != "proot-distro login ubuntu -- env DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
+		t.Fatalf("headless setup did not configure APT non-interactively: %v", commands)
+	}
+}
+
 func TestSetupCreatesPrivateStateDirectories(t *testing.T) {
 	p := paths.New(t.TempDir(), t.TempDir())
 	service := New(p)

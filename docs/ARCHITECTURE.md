@@ -87,10 +87,13 @@ Mobdesk in Termux
 ```
 
 Every command identifies its target environment. The application must not treat
-an Ubuntu process as a native Termux process. Simple processes use
-`os/exec` with context and cancellation. Shells and editors require PTY input,
-output forwarding and safe terminal restoration. User input is never
-concatenated into commands without validation.
+an Ubuntu process as a native Termux process. Simple processes use `os/exec`
+with context and cancellation. Human setup and tool installation, shells and
+editors require PTY input, output forwarding and safe terminal restoration so
+package-manager prompts remain answerable. The TUI suspends through
+`tea.ExecProcess` instead of writing Ubuntu commands itself. JSON and progress
+operations remain headless and use deterministic package configuration
+defaults. User input is never concatenated into commands without validation.
 
 ## State and storage
 
@@ -126,9 +129,11 @@ TUI event
 ```
 
 The real flow does not depend on progress streaming or continuous polling. The
-TUI runs at most one host operation at a time. Operations and status snapshots
-carry monotonic IDs so stale responses are discarded, and backend subprocesses
-are cancelled when the TUI exits.
+TUI runs at most one host operation at a time. Setup and tool installation are
+explicit terminal handoffs; the TUI waits outside the alternate screen and
+refreshes status after the child exits. Operations and status snapshots carry
+monotonic IDs so stale responses are discarded, and backend subprocesses are
+cancelled when the TUI exits.
 
 ## Platform limitations
 

@@ -45,7 +45,7 @@ func runInstallOptions(ctx context.Context, name string, jsonOutput, progressOut
 		}
 		return err
 	}
-	options := install.Options{Paths: paths.Current()}
+	options := install.Options{Paths: paths.Current(), Interactive: !jsonOutput && !progressOutput}
 	if len(localizers) > 0 {
 		options.Localizer = localizers[0]
 	}
@@ -62,6 +62,9 @@ func runInstallOptions(ctx context.Context, name string, jsonOutput, progressOut
 		return err
 	}
 	if err != nil {
+		if result.LogPath != "" {
+			_, _ = fmt.Fprintln(os.Stderr, localized(localizers, i18n.OutputLogsLabel, map[string]any{"Path": result.LogPath}))
+		}
 		return err
 	}
 

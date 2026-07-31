@@ -35,6 +35,27 @@ func runCommandWithLocale(ctx context.Context, locale i18n.Locale, args ...strin
 	}
 }
 
+func runInteractiveOperationWithLocale(ctx context.Context, locale i18n.Locale, args ...string) tea.Cmd {
+	if len(args) == 0 {
+		return func() tea.Msg { return operationMessage{err: fmt.Errorf("operation has no command")} }
+	}
+	binary, err := os.Executable()
+	if err != nil {
+		return func() tea.Msg { return operationMessage{command: args[0], err: err} }
+	}
+	command := exec.CommandContext(ctx, binary, appendLocale(args, locale)...)
+	return tea.ExecProcess(command, func(err error) tea.Msg {
+		result := operationResult{Success: err == nil, State: "completed"}
+		if args[0] == "install" && len(args) > 1 {
+			result.Language = args[1]
+		}
+		if err != nil {
+			result.State = "failed"
+		}
+		return operationMessage{command: args[0], result: result, err: err}
+	})
+}
+
 func runInstallCommand(ctx context.Context, args ...string) tea.Cmd {
 	return runInstallCommandWithLocale(ctx, i18n.LocaleENUS, args...)
 }

@@ -40,7 +40,8 @@ starting with Neovim/LazyVim, versioned JSON CLI operations, separate app and
 configuration states, and touch-first details/actions/confirmation popups.
 
 The criterion is that users can study and develop without a long sequence of
-internal commands.
+internal commands, and that interactive package installation can be completed
+from the TUI without losing access to terminal prompts.
 
 ## Stage 3 - Persistent and remote environment
 

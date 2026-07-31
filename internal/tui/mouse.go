@@ -82,13 +82,13 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 		}
 	case setupScreen:
 		if touchBlockContainsAt(lines, bodyIndex, mouse.X, m.text(i18n.TUISetupContinue, nil)) {
-			return m.runHostOperation("setup", "setup", "--json")
+			return m.runHostOperation("setup", "setup")
 		}
 		if touchBlockContainsAt(lines, bodyIndex, mouse.X, m.text(i18n.TUISetupUpgrade, nil)) {
-			return m.runHostOperation("setup-upgrade", "setup", "--upgrade-system", "--json")
+			return m.runHostOperation("setup-upgrade", "setup", "--upgrade-system")
 		}
 		if nearLine(lines, bodyIndex, m.text(i18n.TUISetupUpgrade, nil)) {
-			return m.runHostOperation("setup-upgrade", "setup", "--upgrade-system", "--json")
+			return m.runHostOperation("setup-upgrade", "setup", "--upgrade-system")
 		}
 	case statusScreen:
 		if blockContainsAt(lines, bodyIndex, mouse.X, m.text(i18n.TUIStatusRefresh, nil)) {

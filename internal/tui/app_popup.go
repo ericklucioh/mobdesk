@@ -326,7 +326,7 @@ func (m Model) dispatchPopupAction(action string) (tea.Model, tea.Cmd) {
 	switch action {
 	case "install":
 		m.installingTool = name
-		return m.runHostOperation("install", "install", name, "--json", "--progress")
+		return m.runHostOperation("install", "install", name)
 	case "uninstall":
 		return m.runHostOperation("uninstall", "uninstall", name, "--json", "--progress")
 	case "config_apply":

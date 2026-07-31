@@ -398,7 +398,10 @@ func runnerFor(options Options) CommandRunner {
 	if options.Runner != nil {
 		return options.Runner
 	}
-	return ExecRunner{}
+	if options.Interactive {
+		return InteractiveRunner{}
+	}
+	return nonInteractiveRunner{Runner: ExecRunner{}}
 }
 
 func commandTimeoutFor(options Options) time.Duration {

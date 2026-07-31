@@ -50,6 +50,14 @@ available.
 `--json`. The TUI consumes that contract and stderr remains for auxiliary
 messages.
 
+### Human installations own the terminal
+
+Text-mode setup and tool installation run through a PTY and keep command output
+visible so users can answer package-manager and installer prompts. The TUI
+suspends temporarily through `tea.ExecProcess` for these operations and resumes
+after the command exits. JSON and progress modes remain non-interactive and
+receive deterministic package configuration defaults instead of reading stdin.
+
 ### LazyVim is an optional versioned profile
 
 LazyVim is separate from Neovim installation. Embedded files and fixed plugin

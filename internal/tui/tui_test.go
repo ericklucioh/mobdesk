@@ -269,7 +269,7 @@ func TestReleaseToolRowsOpenDetailsBeforeInstall(t *testing.T) {
 				t.Fatalf("popup did not start %s: command=%v installing=%q", name, command != nil, model.installingTool)
 			}
 			command()
-			if !slices.Equal(backend.operationArgs, []string{"install", name, "--json", "--progress"}) {
+			if !slices.Equal(backend.operationArgs, []string{"install", name}) {
 				t.Fatalf("button sent args %v for %s", backend.operationArgs, name)
 			}
 		})

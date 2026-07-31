@@ -84,10 +84,7 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 		strategy = profile.InstallKind
 	}
 	progress(options, i18n.ServiceUninstallProgress, map[string]any{"Name": profile.Name, "Detail": ""})
-	runner := options.Runner
-	if runner == nil {
-		runner = ExecRunner{}
-	}
+	runner := runnerFor(options)
 	removedFiles, preservedFiles, removeErr := uninstallStrategy(ctx, runner, options, strategy, record)
 	result.Paths = append(removedFiles, preservedFiles...)
 	result.Conflicts = append([]string(nil), preservedFiles...)

@@ -37,6 +37,9 @@ func (b *realBackend) StatusCmd() tea.Cmd {
 }
 
 func (b *realBackend) OperationCmd(args ...string) tea.Cmd {
+	if len(args) > 0 && !containsArg(args, "--json") && (args[0] == "install" || args[0] == "setup") {
+		return runInteractiveOperationWithLocale(b.ctx, b.locale, args...)
+	}
 	if len(args) > 0 && containsArg(args, "--progress") && (args[0] == "install" || args[0] == "uninstall" || args[0] == "config") {
 		return runInstallCommandWithLocale(b.ctx, b.locale, args...)
 	}

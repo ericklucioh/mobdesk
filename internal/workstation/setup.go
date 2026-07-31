@@ -120,7 +120,11 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupR
 		if err := s.runUbuntu(ctx, "apt-get", "update"); err != nil {
 			return result, fmt.Errorf("update Ubuntu package lists: %w", err)
 		}
-		if err := s.runUbuntu(ctx, "apt-get", "-o", "DPkg::Lock::Timeout=300", "install", "-y", "bash-completion"); err != nil {
+		aptArgs := []string{"apt-get", "-o", "DPkg::Lock::Timeout=300", "install", "-y", "bash-completion"}
+		if !options.AllowPasswordPrompt {
+			aptArgs = append([]string{"env", "DEBIAN_FRONTEND=noninteractive", "TZ=Etc/UTC"}, aptArgs...)
+		}
+		if err := s.runUbuntu(ctx, aptArgs...); err != nil {
 			return result, fmt.Errorf("install Bash completion: %w", err)
 		}
 	}
