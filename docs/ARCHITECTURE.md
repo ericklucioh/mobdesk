@@ -93,7 +93,9 @@ editors require PTY input, output forwarding and safe terminal restoration so
 package-manager prompts remain answerable. The TUI suspends through
 `tea.ExecProcess` instead of writing Ubuntu commands itself. JSON and progress
 operations remain headless and use deterministic package configuration
-defaults. User input is never concatenated into commands without validation.
+defaults. Setup synchronizes Android's validated timezone into Ubuntu, and APT
+operations repair pending `dpkg` configuration before changing packages. User
+input is never concatenated into commands without validation.
 
 ## State and storage
 
@@ -111,6 +113,10 @@ User-profile tools such as Zellij live in `$HOME/.local/bin`; generated shell
 configuration adds that path. Control and installation commands remain Termux
 operations. Mobdesk also supplies a Ubuntu shell launcher through `$SHELL` so
 Zellij panels retain the main shell configuration.
+
+The generated Ubuntu shell exports `CGO_ENABLED=0`. Go-based catalog tools also
+receive the variable explicitly during installation so they do not depend on a
+C compiler or development headers that may be absent from the PRoot userland.
 
 ## Layer contracts
 

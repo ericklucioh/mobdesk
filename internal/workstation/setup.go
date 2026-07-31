@@ -5,9 +5,20 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/ericklucioh/mobdesk/internal/executil"
 	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
+)
+
+const (
+	defaultTimezone      = "Etc/UTC"
+	ubuntuTimezoneScript = `set -eu
+zone=$1
+test -f "/usr/share/zoneinfo/$zone"
+ln -snf "/usr/share/zoneinfo/$zone" /etc/localtime
+printf '%s\n' "$zone" > /etc/timezone`
 )
 
 type SetupOptions struct {
@@ -81,6 +92,9 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupR
 			return result, err
 		}
 	}
+	if err := s.configureUbuntuTimezone(ctx); err != nil {
+		return result, err
+	}
 	if !s.setupPhaseDone("workspace-created") {
 		if err := s.runUbuntu(ctx, "mkdir", "-p", s.Paths.UbuntuWorkspace(), s.Paths.UbuntuConfigDir(), s.Paths.UbuntuDataDir()); err != nil {
 			return result, err
@@ -117,12 +131,20 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupR
 		}
 	}
 	if !s.setupPhaseDone("shell-configured") {
+		zone := s.androidTimezone(ctx)
+		dpkgArgs := []string{"dpkg", "--configure", "-a"}
+		if !options.AllowPasswordPrompt {
+			dpkgArgs = append([]string{"env", "DEBIAN_FRONTEND=noninteractive", "TZ=" + zone}, dpkgArgs...)
+		}
+		if err := s.runUbuntu(ctx, dpkgArgs...); err != nil {
+			return result, fmt.Errorf("repair Ubuntu package state: %w", err)
+		}
 		if err := s.runUbuntu(ctx, "apt-get", "-y", "update"); err != nil {
 			return result, fmt.Errorf("update Ubuntu package lists: %w", err)
 		}
 		aptArgs := []string{"apt-get", "-o", "DPkg::Lock::Timeout=300", "install", "-y", "bash-completion"}
 		if !options.AllowPasswordPrompt {
-			aptArgs = append([]string{"env", "DEBIAN_FRONTEND=noninteractive", "TZ=Etc/UTC"}, aptArgs...)
+			aptArgs = append([]string{"env", "DEBIAN_FRONTEND=noninteractive", "TZ=" + zone}, aptArgs...)
 		}
 		if err := s.runUbuntu(ctx, aptArgs...); err != nil {
 			return result, fmt.Errorf("install Bash completion: %w", err)
@@ -172,6 +194,7 @@ if [ -r /usr/share/bash-completion/bash_completion ]; then
 fi
 export PATH="$HOME/.local/bin:$PATH"
 export SHELL="$HOME/.config/mobdesk/shell"
+export CGO_ENABLED=0
 PS1='\[\e[35m\]\u@\h\[\e[0m\]:\[\e[36m\]\w\[\e[0m\]\$ '
 EOF
 chmod 0600 %q
@@ -185,6 +208,62 @@ chmod 0700 %q`, p.UbuntuConfigDir(), p.UbuntuShellConfig(), p.UbuntuShellConfig(
 func (s Service) setupPhaseDone(phase string) bool {
 	_, err := s.Deps.Stat(s.Paths.SetupPhase(phase))
 	return err == nil
+}
+
+func (s Service) androidTimezone(ctx context.Context) string {
+	if s.Deps.AndroidTimezone != nil {
+		return s.Deps.AndroidTimezone(ctx)
+	}
+	return defaultTimezone
+}
+
+func (s Service) configureUbuntuTimezone(ctx context.Context) error {
+	zone := s.androidTimezone(ctx)
+	if !validTimezone(zone) {
+		return fmt.Errorf("invalid Android timezone %q", zone)
+	}
+	if err := s.runUbuntu(ctx, "sh", "-ec", ubuntuTimezoneScript, "--", zone); err != nil {
+		return fmt.Errorf("configure Ubuntu timezone %s: %w", zone, err)
+	}
+	return nil
+}
+
+func androidTimezone(ctx context.Context) string {
+	for _, executable := range []string{"/system/bin/getprop", "getprop"} {
+		command, err := executil.CommandContext(ctx, executable, "persist.sys.timezone")
+		if err != nil {
+			continue
+		}
+		output, err := command.Output()
+		if err != nil {
+			continue
+		}
+		zone := strings.TrimSpace(string(output))
+		if validTimezone(zone) {
+			return zone
+		}
+	}
+	return defaultTimezone
+}
+
+func validTimezone(zone string) bool {
+	if zone == "" || strings.HasPrefix(zone, "/") {
+		return false
+	}
+	for _, part := range strings.Split(zone, "/") {
+		if part == "" || part == "." || part == ".." {
+			return false
+		}
+	}
+	for index := 0; index < len(zone); index++ {
+		character := zone[index]
+		if (character >= 'a' && character <= 'z') || (character >= 'A' && character <= 'Z') ||
+			(character >= '0' && character <= '9') || strings.ContainsRune("/_+.-", rune(character)) {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func (s Service) markSetupPhase(phase string) error {

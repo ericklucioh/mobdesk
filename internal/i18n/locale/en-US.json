@@ -126,6 +126,7 @@
   "service.install.logs": "create installation log directory: {{.Detail}}",
   "service.install.record": "record installation attempt: {{.Detail}}",
   "service.install.verify": "verify {{.Name}}",
+  "service.install.repair": "repair Ubuntu package state for {{.Name}}",
   "service.install.update": "update Ubuntu indexes for {{.Name}}",
   "service.install.tool": "install {{.Name}}",
   "service.install.hash": "incomplete hash for installed files",

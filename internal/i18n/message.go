@@ -144,6 +144,7 @@ const (
 	ServiceInstallLogs        MessageID = "service.install.logs"
 	ServiceInstallRecord      MessageID = "service.install.record"
 	ServiceInstallVerify      MessageID = "service.install.verify"
+	ServiceInstallRepair      MessageID = "service.install.repair"
 	ServiceInstallUpdate      MessageID = "service.install.update"
 	ServiceInstallTool        MessageID = "service.install.tool"
 	ServiceInstallHash        MessageID = "service.install.hash"
@@ -526,7 +527,7 @@ var requiredMessageIDs = []MessageID{
 	AppTuifiDescription, AppNeovimDescription, AppOpencodeDescription, AppCodexDescription,
 	AppClaudeDescription, AppLeetgoDescription, ProfileLazyVimDescription,
 	ServiceInstallUnsupported, ServiceInstallDependency, ServiceInstallState, ServiceInstallLogs,
-	ServiceInstallRecord, ServiceInstallVerify, ServiceInstallUpdate, ServiceInstallTool,
+	ServiceInstallRecord, ServiceInstallVerify, ServiceInstallRepair, ServiceInstallUpdate, ServiceInstallTool,
 	ServiceInstallHash, ServiceInstallLock, ServiceInstallWait, ServiceConfigError,
 	ServiceConfigProgress, ServiceConfigPlugin, ServiceUninstallError, ServiceUninstallProgress,
 	ServiceWorkstationError, ServiceWorkstationWarning, ServiceWorkstationPID, ServiceUpdateError, ServiceLogsError,

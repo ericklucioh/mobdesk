@@ -23,6 +23,7 @@ func TestSetupOrchestratesAllPhasesWithExplicitPaths(t *testing.T) {
 	}
 	configured := false
 	service.Deps.EnsureSSHConfigured = func(got paths.Paths) error { configured = got == p; return nil }
+	service.Deps.AndroidTimezone = func(context.Context) string { return "America/Sao_Paulo" }
 	service.Deps.Executable = func() (string, error) { return "/bin/mobdesk", nil }
 	service.Deps.Abs = func(path string) (string, error) { return path, nil }
 	service.Deps.EvalSymlinks = func(path string) (string, error) { return path, nil }
@@ -42,18 +43,21 @@ func TestSetupOrchestratesAllPhasesWithExplicitPaths(t *testing.T) {
 	if _, err := os.Stat(p.SetupDone()); err != nil {
 		t.Fatalf("setup.done missing: %v", err)
 	}
-	wantPrefix := []string{"pkg update", "pkg upgrade -y -o Dpkg::Options::=--force-confold", "pkg install -y -o Dpkg::Options::=--force-confold proot-distro openssh net-tools", "proot-distro login ubuntu -- true", "proot-distro install ubuntu", "proot-distro login ubuntu -- mkdir -p /root/workspace /root/.config/mobdesk /root/.local/share/mobdesk", "passwd "}
-	if len(commands) != len(wantPrefix)+3 || strings.Join(commands[:len(wantPrefix)], "\n") != strings.Join(wantPrefix, "\n") {
+	wantPrefix := []string{"pkg update", "pkg upgrade -y -o Dpkg::Options::=--force-confold", "pkg install -y -o Dpkg::Options::=--force-confold proot-distro openssh net-tools", "proot-distro login ubuntu -- true", "proot-distro install ubuntu", "proot-distro login ubuntu -- sh -ec " + ubuntuTimezoneScript + " -- America/Sao_Paulo", "proot-distro login ubuntu -- mkdir -p /root/workspace /root/.config/mobdesk /root/.local/share/mobdesk", "passwd "}
+	if len(commands) != len(wantPrefix)+4 || strings.Join(commands[:len(wantPrefix)], "\n") != strings.Join(wantPrefix, "\n") {
 		t.Fatalf("ordem de comandos inesperada:\n%v", commands)
 	}
-	if commands[7] != "proot-distro login ubuntu -- apt-get -y update" {
-		t.Fatalf("unexpected Ubuntu package update: %q", commands[7])
+	if commands[8] != "proot-distro login ubuntu -- dpkg --configure -a" {
+		t.Fatalf("unexpected dpkg repair: %q", commands[8])
 	}
-	if commands[8] != "proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
-		t.Fatalf("unexpected completion installation: %q", commands[8])
+	if commands[9] != "proot-distro login ubuntu -- apt-get -y update" {
+		t.Fatalf("unexpected Ubuntu package update: %q", commands[9])
 	}
-	if !strings.Contains(commands[9], "bash_completion") || !strings.Contains(commands[9], "PATH=\"$HOME/.local/bin:$PATH\"") || !strings.Contains(commands[9], "PS1=") {
-		t.Fatalf("shell configuration missing: %q", commands[9])
+	if commands[10] != "proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
+		t.Fatalf("unexpected completion installation: %q", commands[10])
+	}
+	if !strings.Contains(commands[11], "bash_completion") || !strings.Contains(commands[11], "PATH=\"$HOME/.local/bin:$PATH\"") || !strings.Contains(commands[11], "CGO_ENABLED=0") || !strings.Contains(commands[11], "PS1=") {
+		t.Fatalf("shell configuration missing: %q", commands[11])
 	}
 }
 
@@ -69,6 +73,7 @@ func TestSetupReconcilesShellConfigForExistingSetup(t *testing.T) {
 		return nil
 	}
 	service.Deps.EnsureSSHConfigured = func(paths.Paths) error { return nil }
+	service.Deps.AndroidTimezone = func(context.Context) string { return "America/Sao_Paulo" }
 	service.Deps.Executable = func() (string, error) { return "/bin/mobdesk", nil }
 	service.Deps.Abs = func(path string) (string, error) { return path, nil }
 	service.Deps.EvalSymlinks = func(path string) (string, error) { return path, nil }
@@ -102,6 +107,7 @@ func TestSetupUsesNonInteractiveAPTForHeadlessMode(t *testing.T) {
 		return nil
 	}
 	service.Deps.EnsureSSHConfigured = func(paths.Paths) error { return nil }
+	service.Deps.AndroidTimezone = func(context.Context) string { return "America/Sao_Paulo" }
 	service.Deps.Executable = func() (string, error) { return "/bin/mobdesk", nil }
 	service.Deps.Abs = func(path string) (string, error) { return path, nil }
 	service.Deps.EvalSymlinks = func(path string) (string, error) { return path, nil }
@@ -118,7 +124,7 @@ func TestSetupUsesNonInteractiveAPTForHeadlessMode(t *testing.T) {
 	if _, err := service.Setup(context.Background(), SetupOptions{}); err != nil {
 		t.Fatal(err)
 	}
-	if len(commands) < 2 || commands[0] != "proot-distro login ubuntu -- apt-get -y update" || commands[1] != "proot-distro login ubuntu -- env DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
+	if len(commands) < 4 || commands[0] != "proot-distro login ubuntu -- sh -ec "+ubuntuTimezoneScript+" -- America/Sao_Paulo" || commands[1] != "proot-distro login ubuntu -- env DEBIAN_FRONTEND=noninteractive TZ=America/Sao_Paulo dpkg --configure -a" || commands[2] != "proot-distro login ubuntu -- apt-get -y update" || commands[3] != "proot-distro login ubuntu -- env DEBIAN_FRONTEND=noninteractive TZ=America/Sao_Paulo apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
 		t.Fatalf("headless setup did not configure APT non-interactively: %v", commands)
 	}
 }
@@ -172,5 +178,30 @@ func TestSetupRefusesSymlinkedPhaseMarker(t *testing.T) {
 	contents, readErr := os.ReadFile(target)
 	if readErr != nil || string(contents) != "keep" {
 		t.Fatalf("target = %q, err = %v", contents, readErr)
+	}
+}
+
+func TestValidTimezoneRejectsUnsafePaths(t *testing.T) {
+	for _, zone := range []string{"America/Sao_Paulo", "Etc/UTC", "UTC"} {
+		if !validTimezone(zone) {
+			t.Fatalf("validTimezone(%q) = false", zone)
+		}
+	}
+	for _, zone := range []string{"", "/etc/passwd", "../UTC", "America/../UTC", "America/Sao Paulo"} {
+		if validTimezone(zone) {
+			t.Fatalf("validTimezone(%q) = true", zone)
+		}
+	}
+}
+
+func TestConfigureUbuntuTimezoneRejectsInvalidValue(t *testing.T) {
+	service := New(paths.New(t.TempDir(), t.TempDir()))
+	service.Deps.AndroidTimezone = func(context.Context) string { return "../../etc/passwd" }
+	service.Deps.Run = func(context.Context, string, ...string) error {
+		t.Fatal("invalid timezone reached Ubuntu")
+		return nil
+	}
+	if err := service.configureUbuntuTimezone(context.Background()); err == nil {
+		t.Fatal("invalid timezone was accepted")
 	}
 }

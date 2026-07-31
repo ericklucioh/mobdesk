@@ -289,8 +289,8 @@ func TestInstallNodeInstallsNPM(t *testing.T) {
 
 func TestInstallTTTInstallsRequiredTools(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y git ripgrep":                     {{}},
-		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " env GOBIN=/usr/local/bin go install github.com/eugenioenko/ttt/cmd/ttt@v1.1.0": {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y git ripgrep":                                   {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " env CGO_ENABLED=0 GOBIN=/usr/local/bin go install github.com/eugenioenko/ttt/cmd/ttt@v1.1.0": {{}},
 	}}
 	tool, ok := Resolve("ttt")
 	if !ok {
@@ -372,6 +372,7 @@ func TestInstallSkipsAlreadyInstalledLanguage(t *testing.T) {
 func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
 		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " go version":                                           {{Err: errors.New("not found")}, {Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " dpkg --configure -a":                                  {{}},
 		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 -y update":         {{}},
 		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y golang": {{}},
 	}}
@@ -385,10 +386,10 @@ func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 	if !result.Installed || !result.Changed || result.Language != "go" {
 		t.Fatalf("unexpected result: %+v", result)
 	}
-	if len(runner.commands) != 4 {
-		t.Fatalf("commands = %v, want version, update, install, version", runner.commands)
+	if len(runner.commands) != 5 {
+		t.Fatalf("commands = %v, want version, repair, update, install, version", runner.commands)
 	}
-	wantUpdates := []string{"verify go", "update Ubuntu indexes for go", "wait for the package manager", "install go", "verify go"}
+	wantUpdates := []string{"verify go", "repair Ubuntu package state for go", "update Ubuntu indexes for go", "wait for the package manager", "install go", "verify go"}
 	if !slices.Equal(updates, wantUpdates) {
 		t.Fatalf("progress = %v, want %v", updates, wantUpdates)
 	}

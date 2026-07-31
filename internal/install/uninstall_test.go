@@ -24,6 +24,7 @@ func writeInstallationRecord(t *testing.T, options Options, record InstallationR
 
 func TestUninstallAptRemovesOnlyManagedPackage(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " dpkg --configure -a":                                 {{}},
 		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 remove -y neovim": {{}},
 	}}
 	options := testOptions(t, runner)

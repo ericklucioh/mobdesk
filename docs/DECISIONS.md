@@ -58,6 +58,27 @@ suspends temporarily through `tea.ExecProcess` for these operations and resumes
 after the command exits. JSON and progress modes remain non-interactive and
 receive deterministic package configuration defaults instead of reading stdin.
 
+### Ubuntu timezone follows Android
+
+Setup reads the Android timezone, validates it against Ubuntu's zoneinfo
+database and persists `/etc/localtime` and `/etc/timezone`; repeated setup runs
+reconcile changes. Non-interactive APT operations rely on that persisted value
+instead of forcing UTC.
+
+### APT repairs interrupted dpkg state first
+
+APT operations run `dpkg --configure -a` before changing packages. This is a
+safe, idempotent repair for interrupted package configuration; broader
+dependency repair is not performed automatically. Interactive PTY stdin
+forwarding is cancellable and must finish before the terminal is restored.
+
+### Go tools default to pure Go builds
+
+The generated Ubuntu shell exports `CGO_ENABLED=0`, and Mobdesk also sets it
+explicitly for Go-based tool installs. This avoids requiring a C toolchain and
+headers in the PRoot userland; tools that genuinely require CGO remain outside
+the current default installation profile.
+
 ### LazyVim is an optional versioned profile
 
 LazyVim is separate from Neovim installation. Embedded files and fixed plugin

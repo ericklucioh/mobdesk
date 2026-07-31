@@ -97,7 +97,7 @@ func TestSSHWrapperUsesConfiguredInteractiveBash(t *testing.T) {
 func TestRenderUbuntuShellConfigEnablesCompletionAndPurplePrompt(t *testing.T) {
 	p := paths.New("/home/user", "/termux/usr")
 	config := renderUbuntuShellConfig(p)
-	for _, expected := range []string{"/usr/share/bash-completion/bash_completion", `export PATH="$HOME/.local/bin:$PATH"`, `export SHELL="$HOME/.config/mobdesk/shell"`, `PS1='\[\e[35m\]`, `\u@\h`, p.UbuntuShellLauncher()} {
+	for _, expected := range []string{"/usr/share/bash-completion/bash_completion", `export PATH="$HOME/.local/bin:$PATH"`, `export SHELL="$HOME/.config/mobdesk/shell"`, `export CGO_ENABLED=0`, `PS1='\[\e[35m\]`, `\u@\h`, p.UbuntuShellLauncher()} {
 		if !strings.Contains(config, expected) {
 			t.Fatalf("configuration does not contain %q:\n%s", expected, config)
 		}

@@ -36,6 +36,7 @@ type Dependencies struct {
 	EnsureIfconfig      func(context.Context, io.Writer, func(context.Context, string, ...string) error) error
 	Addresses           func() []string
 	Username            func() string
+	AndroidTimezone     func(context.Context) string
 	MkdirAll            func(string, os.FileMode) error
 	Chmod               func(string, os.FileMode) error
 	WriteFile           func(string, []byte, os.FileMode) error
@@ -82,7 +83,7 @@ func defaultDependencies() Dependencies {
 		Stat: os.Stat, ReadFile: os.ReadFile, Remove: os.Remove, Run: runCommand, StartSSHD: startSSHD,
 		WakeLock: wakeLock, WakeUnlock: wakeUnlock, PortOpen: portOpen, SSHResponds: sshPortResponds,
 		WaitForPortClosed: waitForPortClosed, ProcessIsMobdeskSSH: ProcessIsMobdeskSSH, FindProcess: findProcess,
-		AcquireLock: acquireLock, EnsureSSHConfigured: EnsureSSHConfigured, EnsureIfconfig: ensureIfconfig, Addresses: LocalIPv4Addresses, Username: currentUsername,
+		AcquireLock: acquireLock, EnsureSSHConfigured: EnsureSSHConfigured, EnsureIfconfig: ensureIfconfig, Addresses: LocalIPv4Addresses, Username: currentUsername, AndroidTimezone: androidTimezone,
 		MkdirAll: os.MkdirAll, Chmod: os.Chmod, WriteFile: os.WriteFile, Lstat: os.Lstat, Readlink: os.Readlink, Symlink: os.Symlink,
 		Executable: os.Executable, Abs: filepath.Abs, EvalSymlinks: filepath.EvalSymlinks,
 	}

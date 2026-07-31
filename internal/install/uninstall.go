@@ -124,6 +124,9 @@ func uninstallStrategy(ctx context.Context, runner CommandRunner, options Option
 		if record.Package == "" {
 			return nil, nil, fmt.Errorf("package missing from %s record", record.Name)
 		}
+		if repair := repairDpkg(ctx, runner, options.CommandTimeout, record.LogPath); repair.Err != nil {
+			return nil, nil, repair.Err
+		}
 		result := runAptLogged(ctx, runner, options.CommandTimeout, record.LogPath, "remove", "-y", record.Package)
 		return nil, nil, result.Err
 	case "npm":

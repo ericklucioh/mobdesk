@@ -243,6 +243,11 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	progress(options, i18n.ServiceInstallVerify, map[string]any{"Name": language.Name})
 	version := runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
 	if version.Err != nil {
+		progress(options, i18n.ServiceInstallRepair, map[string]any{"Name": language.Name})
+		if repair := repairDpkg(ctx, runner, options.CommandTimeout, logPath); repair.Err != nil {
+			err := i18n.NewError(i18n.ServiceInstallRepair, "install_repair", map[string]any{"Name": language.Name}, repair.Err)
+			return failInstallation(installationsDir, record, result, err)
+		}
 		progress(options, i18n.ServiceInstallUpdate, map[string]any{"Name": language.Name})
 		progress(options, i18n.ServiceInstallLock, nil)
 		if update := runAptLogged(ctx, runner, options.CommandTimeout, logPath, "update"); update.Err != nil {
@@ -401,12 +406,12 @@ func installTool(ctx context.Context, runner CommandRunner, timeout time.Duratio
 		}
 		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "PIPX_BIN_DIR=/usr/local/bin", "pipx", "install", tool.Package)
 	case "go":
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "GOBIN=/usr/local/bin", "go", "install", tool.Package)
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "CGO_ENABLED=0", "GOBIN=/usr/local/bin", "go", "install", tool.Package)
 	case "ttt":
 		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "git", "ripgrep"); result.Err != nil {
 			return result
 		}
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "GOBIN=/usr/local/bin", "go", "install", tool.Package)
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "CGO_ENABLED=0", "GOBIN=/usr/local/bin", "go", "install", tool.Package)
 	case "cargo":
 		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "cargo"); result.Err != nil {
 			return result
@@ -427,6 +432,10 @@ func runAptLogged(ctx context.Context, runner CommandRunner, timeout time.Durati
 	}
 	aptArgs := append([]string{"-o", fmt.Sprintf("DPkg::Lock::Timeout=%d", aptLockTimeoutSeconds)}, args...)
 	return runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", aptArgs...)
+}
+
+func repairDpkg(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string) CommandResult {
+	return runUbuntuLogged(ctx, runner, timeout, logPath, "dpkg", "--configure", "-a")
 }
 
 func runUbuntuLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, name string, args ...string) CommandResult {

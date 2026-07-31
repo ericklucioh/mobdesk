@@ -11,6 +11,7 @@ import (
 
 	"github.com/creack/pty/v2"
 	"github.com/ericklucioh/mobdesk/internal/executil"
+	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )
 
@@ -80,17 +81,55 @@ func (InteractiveRunner) Run(ctx context.Context, name string, args ...string) C
 		_, _ = io.Copy(io.MultiWriter(os.Stdout, &output), ptmx)
 		close(outputDone)
 	}()
+	inputContext, cancelInput := context.WithCancel(ctx)
+	inputDone := make(chan struct{})
 	go func() {
-		_, _ = io.Copy(ptmx, os.Stdin)
+		defer close(inputDone)
+		copyTerminalInput(inputContext, ptmx, os.Stdin)
 	}()
 
 	waitErr := command.Wait()
+	cancelInput()
 	_ = ptmx.Close()
 	<-outputDone
+	<-inputDone
 	if waitErr == nil && ctx.Err() != nil {
 		waitErr = ctx.Err()
 	}
 	return CommandResult{Stdout: output.Bytes(), Err: waitErr}
+}
+
+func copyTerminalInput(ctx context.Context, destination io.Writer, source *os.File) {
+	buffer := make([]byte, 4096)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		poll := []unix.PollFd{{Fd: int32(source.Fd()), Events: unix.POLLIN}}
+		_, err := unix.Poll(poll, 100)
+		if err == unix.EINTR {
+			continue
+		}
+		if err != nil || poll[0].Revents&(unix.POLLERR|unix.POLLHUP|unix.POLLNVAL) != 0 {
+			return
+		}
+		if poll[0].Revents&unix.POLLIN == 0 {
+			continue
+		}
+
+		count, err := source.Read(buffer)
+		if count > 0 {
+			if _, writeErr := destination.Write(buffer[:count]); writeErr != nil {
+				return
+			}
+		}
+		if err != nil {
+			return
+		}
+	}
 }
 
 type nonInteractiveRunner struct {
@@ -99,7 +138,7 @@ type nonInteractiveRunner struct {
 
 func (r nonInteractiveRunner) Run(ctx context.Context, name string, args ...string) CommandResult {
 	if name == "proot-distro" {
-		args = addUbuntuEnvironment(args, "DEBIAN_FRONTEND=noninteractive", "TZ=Etc/UTC")
+		args = addUbuntuEnvironment(args, "DEBIAN_FRONTEND=noninteractive")
 	}
 	return r.Runner.Run(ctx, name, args...)
 }
