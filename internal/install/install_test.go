@@ -233,8 +233,8 @@ func TestInstallNeovimUsesUbuntuApt(t *testing.T) {
 
 func TestInstallToolUsesPrivateNPMPrefix(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y npm":             {{}},
-		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " env NPM_CONFIG_PREFIX=/root/.local npm install -g opencode-ai": {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y npm":                   {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " env NPM_CONFIG_PREFIX=/root/.local npm install --yes -g opencode-ai": {{}},
 	}}
 	tool, ok := Resolve("opencode-cli")
 	if !ok {

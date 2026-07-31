@@ -394,7 +394,7 @@ func installTool(ctx context.Context, runner CommandRunner, timeout time.Duratio
 		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "npm"); result.Err != nil {
 			return result
 		}
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "NPM_CONFIG_PREFIX=/root/.local", "npm", "install", "-g", tool.Package)
+		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "NPM_CONFIG_PREFIX=/root/.local", "npm", "install", "--yes", "-g", tool.Package)
 	case "pipx":
 		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "pipx"); result.Err != nil {
 			return result
