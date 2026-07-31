@@ -46,7 +46,7 @@ func TestSetupOrchestratesAllPhasesWithExplicitPaths(t *testing.T) {
 	if len(commands) != len(wantPrefix)+3 || strings.Join(commands[:len(wantPrefix)], "\n") != strings.Join(wantPrefix, "\n") {
 		t.Fatalf("ordem de comandos inesperada:\n%v", commands)
 	}
-	if commands[7] != "proot-distro login ubuntu -- apt-get update" {
+	if commands[7] != "proot-distro login ubuntu -- apt-get -y update" {
 		t.Fatalf("unexpected Ubuntu package update: %q", commands[7])
 	}
 	if commands[8] != "proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
@@ -118,7 +118,7 @@ func TestSetupUsesNonInteractiveAPTForHeadlessMode(t *testing.T) {
 	if _, err := service.Setup(context.Background(), SetupOptions{}); err != nil {
 		t.Fatal(err)
 	}
-	if len(commands) < 2 || commands[1] != "proot-distro login ubuntu -- env DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
+	if len(commands) < 2 || commands[0] != "proot-distro login ubuntu -- apt-get -y update" || commands[1] != "proot-distro login ubuntu -- env DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
 		t.Fatalf("headless setup did not configure APT non-interactively: %v", commands)
 	}
 }

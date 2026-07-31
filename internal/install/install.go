@@ -422,6 +422,9 @@ func installTool(ctx context.Context, runner CommandRunner, timeout time.Duratio
 }
 
 func runAptLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, args ...string) CommandResult {
+	if len(args) > 0 && args[0] == "update" {
+		args = append([]string{"-y"}, args...)
+	}
 	aptArgs := append([]string{"-o", fmt.Sprintf("DPkg::Lock::Timeout=%d", aptLockTimeoutSeconds)}, args...)
 	return runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", aptArgs...)
 }

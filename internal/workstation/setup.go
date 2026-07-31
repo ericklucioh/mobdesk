@@ -117,7 +117,7 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupR
 		}
 	}
 	if !s.setupPhaseDone("shell-configured") {
-		if err := s.runUbuntu(ctx, "apt-get", "update"); err != nil {
+		if err := s.runUbuntu(ctx, "apt-get", "-y", "update"); err != nil {
 			return result, fmt.Errorf("update Ubuntu package lists: %w", err)
 		}
 		aptArgs := []string{"apt-get", "-o", "DPkg::Lock::Timeout=300", "install", "-y", "bash-completion"}

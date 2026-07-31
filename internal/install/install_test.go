@@ -372,7 +372,7 @@ func TestInstallSkipsAlreadyInstalledLanguage(t *testing.T) {
 func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
 		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " go version":                                           {{Err: errors.New("not found")}, {Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
-		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 update":            {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 -y update":         {{}},
 		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 install -y golang": {{}},
 	}}
 	options := testOptions(t, runner)
