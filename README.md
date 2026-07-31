@@ -2,6 +2,8 @@
 
 Turn an Android phone into a personal Ubuntu development workstation.
 
+**[Open the landing page](https://ericklucioh.github.io/mobdesk/)**
+
 > **MVP / experimental:** Mobdesk is functional and has been tested on a real
 > Android device. Validation across a broader device matrix is still in
 > progress. Use it for learning, development and lightweight local services,
@@ -210,6 +212,7 @@ require validation on real Termux when a device is available.
 
 ## Documentation and community
 
+- [Landing page and GitHub Pages deployment](docs/GITHUB-PAGES.md)
 - [Mission](docs/MISSION.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Decisions](docs/DECISIONS.md)

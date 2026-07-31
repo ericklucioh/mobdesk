@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Mobdesk turns an ARM64 Android phone into a persistent Ubuntu development workstation for learning and development.">
+    <meta name="theme-color" content="#0d0817">
+    <title>Mobdesk | Ubuntu in your pocket</title>
+    <link rel="stylesheet" href="../styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="#top" aria-label="Mobdesk, home">
+          <span class="brand-mark" aria-hidden="true">M<span>_</span></span>
+          <span>mobdesk</span>
+        </a>
+        <nav aria-label="Main navigation">
+          <a href="#how-it-works">How it works</a>
+          <a href="#features">Features</a>
+          <a href="#installation">Install</a>
+          <a class="nav-github" href="https://github.com/ericklucioh/mobdesk">GitHub <span aria-hidden="true">↗</span></a>
+          <span class="language-switch"><a href="../">PT</a><span>/</span><strong>EN</strong></span>
+        </nav>
+        <a class="mobile-language" href="../" aria-label="Mudar para português">PT <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    <main id="content">
+      <section class="hero" id="top">
+        <div class="container hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="pulse"></span> experimental beta · open source</p>
+            <h1>Your development environment.<br><em>In your pocket.</em></h1>
+            <p class="hero-lead">Mobdesk turns an ARM64 Android phone into a persistent Ubuntu workstation for learning, coding and working wherever you are.</p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="https://github.com/ericklucioh/mobdesk/releases/latest">Get started <span aria-hidden="true">↗</span></a>
+              <a class="button button-quiet" href="#how-it-works">See how it works <span aria-hidden="true">↓</span></a>
+            </div>
+            <p class="hero-note">No root · no virtual machine · no heavy graphical desktop</p>
+          </div>
+
+          <div class="terminal-card" aria-label="Mobdesk terminal example">
+            <div class="terminal-topbar">
+              <span class="terminal-dots"><i></i><i></i><i></i></span>
+              <span class="terminal-title">mobdesk — status</span>
+              <span class="terminal-menu">···</span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-line muted">$ mobdesk status</div>
+              <div class="terminal-line output"><span class="ok">●</span> workstation online</div>
+              <div class="terminal-line output indent">ubuntu <span>persistent · arm64</span></div>
+              <div class="terminal-line output indent">workspace <span>~/mobdesk/workspace</span></div>
+              <div class="terminal-line output indent">ssh <span class="accent">ready · :8022</span></div>
+              <div class="terminal-gap"></div>
+              <div class="terminal-line muted">$ mobdesk tui</div>
+              <div class="tui-box">
+                <div class="tui-heading"><span> MOBDESK </span><b>● RUNNING</b></div>
+                <div class="tui-row active"><span>›</span> Status <span class="tui-key">enter</span></div>
+                <div class="tui-row"><span> </span> Tools <span class="tui-key">tab</span></div>
+                <div class="tui-row"><span> </span> Shell <span class="tui-key">s</span></div>
+                <div class="tui-row"><span> </span> Updates <span class="tui-key">u</span></div>
+              </div>
+              <div class="terminal-cursor">▌</div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-glow" aria-hidden="true"></div>
+      </section>
+
+      <section class="signal-bar" aria-label="Key characteristics">
+        <div class="container signal-grid">
+          <div><strong>ARM64</strong><span>built for Android</span></div>
+          <div><strong>Ubuntu</strong><span>persistent environment</span></div>
+          <div><strong>SSH</strong><span>on your local network</span></div>
+          <div><strong>MIT</strong><span>open source</span></div>
+        </div>
+      </section>
+
+      <section class="section architecture-section" id="how-it-works">
+        <div class="container">
+          <div class="section-intro split-intro">
+            <div>
+              <p class="eyebrow">01 / architecture</p>
+              <h2>A Linux workstation,<br><span>without carrying a laptop.</span></h2>
+            </div>
+            <p>Android remains the host. Termux controls the environment and PRoot-Distro keeps a persistent Ubuntu userland for your projects and tools.</p>
+          </div>
+          <div class="flow" aria-label="Mobdesk architecture flow">
+            <div class="flow-node"><small>ANDROID</small><strong>Your phone</strong><span>ARM64 hardware</span></div>
+            <div class="flow-arrow" aria-hidden="true">→</div>
+            <div class="flow-node highlighted"><small>HOST</small><strong>Termux</strong><span>system control</span></div>
+            <div class="flow-arrow" aria-hidden="true">→</div>
+            <div class="flow-node"><small>WORKSPACE</small><strong>Ubuntu</strong><span>through PRoot-Distro</span></div>
+            <div class="flow-arrow" aria-hidden="true">→</div>
+            <div class="flow-node"><small>ACCESS</small><strong>Shell or SSH</strong><span>local or trusted network</span></div>
+          </div>
+          <p class="architecture-footnote"><span class="line"></span> An explicit boundary between the Android host and your development environment.</p>
+        </div>
+      </section>
+
+      <section class="section features-section" id="features">
+        <div class="container">
+          <div class="section-intro centered">
+            <p class="eyebrow">02 / what you get</p>
+            <h2>Less setup.<br><span>More time to create.</span></h2>
+          </div>
+          <div class="feature-grid">
+            <article class="feature-card feature-wide">
+              <div class="feature-icon">⌘</div>
+              <div>
+                <p class="card-kicker">VISIBLE CONTROL</p>
+                <h3>A TUI for everyday work</h3>
+                <p>Status, setup, tools, shell and updates in an interface that works with keyboards, mice and touch-capable terminals.</p>
+                <div class="tag-row"><span>status</span><span>setup</span><span>tools</span><span>shell</span></div>
+              </div>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon">↻</div>
+              <p class="card-kicker">PERSISTENT</p>
+              <h3>Configure it once</h3>
+              <p>Your Ubuntu environment, workspace and configuration stay on the phone between sessions.</p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon">&gt;_</div>
+              <p class="card-kicker">CONNECTED</p>
+              <h3>Use SSH when you want</h3>
+              <p>Open the environment from another computer on the same trusted network without moving your projects.</p>
+            </article>
+            <article class="feature-card feature-wide accent-card">
+              <div class="language-orbit" aria-hidden="true"><span>Go</span><span>JS</span><span>Py</span><span>C++</span></div>
+              <div>
+                <p class="card-kicker">TOOL PROFILES</p>
+                <h3>Start with what you already use</h3>
+                <p>Initial profiles for Go, Python, Node.js, C, C++, Lua and Neovim/LazyVim configuration.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section install-section" id="installation">
+        <div class="container install-grid">
+          <div>
+            <p class="eyebrow">03 / first steps</p>
+            <h2>From download to<br><span>your first shell.</span></h2>
+            <p class="section-copy">The recommended path uses the published ARM64 binary from releases. You do not need to install Go to get started.</p>
+            <a class="text-link" href="https://github.com/ericklucioh/mobdesk/blob/main/README.md#installation">Read the full installation guide <span aria-hidden="true">→</span></a>
+          </div>
+          <div class="code-window">
+            <div class="code-label"><span class="violet-dot"></span> TERMUX</div>
+            <pre><code><span class="code-muted"># in Termux</span>
+pkg update
+pkg install -y curl coreutils
+
+<span class="code-muted"># download the ARM64 release</span>
+BASE_URL=<span class="code-string">"https://github.com/ericklucioh/mobdesk/releases/latest/download"</span>
+curl -fL -o mobdesk <span class="code-string">"$BASE_URL/mobdesk-linux-arm64"</span>
+chmod 0755 mobdesk
+./mobdesk setup</code></pre>
+            <div class="code-caption">Setup creates the Ubuntu workspace, configures SSH and installs the launcher.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reality-section">
+        <div class="container reality-grid">
+          <div class="reality-mark" aria-hidden="true">!</div>
+          <div>
+            <p class="eyebrow">04 / transparency</p>
+            <h2>Built for development.<br><span>Not production.</span></h2>
+            <p class="section-copy">Mobdesk is experimental and device compatibility is still expanding. Android may suspend processes, PRoot uses the phone's kernel and performance depends on your hardware.</p>
+            <div class="limits-grid">
+              <div><strong>ARM64</strong><span>Required architecture</span></div>
+              <div><strong>~1.5 GB</strong><span>Base Ubuntu installation</span></div>
+              <div><strong>LAN</strong><span>SSH on trusted networks only</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="closing-cta">
+        <div class="container closing-inner">
+          <p class="eyebrow">The next computer could be in your hand.</p>
+          <h2>Take your environment<br><em>with you.</em></h2>
+          <p>Try Mobdesk, tell us how it behaves on your device and help build a more portable workstation.</p>
+          <div class="hero-actions centered-actions">
+            <a class="button button-primary" href="https://github.com/ericklucioh/mobdesk/releases/latest">Download the beta <span aria-hidden="true">↗</span></a>
+            <a class="button button-outline" href="https://github.com/ericklucioh/mobdesk/issues">Send feedback <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-grid">
+        <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true">M<span>_</span></span><span>mobdesk</span></a>
+        <p>Ubuntu development workstation on Android.</p>
+        <div class="footer-links">
+          <a href="https://github.com/ericklucioh/mobdesk">GitHub</a>
+          <a href="https://github.com/ericklucioh/mobdesk/blob/main/LICENSE">MIT License</a>
+          <a href="../">Português</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

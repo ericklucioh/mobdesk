@@ -2,6 +2,8 @@
 
 Transforme seu celular Android em uma workstation Ubuntu pessoal.
 
+**[Abrir landing page](https://ericklucioh.github.io/mobdesk/)**
+
 > **MVP / experimental:** o Mobdesk funciona e já foi testado em um aparelho
 > Android real. A validação em uma matriz maior de dispositivos ainda está em
 > andamento. Use-o para estudo, desenvolvimento e serviços locais leves, não
@@ -214,6 +216,7 @@ aparelho disponível.
 
 ## Documentação e comunidade
 
+- [Landing page e publicação no GitHub Pages](docs/GITHUB-PAGES.md)
 - [Missão](docs/MISSION.md)
 - [Arquitetura](docs/ARCHITECTURE.md)
 - [Decisões](docs/DECISIONS.md)
