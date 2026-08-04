@@ -32,6 +32,14 @@ Users should not need to know `pkg`, `proot-distro`, `apt`, mounts or scripts.
 The desired flow is install Mobdesk, run `mobdesk start`, and select tools in
 the TUI. Ubuntu, tools, projects and configuration persist across runs.
 
+### App presentation uses curated metadata
+
+The app catalog owns concise user-facing descriptions and usage forms. Runtime
+verification may collect a version, but raw command output is never a TUI
+metadata field; commands such as `--help` are not displayed as versions. New
+profiles follow the same metadata contract so the tools screen remains
+consistent across apps.
+
 ### The TUI remains in control after start
 
 `mobdesk start` starts the workstation without automatically opening a shell.

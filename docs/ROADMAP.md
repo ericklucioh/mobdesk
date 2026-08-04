@@ -37,11 +37,13 @@ through SSH. Scope includes status, setup, start, stop and update screens,
 initial tool profiles, keyboard/mouse/mobile terminal support, remote-session
 identification and host-action blocking, optional app configuration profiles
 starting with Neovim/LazyVim, versioned JSON CLI operations, separate app and
-configuration states, and touch-first details/actions/confirmation popups.
+configuration states, standardized app metadata, and touch-first
+details/actions/confirmation popups.
 
 The criterion is that users can study and develop without a long sequence of
-internal commands, and that interactive package installation can be completed
-from the TUI without losing access to terminal prompts.
+internal commands, that every catalog app presents the same useful metadata,
+and that interactive package installation can be completed from the TUI without
+losing access to terminal prompts.
 
 ## Stage 3 - Persistent and remote environment
 

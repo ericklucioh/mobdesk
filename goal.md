@@ -2,7 +2,7 @@
 
 ## Status
 
-- Status: in_progress
+- Status: completed
 - Project root: /home/erick/code/projs/mobdesk
 - Base branch: main
 - Branch policy: uma branch para o Goal inteiro
@@ -92,7 +92,7 @@ go vet ./internal/install ./internal/i18n
 
 Resultado: aprovado; os dois comandos passaram e `git diff --check` não encontrou erros.
 
-Commit: 8ec67d6
+Commit: 40cb749
 
 ##### Commit
 
@@ -102,7 +102,7 @@ feat: standardize app metadata
 
 ### Task 2 - Implementar o popup normal compacto
 
-- Status: in_progress
+- Status: completed
 - Depends on: Task 1
 - Branch: branch única do Goal
 - Worktree: worktree atual
@@ -148,7 +148,7 @@ go vet ./internal/tui
 
 Resultado: aprovado; testes de TUI, i18n e install, vet, i18n-check e `git diff --check` passaram.
 
-Commit: pendente
+Commit: 88a8cba
 
 ##### Commit
 
@@ -187,7 +187,7 @@ go test ./internal/i18n ./internal/tui
 
 Resultado: aprovado; `i18n-check`, testes localizados e `git diff --check` passaram.
 
-Commit: pendente
+Commit: 6ec3b93
 
 ##### Commit
 
@@ -197,13 +197,15 @@ feat: localize standardized app popup
 
 ### Task 3 - Garantir o padrão contra regressões
 
-- Status: pending
+- Status: completed
 - Depends on: Task 2
 - Branch: branch única do Goal
 - Worktree: worktree atual
 - PR: incluída no PR final
 
 #### Stage 3.1 - Adicionar testes e documentação
+
+- Status: completed
 
 ##### Objetivo
 
@@ -222,19 +224,23 @@ Impedir que novos apps sejam cadastrados ou renderizados de forma inconsistente.
 
 ##### Critérios de aceite
 
-- [ ] Perfil sem uso ou descrição falha nos testes.
-- [ ] Help completo não aparece na versão.
-- [ ] A instalação automática de dependências continua coberta pelos testes existentes.
-- [ ] Popup compacto possui cobertura de rendering.
-- [ ] Mouse e teclado continuam equivalentes.
-- [ ] `make check` passa.
-- [ ] Documentação explica como cadastrar novos metadados.
+- [x] Perfil sem uso ou descrição falha nos testes.
+- [x] Help completo não aparece na versão.
+- [x] A instalação automática de dependências continua coberta pelos testes existentes.
+- [x] Popup compacto possui cobertura de rendering.
+- [x] Mouse e teclado continuam equivalentes.
+- [x] `make check` passa.
+- [x] Documentação explica como cadastrar novos metadados.
 
 ##### Validação
 
 ```bash
 make check
 ```
+
+Resultado: aprovado; `make check` passou após a recuperação do mirror Docker, incluindo formatação, i18n-check, vet, testes e build.
+
+Commit: 8fc00f3
 
 ##### Commit
 

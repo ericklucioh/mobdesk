@@ -45,6 +45,13 @@ internal/tui             Bubble Tea presentation
     └── mock backend: simulates responses for visual tests
 ```
 
+App catalog profiles separate user-facing metadata from installation data. A
+profile's localized description, concise usage form and optional catalog
+version feed the TUI presentation; package, executable, verification arguments,
+installation strategy and storage estimates remain operational metadata. The
+TUI must never render raw verification output as app metadata, especially when
+an app uses `--help` only as an installation check.
+
 `cmd/mobdesk` starts the application. `internal/cobra` registers commands,
 parses arguments and coordinates services. Install, uninstall and
 `config apply/remove` share app services and provide human output or schema 1
@@ -116,7 +123,12 @@ Zellij panels retain the main shell configuration.
 
 The generated Ubuntu shell exports `CGO_ENABLED=0`. Go-based catalog tools also
 receive the variable explicitly during installation so they do not depend on a
-C compiler or development headers that may be absent from the PRoot userland.
+a C compiler and development headers that may be absent from the PRoot userland.
+
+New catalog apps must declare the same presentation contract as existing apps:
+localized description, concise usage, installation profile and storage
+estimate. Optional configuration and dependencies are rendered only when they
+apply to the current state.
 
 ## Layer contracts
 
