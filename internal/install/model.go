@@ -35,14 +35,20 @@ const (
 // AppProfile is the domain model for the app catalog. Installation strategy
 // details remain declarative data until the corresponding service phases.
 type AppProfile struct {
-	Name             string           `json:"name"`
-	Aliases          []string         `json:"aliases"`
-	Description      string           `json:"description,omitempty"`
-	DescriptionID    i18n.MessageID   `json:"-"`
-	Kind             string           `json:"kind,omitempty"`
-	Package          string           `json:"package"`
-	Executable       string           `json:"executable"`
-	VersionArg       []string         `json:"version_arg"`
+	Name    string   `json:"name"`
+	Aliases []string `json:"aliases"`
+	// Description is localized presentation text; Usage is the concise command
+	// form shown to users. Neither field controls installation.
+	Description   string         `json:"description,omitempty"`
+	Usage         string         `json:"usage,omitempty"`
+	DescriptionID i18n.MessageID `json:"-"`
+	Kind          string         `json:"kind,omitempty"`
+	Package       string         `json:"package"`
+	Executable    string         `json:"executable"`
+	VersionArg    []string       `json:"version_arg"`
+	// CatalogVersion is a short display fallback when VersionArg is not a
+	// reliable, concise version source, such as an app's help command.
+	CatalogVersion   string           `json:"catalog_version,omitempty"`
 	InstallKind      string           `json:"install_kind,omitempty"`
 	Requires         []string         `json:"requires,omitempty"`
 	UserBin          bool             `json:"-"`

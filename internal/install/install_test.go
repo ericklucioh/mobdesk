@@ -47,6 +47,7 @@ func TestAppProfileContract(t *testing.T) {
 		Name:        "neovim",
 		Aliases:     []string{"nvim"},
 		Description: "editor modal",
+		Usage:       "nvim [arquivo ou diret\u00f3rio]",
 		Package:     "neovim",
 		Executable:  "nvim",
 		VersionArg:  []string{"--version"},
@@ -61,7 +62,7 @@ func TestAppProfileContract(t *testing.T) {
 		},
 	}
 
-	if profile.Name != "neovim" || profile.StorageEstimate == nil || profile.StorageEstimate.MeasuredAt != measuredAt {
+	if profile.Name != "neovim" || profile.Usage == "" || profile.StorageEstimate == nil || profile.StorageEstimate.MeasuredAt != measuredAt {
 		t.Fatalf("unexpected app profile: %+v", profile)
 	}
 }
@@ -103,7 +104,7 @@ func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
 			t.Fatalf("catalog has invalid or duplicate profile: %+v", profile)
 		}
 		seen[profile.Name] = true
-		if profile.Description == "" || profile.InstallKind == "" || profile.StorageEstimate == nil {
+		if profile.Description == "" || profile.Usage == "" || profile.InstallKind == "" || profile.StorageEstimate == nil {
 			t.Fatalf("profile lacks required catalog metadata: %+v", profile)
 		}
 		estimate := profile.StorageEstimate
@@ -117,6 +118,15 @@ func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
 			if alias != strings.ToLower(alias) {
 				t.Fatalf("alias %q for %s is not normalized", alias, profile.Name)
 			}
+		}
+	}
+}
+
+func TestCatalogHelpChecksHaveShortDisplayVersions(t *testing.T) {
+	for _, name := range []string{"ttt", "leetgo"} {
+		profile, ok := Resolve(name)
+		if !ok || profile.CatalogVersion == "" {
+			t.Fatalf("%s lacks a short catalog version: %+v", name, profile)
 		}
 	}
 }
