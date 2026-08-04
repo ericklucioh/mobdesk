@@ -126,6 +126,32 @@ func TestPopupKeyboardAndMouseConfirmationUseSelectedLocale(t *testing.T) {
 	}
 }
 
+func TestPopupCompactMetadataUsesSelectedLocale(t *testing.T) {
+	for _, locale := range []i18n.Locale{i18n.LocaleENUS, i18n.LocalePTBR} {
+		t.Run(string(locale), func(t *testing.T) {
+			model := localizedPopupTestModel(&controlledBackend{}, locale)
+			view := ansi.Strip(model.renderScreen())
+			usageLabel := strings.TrimSpace(strings.Split(model.text(i18n.TUIPopupUsage, map[string]any{"Value": "nvim"}), "nvim")[0])
+			for _, expected := range []string{
+				model.text(i18n.TUIPopupState, map[string]any{"Value": model.appStateLabel("installed")}),
+				usageLabel, "nvim", "arquivo", "diret\u00f3rio",
+				model.text(i18n.TUIPopupConfig, map[string]any{"Value": "LazyVim " + model.configStateLabel(status.ConfigStateNotApplied)}),
+				"[ " + model.text(i18n.TUIPopupReinstall, nil) + " ]",
+				"[ " + model.text(i18n.TUIPopupClose, nil) + " ]",
+			} {
+				if !strings.Contains(view, expected) {
+					t.Fatalf("%s popup is missing %q: %s", locale, expected, view)
+				}
+			}
+			for _, line := range strings.Split(view, "\n") {
+				if lipgloss.Width(line) > contentWidth(model.width) {
+					t.Fatalf("%s popup line exceeds terminal: %q", locale, line)
+				}
+			}
+		})
+	}
+}
+
 func TestMockBackendUsesSelectedLocale(t *testing.T) {
 	for _, locale := range []i18n.Locale{i18n.LocaleENUS, i18n.LocalePTBR} {
 		message := NewMockBackendLocale("healthy", locale).OperationCmd("setup")().(operationMessage)

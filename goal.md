@@ -158,6 +158,8 @@ feat: simplify app detail popup
 
 #### Stage 2.2 - Atualizar localização
 
+- Status: completed
+
 ##### Objetivo
 
 Garantir textos consistentes em inglês e português.
@@ -171,10 +173,10 @@ Garantir textos consistentes em inglês e português.
 
 ##### Critérios de aceite
 
-- [ ] Inglês e português possuem todas as mensagens novas.
-- [ ] Nenhum texto aparece como tradução ausente.
-- [ ] Textos localizados cabem em terminais estreitos.
-- [ ] Hit-tests não dependem de textos não localizados.
+- [x] Inglês e português possuem todas as mensagens novas.
+- [x] Nenhum texto aparece como tradução ausente.
+- [x] Textos localizados cabem em terminais estreitos.
+- [x] Hit-tests não dependem de textos não localizados.
 
 ##### Validação
 
@@ -182,6 +184,10 @@ Garantir textos consistentes em inglês e português.
 ./scripts/i18n-check.sh
 go test ./internal/i18n ./internal/tui
 ```
+
+Resultado: aprovado; `i18n-check`, testes localizados e `git diff --check` passaram.
+
+Commit: pendente
 
 ##### Commit
 
