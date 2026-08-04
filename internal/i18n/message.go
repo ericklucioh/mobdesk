@@ -374,6 +374,7 @@ const (
 	TUIPopupState                  MessageID = "tui.popup.state"
 	TUIPopupSource                 MessageID = "tui.popup.source"
 	TUIPopupVersion                MessageID = "tui.popup.version"
+	TUIPopupUsage                  MessageID = "tui.popup.usage"
 	TUIPopupDependencies           MessageID = "tui.popup.dependencies"
 	TUIPopupConfig                 MessageID = "tui.popup.config"
 	TUIPopupPaths                  MessageID = "tui.popup.paths"
@@ -381,8 +382,10 @@ const (
 	TUIPopupConfigUnavailable      MessageID = "tui.popup.config_unavailable"
 	TUIPopupStorage                MessageID = "tui.popup.storage"
 	TUIPopupStorageTotal           MessageID = "tui.popup.storage_total"
+	TUIPopupStorageShort           MessageID = "tui.popup.storage_short"
 	TUIPopupActions                MessageID = "tui.popup.actions"
 	TUIPopupInstall                MessageID = "tui.popup.install"
+	TUIPopupReinstall              MessageID = "tui.popup.reinstall"
 	TUIPopupUninstall              MessageID = "tui.popup.uninstall"
 	TUIPopupApplyConfig            MessageID = "tui.popup.apply_config"
 	TUIPopupRemoveConfig           MessageID = "tui.popup.remove_config"
@@ -575,9 +578,9 @@ var tuiMessageIDs = []MessageID{
 	TUIOperationCompleted, TUIOperationVerified, TUIOperationInstalled, TUIConfirmationExit,
 	TUIConfirmationStop, TUIConfirmationDestructive, TUIConfirmationYes, TUIConfirmationNo, TUIActionCancelled,
 	TUIHostRestriction, TUIHostOnlyTitle, TUIHostOnlySetup, TUIHostOnlyTools, TUIHostOnlySystem,
-	TUIHostOnlyHomeStatus, TUIHostOnlyHomeShell, TUIPopupTag, TUIPopupState, TUIPopupSource, TUIPopupVersion,
+	TUIHostOnlyHomeStatus, TUIHostOnlyHomeShell, TUIPopupTag, TUIPopupState, TUIPopupSource, TUIPopupVersion, TUIPopupUsage,
 	TUIPopupDependencies, TUIPopupConfig, TUIPopupPaths, TUIPopupPlugins, TUIPopupConfigUnavailable,
-	TUIPopupStorage, TUIPopupStorageTotal, TUIPopupActions, TUIPopupInstall, TUIPopupUninstall,
+	TUIPopupStorage, TUIPopupStorageTotal, TUIPopupStorageShort, TUIPopupActions, TUIPopupInstall, TUIPopupReinstall, TUIPopupUninstall,
 	TUIPopupApplyConfig, TUIPopupRemoveConfig, TUIPopupClose, TUIPopupInstallShort, TUIPopupUninstallShort,
 	TUIPopupApplyConfigShort, TUIPopupRemoveConfigShort, TUIPopupAlreadyInstalled, TUIPopupDetectedReason,
 	TUIPopupInstallFirst, TUIPopupConflict, TUIPopupNotApplied, TUIPopupConfirm, TUIPopupDetected, TUIPopupMobdesk,

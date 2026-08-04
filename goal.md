@@ -102,13 +102,15 @@ feat: standardize app metadata
 
 ### Task 2 - Implementar o popup normal compacto
 
-- Status: pending
+- Status: in_progress
 - Depends on: Task 1
 - Branch: branch única do Goal
 - Worktree: worktree atual
 - PR: incluída no PR final
 
 #### Stage 2.1 - Padronizar rendering e ações
+
+- Status: completed
 
 ##### Objetivo
 
@@ -127,15 +129,15 @@ Renderizar todos os apps com o padrão visual aprovado.
 
 ##### Critérios de aceite
 
-- [ ] TTT corresponde ao layout aprovado.
-- [ ] Neovim mostra `Config LazyVim aplicada` quando aplicável.
-- [ ] Yazi mostra estado, uso e espaço total.
-- [ ] Apps sem configuração não mostram configuração vazia.
-- [ ] Apps sem dependências não mostram linha vazia.
-- [ ] Apps instalados mostram `Reinstalar`.
-- [ ] Nenhum popup mostra a saída completa de `--help`.
-- [ ] Nenhuma linha excede a largura do terminal.
-- [ ] Não existe tela secundária de detalhes.
+- [x] TTT corresponde ao layout aprovado.
+- [x] Neovim mostra `Config LazyVim aplicada` quando aplicável.
+- [x] Yazi mostra estado, uso e espaço total.
+- [x] Apps sem configuração não mostram configuração vazia.
+- [x] Apps sem dependências não mostram linha vazia.
+- [x] Apps instalados mostram `Reinstalar`.
+- [x] Nenhum popup mostra a saída completa de `--help`.
+- [x] Nenhuma linha excede a largura do terminal.
+- [x] Não existe tela secundária de detalhes.
 
 ##### Validação
 
@@ -143,6 +145,10 @@ Renderizar todos os apps com o padrão visual aprovado.
 go test ./internal/tui
 go vet ./internal/tui
 ```
+
+Resultado: aprovado; testes de TUI, i18n e install, vet, i18n-check e `git diff --check` passaram.
+
+Commit: pendente
 
 ##### Commit
 

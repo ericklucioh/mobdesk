@@ -987,7 +987,7 @@ func TestPopupInstallAndConfigActionsUseCLIContract(t *testing.T) {
 	}
 
 	model = popupTestModel(backend, "neovim", "mobdesk", true, status.ConfigStateApplied)
-	for range 3 {
+	for range 2 {
 		updated, _ = model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyTab}))
 		model = updated.(Model)
 	}
@@ -1077,6 +1077,61 @@ func TestPopupBlocksDetectedAppAndRemoteRuntime(t *testing.T) {
 	remote = updated.(Model)
 	if command != nil || !strings.Contains(remote.popupMessage, remote.text(i18n.TUIHostRestriction, nil)) {
 		t.Fatalf("remote popup did not explain restriction: command=%v message=%q", command != nil, remote.popupMessage)
+	}
+}
+
+func TestPopupRendersCompactCatalogMetadata(t *testing.T) {
+	model := NewWithBackend(&controlledBackend{})
+	model.screen = toolsScreen
+	model.statusLoaded = true
+	model.status.Host.Termux = true
+	model.status.Installations = []status.InstallationStatus{{
+		Name: "ttt", Kind: "development", Package: "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0",
+		Executable: "ttt", State: "installed", Source: "mobdesk", Managed: true,
+		Version: "ttt dev - TTT Editor\nUsage: ttt [options]",
+	}}
+	model.openAppPopup(toolIndex("ttt"))
+	model.width = 44
+	model.height = 30
+
+	view := ansi.Strip(model.renderScreen())
+	for _, expected := range []string{
+		"terminal editor and IDE",
+		"State: installed",
+		"Version: v1.1.0",
+		"Usage: ttt",
+		"[arquivos/pastas/URLs...]",
+		"Dependencies: Go",
+		"Reinstall",
+		"Uninstall",
+		"Close",
+	} {
+		if !strings.Contains(view, expected) {
+			t.Fatalf("compact popup does not contain %q: %s", expected, view)
+		}
+	}
+	for _, unexpected := range []string{"Source:", "APP DETAILS", "Arguments:", "ttt dev - TTT Editor"} {
+		if strings.Contains(view, unexpected) {
+			t.Fatalf("compact popup contains removed content %q: %s", unexpected, view)
+		}
+	}
+}
+
+func TestPopupShowsConfigSummaryAndAvailableStorage(t *testing.T) {
+	neovim := popupTestModel(&controlledBackend{}, "neovim", "mobdesk", true, status.ConfigStateApplied)
+	neovimView := ansi.Strip(neovim.renderScreen())
+	if !strings.Contains(neovimView, "Config: LazyVim") || !strings.Contains(neovimView, "applied") || strings.Contains(neovimView, "Paths:") || strings.Contains(neovimView, "Managed plugins:") {
+		t.Fatalf("neovim popup has incorrect config detail: %s", neovimView)
+	}
+
+	yazi := NewWithBackend(&controlledBackend{})
+	yazi.screen = toolsScreen
+	yazi.width = 44
+	yazi.height = 30
+	yazi.openAppPopup(toolIndex("yazi"))
+	yaziView := ansi.Strip(yazi.renderScreen())
+	if !strings.Contains(yaziView, "Space: approximately 326-610") || !strings.Contains(yaziView, "MB") {
+		t.Fatalf("yazi popup does not show compact storage: %s", yaziView)
 	}
 }
 
