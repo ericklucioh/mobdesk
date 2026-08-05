@@ -9,7 +9,7 @@ require (
 	github.com/charmbracelet/x/ansi v0.11.7
 	github.com/creack/pty/v2 v2.0.1
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.9
+	github.com/spf13/pflag v1.0.10
 	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.45.0
 )
