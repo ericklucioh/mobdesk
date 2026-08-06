@@ -96,6 +96,7 @@
   "locale.portuguese_br_name": "Brazilian Portuguese",
   "app.go.description": "compiled language",
   "app.java.description": "JVM development kit",
+  "app.kotlin.description": "Kotlin/JVM compiler",
   "app.python.description": "scripting and automation",
   "app.node.description": "JavaScript on the server",
   "app.c.description": "C compiler",

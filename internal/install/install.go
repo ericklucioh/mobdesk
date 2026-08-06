@@ -27,6 +27,7 @@ const (
 var catalog = []AppProfile{
 	{Name: "go", Aliases: []string{"golang"}, DescriptionID: i18n.AppGoDescription, Usage: "go [command]", Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(180, 300, 0, 50, 0, 5)},
 	{Name: "java", Aliases: []string{"openjdk"}, DescriptionID: i18n.AppJavaDescription, Usage: "java [options] <class>", Package: "openjdk-21-jdk", Executable: "java", RequiredExecutables: []ExecutableSpec{{Name: "java", VersionArg: []string{"--version"}}, {Name: "javac", VersionArg: []string{"--version"}}, {Name: "jar", VersionArg: []string{"--version"}}}, VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(160, 340, 0, 0, 0, 5)},
+	{Name: "kotlin", Aliases: []string{"kotlin-jvm", "kotlinc"}, DescriptionID: i18n.AppKotlinDescription, Usage: "kotlinc [options] <source files>", Package: "kotlin-compiler-2.2.20", Executable: "kotlinc", RequiredExecutables: []ExecutableSpec{{Name: "kotlinc", VersionArg: []string{"-version"}}, {Name: "kotlin", VersionArg: []string{"-version"}}}, VersionArg: []string{"-version"}, Kind: "language", InstallKind: "script", Requires: []string{"java"}, UserBin: true, Script: kotlinCompilerInstallScript(), StorageEstimate: plannedStorage(85, 110, 0, 0, 1, 5)},
 	{Name: "python", Aliases: []string{"python3"}, DescriptionID: i18n.AppPythonDescription, Usage: "python3 [script]", Package: "python3", Executable: "python3", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(35, 60, 0, 20, 0, 5)},
 	{Name: "node", Aliases: []string{"nodejs"}, DescriptionID: i18n.AppNodeDescription, Usage: "node [script]", Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "node", StorageEstimate: plannedStorage(70, 130, 20, 60, 0, 10)},
 	{Name: "c", Aliases: []string{"c-lang"}, DescriptionID: i18n.AppCDescription, Usage: "clang [options] <files...>", Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(250, 450, 20, 80, 0, 10)},
@@ -131,6 +132,30 @@ func tuifiInstallScript() string {
 	return `set -eu
 apt-get -o DPkg::Lock::Timeout=300 install -y build-essential python3-dev libncurses-dev pipx
 PIPX_BIN_DIR=/usr/local/bin pipx install --force TUIFIManager==5.2.6`
+}
+
+func kotlinCompilerInstallScript() string {
+	return `set -eu
+case "$(uname -m)" in
+    aarch64|arm64|x86_64|amd64) ;;
+    *) printf 'unsupported architecture: %s\n' "$(uname -m)" >&2; exit 1 ;;
+esac
+apt-get -o DPkg::Lock::Timeout=300 install -y ca-certificates curl unzip
+version=2.2.20
+archive=$(mktemp)
+temporary=$(mktemp -d)
+target="$HOME/.local/share/mobdesk/kotlin/$version"
+trap 'rm -f "$archive"; rm -rf "$temporary"' EXIT
+curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/JetBrains/kotlin/releases/download/v$version/kotlin-compiler-$version.zip" -o "$archive"
+printf '%s  %s\n' '81f0264c9073b5cbbdb3ff8418cf2c5dac076879fc156fa1a6462f5a5acc4420' "$archive" | sha256sum -c -
+unzip -q "$archive" -d "$temporary"
+test -x "$temporary/kotlinc/bin/kotlinc"
+test -x "$temporary/kotlinc/bin/kotlin"
+mkdir -p "$(dirname "$target")" "$HOME/.local/bin"
+rm -rf "$target"
+mv "$temporary/kotlinc" "$target"
+ln -sfn "$target/bin/kotlinc" "$HOME/.local/bin/kotlinc"
+ln -sfn "$target/bin/kotlin" "$HOME/.local/bin/kotlin"`
 }
 
 type Options struct {

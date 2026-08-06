@@ -318,7 +318,7 @@ feat: configure Ubuntu Java environment
 
 #### Stage 3.1 - Instalar compiler oficial Kotlin
 
-- Status: pending
+- Status: completed
 
 ##### Objetivo
 
@@ -335,13 +335,13 @@ Disponibilizar Kotlin/JVM atual sem usar o pacote Ubuntu obsoleto.
 
 ##### Critérios de aceite
 
-- [ ] `mobdesk install kotlin` instala Java 21 se necessário.
-- [ ] Não usa `apt install kotlin`.
-- [ ] Checksum inválido interrompe sem ativar arquivos.
-- [ ] `kotlinc --version` funciona.
+- [x] `mobdesk install kotlin` instala Java 21 se necessário.
+- [x] Não usa `apt install kotlin`.
+- [x] Checksum inválido interrompe sem ativar arquivos.
+- [x] `kotlinc --version` funciona.
 - [ ] Kotlin compila JAR executável executado por `java -jar`.
-- [ ] Segunda instalação é idempotente.
-- [ ] Arquivos modificados não são removidos silenciosamente.
+- [x] Segunda instalação é idempotente.
+- [x] Arquivos modificados não são removidos silenciosamente.
 
 ##### Validação
 
@@ -349,6 +349,8 @@ Disponibilizar Kotlin/JVM atual sem usar o pacote Ubuntu obsoleto.
 go test ./internal/install
 go vet ./internal/install
 ```
+
+Resultado: perfil Kotlin/JVM 2.2.20, checksum fixado, validação de HTTPS/TLS, arquitetura, dependência Java e catálogo passaram em testes, vet, i18n e `make check`. A execução de JAR fica validada na Stage 3.2.
 
 ##### Commit
 

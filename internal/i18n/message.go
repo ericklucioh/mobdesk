@@ -113,6 +113,7 @@ const (
 
 	AppGoDescription          MessageID = "app.go.description"
 	AppJavaDescription        MessageID = "app.java.description"
+	AppKotlinDescription      MessageID = "app.kotlin.description"
 	AppPythonDescription      MessageID = "app.python.description"
 	AppNodeDescription        MessageID = "app.node.description"
 	AppCDescription           MessageID = "app.c.description"
@@ -526,7 +527,7 @@ var requiredMessageIDs = []MessageID{
 	LocaleEnglishName,
 	LocalePortugueseBRName,
 	ErrorMissingMessage,
-	AppGoDescription, AppJavaDescription, AppPythonDescription, AppNodeDescription, AppCDescription,
+	AppGoDescription, AppJavaDescription, AppKotlinDescription, AppPythonDescription, AppNodeDescription, AppCDescription,
 	AppCPPDescription, AppLuaDescription, AppGitDescription, AppGHDescription,
 	AppTmuxDescription, AppZellijDescription, AppMicroDescription, AppLazygitDescription,
 	AppTreeDescription, AppTTTDescription, AppHtopDescription, AppNcduDescription,

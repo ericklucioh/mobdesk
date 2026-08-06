@@ -163,8 +163,8 @@ func TestCanonicalAppAndConfigStates(t *testing.T) {
 
 func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
 	profiles := Tools()
-	if len(profiles) != 27 {
-		t.Fatalf("catalog has %d profiles, want 27", len(profiles))
+	if len(profiles) != 28 {
+		t.Fatalf("catalog has %d profiles, want 28", len(profiles))
 	}
 	seen := make(map[string]bool, len(profiles))
 	for _, profile := range profiles {
@@ -213,6 +213,20 @@ func TestJavaProfileUsesJDK21AndAllRequiredExecutables(t *testing.T) {
 		if executable.Name != want[index] || !slices.Equal(executable.VersionArg, []string{"--version"}) {
 			t.Fatalf("Java executable %d = %+v", index, executable)
 		}
+	}
+}
+
+func TestKotlinProfileUsesPinnedJVMCompilerAndJavaDependency(t *testing.T) {
+	kotlin, ok := Resolve("kotlin")
+	if !ok || kotlin.InstallKind != "script" || !kotlin.UserBin || !slices.Contains(kotlin.Requires, "java") {
+		t.Fatalf("unexpected Kotlin profile: %+v", kotlin)
+	}
+	if kotlin.Package != "kotlin-compiler-2.2.20" || !strings.Contains(kotlin.Script, "kotlin-compiler-$version.zip") || !strings.Contains(kotlin.Script, "sha256sum -c") || strings.Contains(kotlin.Script, "apt-get install kotlin") {
+		t.Fatalf("unexpected Kotlin installation script: %+v", kotlin)
+	}
+	wantExecutables := []ExecutableSpec{{Name: "kotlinc", VersionArg: []string{"-version"}}, {Name: "kotlin", VersionArg: []string{"-version"}}}
+	if len(kotlin.RequiredExecutables) != len(wantExecutables) || kotlin.RequiredExecutables[0].Name != wantExecutables[0].Name || kotlin.RequiredExecutables[1].Name != wantExecutables[1].Name || !slices.Equal(kotlin.RequiredExecutables[0].VersionArg, wantExecutables[0].VersionArg) || !slices.Equal(kotlin.RequiredExecutables[1].VersionArg, wantExecutables[1].VersionArg) {
+		t.Fatalf("unexpected Kotlin executables: %+v", kotlin.RequiredExecutables)
 	}
 }
 
@@ -307,7 +321,7 @@ func TestInstallStoragePolicyAllowsAtOrAboveTenGB(t *testing.T) {
 }
 
 func TestResolveLanguagesAndAliases(t *testing.T) {
-	for _, name := range []string{"java", "openjdk", "go", "golang", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4"} {
+	for _, name := range []string{"java", "openjdk", "go", "golang", "kotlin", "kotlin-jvm", "kotlinc", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4"} {
 		if _, ok := Resolve(name); !ok {
 			t.Fatalf("Resolve(%q) returned false", name)
 		}
