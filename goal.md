@@ -703,7 +703,7 @@ docs: document JVM and Spring Boot support
 
 #### Stage 7.2 - Validação final e regressão
 
-- Status: pending
+- Status: blocked
 
 ##### Objetivo
 
@@ -718,16 +718,16 @@ Garantir que o suporte JVM não quebre o catálogo nem os fluxos existentes.
 
 ##### Critérios de aceite
 
-- [ ] `make check` passa.
-- [ ] `make catalog-test` passa.
-- [ ] `make integration-test` passa.
-- [ ] Java, Kotlin, Gradle e Maven passam as validações previstas.
-- [ ] Matriz Spring reduzida passa.
-- [ ] Catálogo existente continua funcionando.
-- [ ] Instalações repetidas são idempotentes.
-- [ ] Java não é removido prematuramente.
-- [ ] Aviso e bloqueio de armazenamento funcionam.
-- [ ] `git diff --check` passa.
+- [x] `make check` passa.
+- [ ] `make catalog-test` passa. Não executado conforme instrução do usuário.
+- [ ] `make integration-test` passa. O fixture falha no bootstrap de timezone; o comando isolado passa.
+- [x] Java, Kotlin, Gradle e Maven passam as validações previstas.
+- [x] Matriz Spring reduzida passa pelo script separado.
+- [x] Catálogo existente continua funcionando nos testes unitários.
+- [x] Instalações repetidas são idempotentes.
+- [x] Java não é removido prematuramente.
+- [x] Aviso e bloqueio de armazenamento funcionam.
+- [x] `git diff --check` passa.
 
 ##### Validação
 
@@ -736,6 +736,11 @@ make check
 make catalog-test
 make integration-test
 ```
+
+Resultado: `make check`, testes unitários, vet, i18n, Spring fixtures e
+`git diff --check` passaram. `catalog-test` não foi executado conforme pedido.
+`integration-test` permanece bloqueado por falha de bootstrap do fixture na
+configuração de timezone, embora o comando de timezone isolado passe.
 
 ##### Commit
 
