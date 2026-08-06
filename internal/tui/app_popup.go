@@ -154,11 +154,21 @@ func (m Model) popupActions() []popupAction {
 		installLabel = m.text(i18n.TUIPopupReinstall, nil)
 	}
 	if !installed || installation.State != "installed" {
-		actions = append(actions, popupAction{ID: "install", Label: installLabel, Enabled: m.canManageHost(), Reason: m.hostActionReason(m.canManageHost())})
+		canInstall := m.canManageHost() && !m.status.Storage.Blocked
+		reason := m.hostActionReason(m.canManageHost())
+		if m.status.Storage.Blocked {
+			reason = m.text(i18n.TUIPopupStorageBlocked, nil)
+		}
+		actions = append(actions, popupAction{ID: "install", Label: installLabel, Enabled: canInstall, Reason: reason})
 		actions = append(actions, popupAction{ID: "close", Label: m.text(i18n.TUIPopupClose, nil), Enabled: true})
 		return actions
 	}
-	actions = append(actions, popupAction{ID: "install", Label: installLabel, Enabled: m.canManageHost(), Reason: m.hostActionReason(m.canManageHost())})
+	canInstall := m.canManageHost() && !m.status.Storage.Blocked
+	installReason := m.hostActionReason(m.canManageHost())
+	if m.status.Storage.Blocked {
+		installReason = m.text(i18n.TUIPopupStorageBlocked, nil)
+	}
+	actions = append(actions, popupAction{ID: "install", Label: installLabel, Enabled: canInstall, Reason: installReason})
 	managed := installed && installation.State == "installed" && installation.Managed && installation.Source == "mobdesk"
 	uninstallReason := m.text(i18n.TUIPopupDetectedReason, nil)
 	if !installed || installation.State != "installed" {
@@ -251,6 +261,12 @@ func (m Model) renderAppPopup() string {
 			dependencies = append(dependencies, popupDependencyLabel(dependency))
 		}
 		metadata = append(metadata, m.text(i18n.TUIPopupDependencies, map[string]any{"Value": strings.Join(dependencies, ", ")}))
+	}
+	if installed && len(installation.MissingExecutables) > 0 {
+		metadata = append(metadata, m.text(i18n.TUIPopupMissingExecutables, map[string]any{"Value": strings.Join(installation.MissingExecutables, ", ")}))
+	}
+	if installed && len(installation.MissingDependencies) > 0 {
+		metadata = append(metadata, m.text(i18n.TUIPopupDependencies, map[string]any{"Value": strings.Join(installation.MissingDependencies, ", ")}))
 	}
 	if hasConfig {
 		config := popupConfigLabel(entry.profile.ConfigProfile) + " " + m.configStateLabel(configuration.State)

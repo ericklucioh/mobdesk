@@ -323,6 +323,7 @@ const (
 	TUIToolStateInstalled          MessageID = "tui.tool.state.installed"
 	TUIToolStateInstalling         MessageID = "tui.tool.state.installing"
 	TUIToolStateInstall            MessageID = "tui.tool.state.install"
+	TUIToolStatePartial            MessageID = "tui.tool.state.partial"
 	TUIShellTag                    MessageID = "tui.shell.tag"
 	TUIShellTitle                  MessageID = "tui.shell.title"
 	TUIShellBody                   MessageID = "tui.shell.body"
@@ -382,6 +383,7 @@ const (
 	TUIPopupVersion                MessageID = "tui.popup.version"
 	TUIPopupUsage                  MessageID = "tui.popup.usage"
 	TUIPopupDependencies           MessageID = "tui.popup.dependencies"
+	TUIPopupMissingExecutables     MessageID = "tui.popup.missing_executables"
 	TUIPopupConfig                 MessageID = "tui.popup.config"
 	TUIPopupPaths                  MessageID = "tui.popup.paths"
 	TUIPopupPlugins                MessageID = "tui.popup.plugins"
@@ -389,6 +391,7 @@ const (
 	TUIPopupStorage                MessageID = "tui.popup.storage"
 	TUIPopupStorageTotal           MessageID = "tui.popup.storage_total"
 	TUIPopupStorageShort           MessageID = "tui.popup.storage_short"
+	TUIPopupStorageBlocked         MessageID = "tui.popup.storage_blocked"
 	TUIPopupActions                MessageID = "tui.popup.actions"
 	TUIPopupInstall                MessageID = "tui.popup.install"
 	TUIPopupReinstall              MessageID = "tui.popup.reinstall"
@@ -574,7 +577,7 @@ var tuiMessageIDs = []MessageID{
 	TUISetupDirectoriesDetail, TUISetupPackages, TUISetupPackagesDetail, TUISetupUbuntu, TUISetupUbuntuDetail,
 	TUISetupWorkspace, TUISetupWorkspaceDetail, TUISetupAdvanced, TUISetupAdvancedTitle, TUISetupAdvancedBody,
 	TUISetupAdvancedHint, TUIToolsTag, TUIToolsTitle, TUIToolsBody, TUIToolsRemoteTitle, TUIToolsRemoteBody,
-	TUIToolStateInstalled, TUIToolStateInstalling, TUIToolStateInstall, TUIShellTag, TUIShellTitle, TUIShellBody,
+	TUIToolStateInstalled, TUIToolStateInstalling, TUIToolStateInstall, TUIToolStatePartial, TUIShellTag, TUIShellTitle, TUIShellBody,
 	TUIShellOpen, TUIShellOpenDetail, TUIShellBack, TUIShellBackDetail, TUISystemTag, TUISystemTitle,
 	TUISystemBody, TUISystemUpdate, TUISystemCheck, TUISystemAdvanced, TUISystemAdvancedTitle,
 	TUISystemAdvancedBody, TUISystemResult, TUISystemUpdateHint, TUISystemVersion, TUISystemChannel,
@@ -586,8 +589,8 @@ var tuiMessageIDs = []MessageID{
 	TUIConfirmationStop, TUIConfirmationDestructive, TUIConfirmationYes, TUIConfirmationNo, TUIActionCancelled,
 	TUIHostRestriction, TUIHostOnlyTitle, TUIHostOnlySetup, TUIHostOnlyTools, TUIHostOnlySystem,
 	TUIHostOnlyHomeStatus, TUIHostOnlyHomeShell, TUIPopupTag, TUIPopupState, TUIPopupSource, TUIPopupVersion, TUIPopupUsage,
-	TUIPopupDependencies, TUIPopupConfig, TUIPopupPaths, TUIPopupPlugins, TUIPopupConfigUnavailable,
-	TUIPopupStorage, TUIPopupStorageTotal, TUIPopupStorageShort, TUIPopupActions, TUIPopupInstall, TUIPopupReinstall, TUIPopupUninstall,
+	TUIPopupDependencies, TUIPopupMissingExecutables, TUIPopupConfig, TUIPopupPaths, TUIPopupPlugins, TUIPopupConfigUnavailable,
+	TUIPopupStorage, TUIPopupStorageTotal, TUIPopupStorageShort, TUIPopupStorageBlocked, TUIPopupActions, TUIPopupInstall, TUIPopupReinstall, TUIPopupUninstall,
 	TUIPopupApplyConfig, TUIPopupRemoveConfig, TUIPopupClose, TUIPopupInstallShort, TUIPopupUninstallShort,
 	TUIPopupApplyConfigShort, TUIPopupRemoveConfigShort, TUIPopupAlreadyInstalled, TUIPopupDetectedReason,
 	TUIPopupInstallFirst, TUIPopupConflict, TUIPopupNotApplied, TUIPopupConfirm, TUIPopupDetected, TUIPopupMobdesk,

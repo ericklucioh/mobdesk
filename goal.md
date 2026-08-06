@@ -482,7 +482,7 @@ feat: document project build wrapper precedence
 
 ### Task 5 - Integrar status, JSON e TUI
 
-- Status: in_progress
+- Status: completed
 - Depends on: Task 1, Task 2, Task 3, Task 4
 - Branch: branch única do Goal
 - Worktree: worktree atual
@@ -530,7 +530,7 @@ feat: report complete toolchain states
 
 #### Stage 5.2 - Atualizar catálogo visual e localizações
 
-- Status: pending
+- Status: completed
 
 ##### Objetivo
 
@@ -544,12 +544,12 @@ Apresentar Java, Kotlin, Gradle e Maven na lista e nos popups existentes.
 
 ##### Critérios de aceite
 
-- [ ] Quatro apps aparecem na lista.
-- [ ] Gradle e Maven são instaláveis separadamente.
-- [ ] Falta de espaço mostra bloqueio na TUI.
-- [ ] App parcial não oferece ação incompatível sem explicação.
-- [ ] Nenhum popup mostra help ou saída bruta.
-- [ ] `i18n-check` passa.
+- [x] Quatro apps aparecem na lista.
+- [x] Gradle e Maven são instaláveis separadamente.
+- [x] Falta de espaço mostra bloqueio na TUI.
+- [x] App parcial não oferece ação incompatível sem explicação.
+- [x] Nenhum popup mostra help ou saída bruta.
+- [x] `i18n-check` passa.
 
 ##### Validação
 
@@ -558,6 +558,8 @@ go test ./internal/tui ./internal/i18n
 go vet ./internal/tui ./internal/i18n
 ./scripts/i18n-check.sh
 ```
+
+Resultado: Java, Kotlin, Gradle e Maven aparecem no catálogo e popups; estados parciais, executáveis ausentes e bloqueio de armazenamento são localizados e exibidos pela TUI.
 
 ##### Commit
 
