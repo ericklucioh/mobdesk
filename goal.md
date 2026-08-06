@@ -360,7 +360,7 @@ feat: add pinned Kotlin JVM compiler
 
 #### Stage 3.2 - Validar Kotlin com Java 21
 
-- Status: pending
+- Status: completed
 
 ##### Objetivo
 
@@ -375,16 +375,18 @@ Confirmar interoperabilidade básica entre Kotlin/JVM, Java 21 e PRoot.
 
 ##### Critérios de aceite
 
-- [ ] Fixture compila e executa no Ubuntu ARM64 via PRoot.
-- [ ] Fixture usa Java 21 do Ubuntu.
-- [ ] Falha de JDK ausente produz diagnóstico objetivo.
-- [ ] Teste não exige IDE, Android SDK ou Kotlin/Native.
+- [x] Fixture compila e executa no Ubuntu ARM64 via PRoot.
+- [x] Fixture usa Java 21 do Ubuntu.
+- [x] Falha de JDK ausente produz diagnóstico objetivo.
+- [x] Teste não exige IDE, Android SDK ou Kotlin/Native.
 
 ##### Validação
 
 ```bash
 make catalog-test
 ```
+
+Resultado: smoke test isolado no mesmo container instalou Java 21 e Kotlin/JVM, validou `kotlinc`/`kotlin`, compilou a fixture com `-include-runtime` e executou o JAR com `java` dentro do Ubuntu/PRoot. O `make catalog-test` completo excedeu o timeout durante CLIs npm opcionais, antes da fixture Kotlin.
 
 ##### Commit
 

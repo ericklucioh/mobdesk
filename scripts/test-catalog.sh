@@ -32,7 +32,7 @@ MOBDESK=/data/data/com.termux/files/home/mobdesk/bin/mobdesk
 # separate integration test owns the clean-install user journey.
 proot-distro login ubuntu -- true
 
-for tool in java go python node c cpp lua git gh tmux micro lazygit tree ttt htop ncdu inxi speedtest-cli posting yazi tuifi neovim opencode-cli codex-cli claudecode-cli; do
+for tool in java kotlin go python node c cpp lua git gh tmux micro lazygit tree ttt htop ncdu inxi speedtest-cli posting yazi tuifi neovim opencode-cli codex-cli claudecode-cli; do
     "$MOBDESK" install "$tool"
 done
 
@@ -44,9 +44,12 @@ proot-distro login ubuntu -- git --version
 proot-distro login ubuntu -- java --version
 proot-distro login ubuntu -- javac --version
 proot-distro login ubuntu -- jar --version
+proot-distro login ubuntu -- sh -ec 'PATH="$HOME/.local/bin:$PATH"; kotlinc -version; kotlin -version'
 proot-distro login ubuntu -- mkdir -p /root/workspace
 proot-distro login ubuntu -- tee /root/workspace/Main.java < scripts/fixtures/hello/java/Main.java >/dev/null
 proot-distro login ubuntu -- sh -ec 'javac /root/workspace/Main.java; jar --create --file /tmp/mobdesk-hello-java.jar --main-class Main -C /root/workspace Main.class; test "$(java -jar /tmp/mobdesk-hello-java.jar)" = hello-java'
+proot-distro login ubuntu -- tee /root/workspace/Main.kt < scripts/fixtures/hello/kotlin/Main.kt >/dev/null
+proot-distro login ubuntu -- sh -ec 'PATH="$HOME/.local/bin:$PATH"; kotlinc /root/workspace/Main.kt -include-runtime -d /tmp/mobdesk-hello-kotlin.jar; test "$(java -jar /tmp/mobdesk-hello-kotlin.jar)" = hello-kotlin'
 proot-distro login ubuntu -- gh --version
 proot-distro login ubuntu -- tmux -V
 if test "$(proot-distro login ubuntu -- uname -m)" = "aarch64"; then
