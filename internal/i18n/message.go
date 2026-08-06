@@ -77,34 +77,35 @@ const (
 	ValidationExactArgs          MessageID = "validation.exact_args"
 	ValidationNoArgs             MessageID = "validation.no_args"
 
-	OutputStartWarning     MessageID = "output.start.warning"
-	OutputStartCompleted   MessageID = "output.start.completed"
-	OutputStartLocalSSH    MessageID = "output.start.local_ssh"
-	OutputStartRemoteSSH   MessageID = "output.start.remote_ssh"
-	OutputStartReady       MessageID = "output.start.ready"
-	OutputStopStale        MessageID = "output.stop.stale"
-	OutputStopAlready      MessageID = "output.stop.already"
-	OutputStopCompleted    MessageID = "output.stop.completed"
-	OutputSetupCompleted   MessageID = "output.setup.completed"
-	OutputSetupBase        MessageID = "output.setup.base"
-	OutputSetupSSH         MessageID = "output.setup.ssh"
-	OutputInstallInstalled MessageID = "output.install.installed"
-	OutputInstallAlready   MessageID = "output.install.already"
-	OutputUninstallRemoved MessageID = "output.uninstall.removed"
-	OutputUninstallAlready MessageID = "output.uninstall.already"
-	OutputUpdateCurrent    MessageID = "output.update.current"
-	OutputUpdateAvailable  MessageID = "output.update.available"
-	OutputUpdateUpdated    MessageID = "output.update.updated"
-	OutputVersion          MessageID = "output.version"
-	OutputLogsEmpty        MessageID = "output.logs.empty"
-	OutputLogsNameEmpty    MessageID = "output.logs.name_empty"
-	OutputLogsLabel        MessageID = "output.logs.label"
-	OutputLogsError        MessageID = "output.logs.error"
-	OutputLogsMissing      MessageID = "output.logs.missing"
-	OutputLogsContentEmpty MessageID = "output.logs.content_empty"
-	OutputConfigApplied    MessageID = "output.config.applied"
-	OutputConfigRemoved    MessageID = "output.config.removed"
-	OutputConfigFailed     MessageID = "output.config.failed"
+	OutputStartWarning          MessageID = "output.start.warning"
+	OutputStartCompleted        MessageID = "output.start.completed"
+	OutputStartLocalSSH         MessageID = "output.start.local_ssh"
+	OutputStartRemoteSSH        MessageID = "output.start.remote_ssh"
+	OutputStartReady            MessageID = "output.start.ready"
+	OutputStopStale             MessageID = "output.stop.stale"
+	OutputStopAlready           MessageID = "output.stop.already"
+	OutputStopCompleted         MessageID = "output.stop.completed"
+	OutputSetupCompleted        MessageID = "output.setup.completed"
+	OutputSetupBase             MessageID = "output.setup.base"
+	OutputSetupSSH              MessageID = "output.setup.ssh"
+	OutputInstallInstalled      MessageID = "output.install.installed"
+	OutputInstallAlready        MessageID = "output.install.already"
+	OutputInstallStorageWarning MessageID = "output.install.storage_warning"
+	OutputUninstallRemoved      MessageID = "output.uninstall.removed"
+	OutputUninstallAlready      MessageID = "output.uninstall.already"
+	OutputUpdateCurrent         MessageID = "output.update.current"
+	OutputUpdateAvailable       MessageID = "output.update.available"
+	OutputUpdateUpdated         MessageID = "output.update.updated"
+	OutputVersion               MessageID = "output.version"
+	OutputLogsEmpty             MessageID = "output.logs.empty"
+	OutputLogsNameEmpty         MessageID = "output.logs.name_empty"
+	OutputLogsLabel             MessageID = "output.logs.label"
+	OutputLogsError             MessageID = "output.logs.error"
+	OutputLogsMissing           MessageID = "output.logs.missing"
+	OutputLogsContentEmpty      MessageID = "output.logs.content_empty"
+	OutputConfigApplied         MessageID = "output.config.applied"
+	OutputConfigRemoved         MessageID = "output.config.removed"
+	OutputConfigFailed          MessageID = "output.config.failed"
 
 	LocaleEnglishName      MessageID = "locale.english_name"
 	LocalePortugueseBRName MessageID = "locale.portuguese_br_name"
@@ -150,6 +151,7 @@ const (
 	ServiceInstallHash        MessageID = "service.install.hash"
 	ServiceInstallLock        MessageID = "service.install.lock"
 	ServiceInstallWait        MessageID = "service.install.wait"
+	ServiceInstallStorage     MessageID = "service.install.storage"
 	ServiceConfigError        MessageID = "service.config.error"
 	ServiceConfigProgress     MessageID = "service.config.progress"
 	ServiceConfigPlugin       MessageID = "service.config.plugin"
@@ -504,6 +506,7 @@ var requiredMessageIDs = []MessageID{
 	OutputSetupSSH,
 	OutputInstallInstalled,
 	OutputInstallAlready,
+	OutputInstallStorageWarning,
 	OutputUninstallRemoved,
 	OutputUninstallAlready,
 	OutputUpdateCurrent,
@@ -531,7 +534,7 @@ var requiredMessageIDs = []MessageID{
 	AppClaudeDescription, AppLeetgoDescription, ProfileLazyVimDescription,
 	ServiceInstallUnsupported, ServiceInstallDependency, ServiceInstallState, ServiceInstallLogs,
 	ServiceInstallRecord, ServiceInstallVerify, ServiceInstallRepair, ServiceInstallUpdate, ServiceInstallTool,
-	ServiceInstallHash, ServiceInstallLock, ServiceInstallWait, ServiceConfigError,
+	ServiceInstallHash, ServiceInstallLock, ServiceInstallWait, ServiceInstallStorage, ServiceConfigError,
 	ServiceConfigProgress, ServiceConfigPlugin, ServiceUninstallError, ServiceUninstallProgress,
 	ServiceWorkstationError, ServiceWorkstationWarning, ServiceWorkstationPID, ServiceUpdateError, ServiceLogsError,
 	ServiceUninstallDetected, ServiceUninstallState, ServiceUninstallShared, ServiceExecError,

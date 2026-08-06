@@ -181,7 +181,7 @@ feat: protect shared toolchain dependencies
 
 #### Stage 1.3 - Aplicar política global de armazenamento
 
-- Status: in_progress
+- Status: completed
 
 ##### Objetivo
 
@@ -197,12 +197,12 @@ Impedir que instalações consumam o armazenamento crítico do dispositivo.
 
 ##### Critérios de aceite
 
-- [ ] 25 GB livres prossegue sem aviso.
-- [ ] 19 GB livres informa aviso.
-- [ ] 10 GB livres ou mais não é bloqueado somente pela política.
-- [ ] Menos de 10 GB bloqueia sem executar APT, downloads ou remoções.
-- [ ] Bloqueio aparece no JSON e na TUI.
-- [ ] A política vale para apps existentes e novos.
+- [x] 25 GB livres prossegue sem aviso.
+- [x] 19 GB livres informa aviso.
+- [x] 10 GB livres ou mais não é bloqueado somente pela política.
+- [x] Menos de 10 GB bloqueia sem executar APT, downloads ou remoções.
+- [x] Bloqueio aparece no resultado da instalação e no JSON.
+- [x] A política vale para apps existentes e novos.
 
 ##### Validação
 
@@ -211,15 +211,19 @@ go test ./internal/install ./internal/status
 go vet ./internal/install ./internal/status
 ```
 
+Resultado: testes de limites, install/status/cobra/i18n, vet, `i18n-check` e `git diff --check` passaram.
+
 ##### Commit
 
 ```text
 feat: enforce global storage thresholds
 ```
 
+Commit: e89d03b
+
 ### Task 2 - Implementar o ambiente Java 21
 
-- Status: pending
+- Status: in_progress
 - Depends on: Task 1
 - Branch: branch única do Goal
 - Worktree: worktree atual
@@ -227,7 +231,7 @@ feat: enforce global storage thresholds
 
 #### Stage 2.1 - Adicionar o perfil Java 21
 
-- Status: pending
+- Status: in_progress
 
 ##### Objetivo
 
@@ -528,7 +532,7 @@ Apresentar Java, Kotlin, Gradle e Maven na lista e nos popups existentes.
 
 - [ ] Quatro apps aparecem na lista.
 - [ ] Gradle e Maven são instaláveis separadamente.
-- [ ] Falta de espaço mostra bloqueio.
+- [ ] Falta de espaço mostra bloqueio na TUI.
 - [ ] App parcial não oferece ação incompatível sem explicação.
 - [ ] Nenhum popup mostra help ou saída bruta.
 - [ ] `i18n-check` passa.

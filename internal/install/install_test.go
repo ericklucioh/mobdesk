@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -229,6 +230,52 @@ func TestStorageEstimateTotals(t *testing.T) {
 	estimate := StorageEstimate{AppMinMB: 15, AppMaxMB: 30, DependenciesMinMB: 2, DependenciesMaxMB: 20, ConfigMinMB: 1, ConfigMaxMB: 5}
 	if estimate.TotalMinMB() != 18 || estimate.TotalMaxMB() != 55 {
 		t.Fatalf("totals = %d-%d, want 18-55", estimate.TotalMinMB(), estimate.TotalMaxMB())
+	}
+}
+
+func TestInstallStoragePolicyBlocksBelowTenGB(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{}}
+	options := testOptions(t, runner)
+	options.StorageFree = func(string) (int64, error) { return 9 * 1024 * 1024 * 1024, nil }
+
+	result, err := Install(context.Background(), "go", options)
+	if err == nil || result.State != "blocked" || !result.StorageBlocked {
+		t.Fatalf("unexpected storage block result: %+v, %v", result, err)
+	}
+	if len(runner.commands) != 0 {
+		t.Fatalf("storage block executed commands: %v", runner.commands)
+	}
+}
+
+func TestInstallStoragePolicyWarnsBelowTwentyGB(t *testing.T) {
+	versionCommand := "proot-distro login ubuntu -- env PATH=" + ubuntuPath + " go version"
+	runner := &fakeRunner{results: map[string][]CommandResult{
+		versionCommand: {{Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
+	}}
+	options := testOptions(t, runner)
+	options.StorageFree = func(string) (int64, error) { return 19 * 1024 * 1024 * 1024, nil }
+
+	result, err := Install(context.Background(), "go", options)
+	if err != nil || !result.StorageWarning || result.StorageBlocked || result.State != "installed" {
+		t.Fatalf("unexpected storage warning result: %+v, %v", result, err)
+	}
+}
+
+func TestInstallStoragePolicyAllowsAtOrAboveTenGB(t *testing.T) {
+	for _, free := range []int64{10 * 1024 * 1024 * 1024, 25 * 1024 * 1024 * 1024} {
+		t.Run(fmt.Sprintf("%dGB", free/(1024*1024*1024)), func(t *testing.T) {
+			versionCommand := "proot-distro login ubuntu -- env PATH=" + ubuntuPath + " go version"
+			runner := &fakeRunner{results: map[string][]CommandResult{
+				versionCommand: {{Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
+			}}
+			options := testOptions(t, runner)
+			options.StorageFree = func(string) (int64, error) { return free, nil }
+
+			result, err := Install(context.Background(), "go", options)
+			if err != nil || result.State != "installed" || result.StorageBlocked || (free >= storageWarningBytes && result.StorageWarning) {
+				t.Fatalf("unexpected storage boundary result: %+v, %v", result, err)
+			}
+		})
 	}
 }
 

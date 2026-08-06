@@ -67,6 +67,9 @@ func runInstallOptions(ctx context.Context, name string, jsonOutput, progressOut
 		}
 		return err
 	}
+	if result.StorageWarning {
+		fmt.Println(localized(localizers, i18n.OutputInstallStorageWarning, map[string]any{"Free": result.StorageFreeBytes}))
+	}
 
 	id := i18n.OutputInstallAlready
 	if result.Changed {
@@ -83,22 +86,27 @@ type installProgressEvent struct {
 
 func installOperationResult(result install.Result, installErr error, localizers ...i18n.Localizer) operationResult {
 	response := operationResult{
-		SchemaVersion:   1,
-		Command:         "install",
-		Success:         installErr == nil,
-		State:           result.State,
-		Target:          result.Language,
-		Action:          "install",
-		Changed:         result.Changed,
-		Language:        result.Language,
-		Version:         result.Version,
-		LogPath:         result.LogPath,
-		Source:          result.Source,
-		StorageEstimate: result.StorageEstimate,
-		Message:         localized(localizers, i18n.OutputInstallInstalled, nil),
+		SchemaVersion:    1,
+		Command:          "install",
+		Success:          installErr == nil,
+		State:            result.State,
+		Target:           result.Language,
+		Action:           "install",
+		Changed:          result.Changed,
+		Language:         result.Language,
+		Version:          result.Version,
+		LogPath:          result.LogPath,
+		Source:           result.Source,
+		StorageEstimate:  result.StorageEstimate,
+		StorageFreeBytes: result.StorageFreeBytes,
+		StorageWarning:   result.StorageWarning,
+		StorageBlocked:   result.StorageBlocked,
+		Message:          localized(localizers, i18n.OutputInstallInstalled, nil),
 	}
 	if installErr != nil {
-		response.State = "failed"
+		if response.State == "" || response.State == "installing" {
+			response.State = "failed"
+		}
 		response.Message = operationErrorMessage(localizers, installErr)
 	}
 	response = decorateResult(response, localizers, i18n.OutputInstallInstalled, installErr)

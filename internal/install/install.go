@@ -19,6 +19,8 @@ const (
 	defaultLockTimeout    = 5 * time.Minute
 	aptLockTimeoutSeconds = 300
 	ubuntuPath            = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	storageWarningBytes   = 20 * 1024 * 1024 * 1024
+	storageBlockBytes     = 10 * 1024 * 1024 * 1024
 )
 
 var catalog = []AppProfile{
@@ -139,6 +141,7 @@ type Options struct {
 	Progress       func(string)
 	ConfigProfiles map[string]ConfigProfile
 	Localizer      i18n.Localizer
+	StorageFree    func(string) (int64, error)
 }
 
 func Languages(localizers ...i18n.Localizer) []AppProfile {
@@ -195,6 +198,26 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	if !ok {
 		return Result{}, i18n.NewError(i18n.ServiceInstallUnsupported, "install_unsupported", map[string]any{"Name": name}, nil)
 	}
+	free, storageErr := availableStorage(options)
+	if storageErr != nil {
+		return Result{SchemaVersion: 1, Language: language.Name, State: "failed", StorageEstimate: language.StorageEstimate}, i18n.NewError(i18n.ServiceInstallStorage, "install_storage_check", map[string]any{"Detail": storageErr.Error()}, storageErr)
+	}
+	storageWarning := free < storageWarningBytes
+	if free < storageBlockBytes {
+		return Result{
+			SchemaVersion:    1,
+			Language:         language.Name,
+			Package:          language.Package,
+			Packages:         profilePackages(language),
+			Executable:       language.Executable,
+			Executables:      profileExecutables(language),
+			State:            "blocked",
+			Source:           "mobdesk",
+			StorageEstimate:  language.StorageEstimate,
+			StorageFreeBytes: free,
+			StorageBlocked:   true,
+		}, i18n.NewError(i18n.ServiceInstallStorage, "install_storage_blocked", map[string]any{"Name": language.Name, "Free": free}, nil)
+	}
 	runner := runnerFor(options)
 	for _, prerequisite := range language.Requires {
 		progress(options, i18n.ServiceInstallDependency, map[string]any{"Dependency": prerequisite, "Name": language.Name})
@@ -207,16 +230,18 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	logsDir := options.Paths.InstallLogsDir()
 	logPath := filepath.Join(logsDir, language.Name+".log")
 	result := Result{
-		SchemaVersion:   1,
-		Language:        language.Name,
-		Package:         language.Package,
-		Packages:        profilePackages(language),
-		Executable:      language.Executable,
-		Executables:     profileExecutables(language),
-		State:           "installing",
-		LogPath:         logPath,
-		Source:          "mobdesk",
-		StorageEstimate: language.StorageEstimate,
+		SchemaVersion:    1,
+		Language:         language.Name,
+		Package:          language.Package,
+		Packages:         profilePackages(language),
+		Executable:       language.Executable,
+		Executables:      profileExecutables(language),
+		State:            "installing",
+		LogPath:          logPath,
+		Source:           "mobdesk",
+		StorageEstimate:  language.StorageEstimate,
+		StorageFreeBytes: free,
+		StorageWarning:   storageWarning,
 	}
 	record := InstallationRecord{
 		Name:                language.Name,
@@ -286,6 +311,17 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		return result, i18n.NewError(i18n.ServiceInstallRecord, "install_record", nil, err)
 	}
 	return result, nil
+}
+
+func availableStorage(options Options) (int64, error) {
+	if options.StorageFree != nil {
+		return options.StorageFree(options.Paths.Home)
+	}
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(options.Paths.Home, &stat); err != nil {
+		return 0, err
+	}
+	return int64(stat.Bavail) * int64(stat.Bsize), nil
 }
 
 func progress(options Options, id i18n.MessageID, data map[string]any) {
