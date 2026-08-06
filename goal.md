@@ -569,7 +569,7 @@ feat: expose JVM tools in the TUI
 
 ### Task 6 - Validar Spring Boot 4.x no Ubuntu ARM64
 
-- Status: pending
+- Status: in_progress
 - Depends on: Task 3, Task 4, Task 5
 - Branch: branch única do Goal
 - Worktree: worktree atual
@@ -577,7 +577,7 @@ feat: expose JVM tools in the TUI
 
 #### Stage 6.1 - Criar fixtures de Spring Boot 4.x
 
-- Status: pending
+- Status: completed
 
 ##### Objetivo
 
@@ -594,17 +594,19 @@ Validar o ambiente em aplicações reais sem criar um gerenciador de projetos.
 
 ##### Critérios de aceite
 
-- [ ] As três fixtures compilam.
-- [ ] Os testes passam.
-- [ ] JARs executáveis são gerados.
-- [ ] Versões não dependem de `latest`.
-- [ ] Fixtures não dependem de IDE.
+- [x] As três fixtures compilam.
+- [x] Os testes passam.
+- [x] JARs executáveis são gerados.
+- [x] Versões não dependem de `latest`.
+- [x] Fixtures não dependem de IDE.
 
 ##### Validação
 
 ```bash
 make catalog-test
 ```
+
+Resultado: o script Spring separado compilou as três fixtures, executou os testes e gerou os JARs. A validação foi feita sem `catalog-test`, conforme solicitado.
 
 ##### Commit
 
