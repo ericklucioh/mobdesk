@@ -80,6 +80,39 @@ func TestUninstallProtectsSharedPackage(t *testing.T) {
 	}
 }
 
+func TestUninstallProtectsPackageUsedByDependency(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{}}
+	options := testOptions(t, runner)
+	writeInstallationRecord(t, options, InstallationRecord{Name: "neovim", Packages: []string{"shared-runtime"}, Strategy: "apt", Source: "mobdesk", State: "installed"})
+	writeInstallationRecord(t, options, InstallationRecord{Name: "cpp", Packages: []string{"cpp-tool"}, Dependencies: []string{"neovim"}, Strategy: "apt", Source: "mobdesk", State: "installed"})
+
+	_, err := Uninstall(context.Background(), "neovim", options)
+	if err == nil || i18n.ErrorCode(err) != "uninstall_shared_package" {
+		t.Fatalf("unexpected dependency protection result: %v", err)
+	}
+	if len(runner.commands) != 0 {
+		t.Fatalf("dependency protection executed commands: %v", runner.commands)
+	}
+}
+
+func TestUninstallAptRemovesAllUnsharedPackages(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " dpkg --configure -a":                                              {{}},
+		"proot-distro login ubuntu -- env PATH=" + ubuntuPath + " apt-get -o DPkg::Lock::Timeout=300 remove -y package-a package-b": {{}},
+	}}
+	options := testOptions(t, runner)
+	writeInstallationRecord(t, options, InstallationRecord{Name: "neovim", Packages: []string{"package-a", "package-b"}, Strategy: "apt", Source: "mobdesk", State: "installed"})
+
+	result, err := Uninstall(context.Background(), "neovim", options)
+	if err != nil || result.State != "uninstalled" {
+		t.Fatalf("unexpected multi-package uninstall result: %+v, %v", result, err)
+	}
+	record, err := loadInstallationRecord(options.Paths, "neovim")
+	if err != nil || !reflect.DeepEqual(record.RemovedPackages, []string{"package-a", "package-b"}) {
+		t.Fatalf("unexpected removed packages: %+v, %v", record, err)
+	}
+}
+
 func TestUninstallPreservesModifiedTrackedFile(t *testing.T) {
 	path := "/root/.local/bin/yazi"
 	runner := &fakeRunner{results: map[string][]CommandResult{

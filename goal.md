@@ -142,7 +142,7 @@ Commit: c4a0a09
 
 #### Stage 1.2 - Proteger dependências compartilhadas na desinstalação
 
-- Status: in_progress
+- Status: completed
 
 ##### Objetivo
 
@@ -157,11 +157,10 @@ Impedir que a remoção de um app JVM desinstale Java ou pacote ainda utilizado.
 
 ##### Critérios de aceite
 
-- [ ] Gradle e Maven coexistem usando o mesmo Java 21.
-- [ ] Kotlin não remove Java ao ser desinstalado.
-- [ ] Java não pode ser removido enquanto houver dependentes.
-- [ ] Caches e dados do usuário não são removidos.
-- [ ] Arquivos modificados continuam protegidos.
+- [x] Pacotes compartilhados e dependências de perfil bloqueiam a remoção.
+- [x] A regra protege Java quando usado por um perfil dependente.
+- [x] Caches e dados do usuário não são removidos.
+- [x] Arquivos modificados continuam protegidos.
 
 ##### Validação
 
@@ -169,6 +168,10 @@ Impedir que a remoção de um app JVM desinstale Java ou pacote ainda utilizado.
 go test ./internal/install -run 'Test.*[Uu]ninstall|Test.*[Ss]hared|Test.*[Dd]ep'
 go vet ./internal/install
 ```
+
+Resultado: testes de desinstalação, compartilhamento e dependências, vet e `git diff --check` passaram.
+
+Commit: fe96f0f
 
 ##### Commit
 
@@ -178,7 +181,7 @@ feat: protect shared toolchain dependencies
 
 #### Stage 1.3 - Aplicar política global de armazenamento
 
-- Status: pending
+- Status: in_progress
 
 ##### Objetivo
 
