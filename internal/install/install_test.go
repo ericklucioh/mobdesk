@@ -163,8 +163,8 @@ func TestCanonicalAppAndConfigStates(t *testing.T) {
 
 func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
 	profiles := Tools()
-	if len(profiles) != 28 {
-		t.Fatalf("catalog has %d profiles, want 28", len(profiles))
+	if len(profiles) != 30 {
+		t.Fatalf("catalog has %d profiles, want 30", len(profiles))
 	}
 	seen := make(map[string]bool, len(profiles))
 	for _, profile := range profiles {
@@ -227,6 +227,17 @@ func TestKotlinProfileUsesPinnedJVMCompilerAndJavaDependency(t *testing.T) {
 	wantExecutables := []ExecutableSpec{{Name: "kotlinc", VersionArg: []string{"-version"}}, {Name: "kotlin", VersionArg: []string{"-version"}}}
 	if len(kotlin.RequiredExecutables) != len(wantExecutables) || kotlin.RequiredExecutables[0].Name != wantExecutables[0].Name || kotlin.RequiredExecutables[1].Name != wantExecutables[1].Name || !slices.Equal(kotlin.RequiredExecutables[0].VersionArg, wantExecutables[0].VersionArg) || !slices.Equal(kotlin.RequiredExecutables[1].VersionArg, wantExecutables[1].VersionArg) {
 		t.Fatalf("unexpected Kotlin executables: %+v", kotlin.RequiredExecutables)
+	}
+}
+
+func TestBuildToolProfilesAreIndependentJavaDependents(t *testing.T) {
+	gradle, gradleOK := Resolve("gradle")
+	maven, mavenOK := Resolve("mvn")
+	if !gradleOK || !mavenOK || gradle.Package != "gradle" || maven.Package != "maven" || !slices.Contains(gradle.Requires, "java") || !slices.Contains(maven.Requires, "java") {
+		t.Fatalf("unexpected build profiles: gradle=%+v maven=%+v", gradle, maven)
+	}
+	if slices.Contains(gradle.Requires, "maven") || slices.Contains(maven.Requires, "gradle") {
+		t.Fatalf("build tools are not independent: gradle=%v maven=%v", gradle.Requires, maven.Requires)
 	}
 }
 

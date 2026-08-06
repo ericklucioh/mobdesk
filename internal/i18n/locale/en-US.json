@@ -97,6 +97,8 @@
   "app.go.description": "compiled language",
   "app.java.description": "JVM development kit",
   "app.kotlin.description": "Kotlin/JVM compiler",
+  "app.gradle.description": "Gradle build automation",
+  "app.maven.description": "Apache Maven build automation",
   "app.python.description": "scripting and automation",
   "app.node.description": "JavaScript on the server",
   "app.c.description": "C compiler",

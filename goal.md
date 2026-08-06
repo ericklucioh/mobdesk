@@ -404,7 +404,7 @@ test: validate Kotlin JVM toolchain
 
 #### Stage 4.1 - Adicionar perfis independentes de Gradle e Maven
 
-- Status: pending
+- Status: completed
 
 ##### Objetivo
 
@@ -420,12 +420,12 @@ Disponibilizar os dois build tools sem criar dependência entre eles.
 
 ##### Critérios de aceite
 
-- [ ] Gradle e Maven aparecem como apps opcionais.
-- [ ] Instalar Gradle não instala Maven e vice-versa.
-- [ ] Ambos instalam Java 21 somente quando necessário.
-- [ ] Ambos mostram a versão do Java usado.
-- [ ] Desinstalação preserva Java enquanto houver dependentes.
-- [ ] TUI mostra dependências sem subconfiguração dentro do Java.
+- [x] Gradle e Maven aparecem como apps opcionais.
+- [x] Instalar Gradle não instala Maven e vice-versa.
+- [x] Ambos instalam Java 21 somente quando necessário.
+- [x] Ambos mostram a versão do Java usado.
+- [x] Desinstalação preserva Java enquanto houver dependentes.
+- [x] TUI mostra dependências sem subconfiguração dentro do Java.
 
 ##### Validação
 
@@ -433,6 +433,8 @@ Disponibilizar os dois build tools sem criar dependência entre eles.
 go test ./internal/install ./internal/status ./internal/tui
 go vet ./internal/install ./internal/status ./internal/tui
 ```
+
+Resultado: perfis APT independentes, dependentes somente de Java, foram cobertos por testes, vet e `make check`; o smoke do catálogo inclui `gradle --version` e `mvn --version`.
 
 ##### Commit
 
