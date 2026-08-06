@@ -45,7 +45,9 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 		SchemaVersion:   1,
 		Language:        profile.Name,
 		Package:         profile.Package,
+		Packages:        profilePackages(profile),
 		Executable:      profile.Executable,
+		Executables:     profileExecutables(profile),
 		State:           "failed",
 		Source:          "mobdesk",
 		StorageEstimate: profile.StorageEstimate,
@@ -102,8 +104,8 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 	record.LastError = ""
 	record.RemovedFiles = append(record.RemovedFiles, removedFiles...)
 	record.PreservedFiles = append(record.PreservedFiles, preservedFiles...)
-	if record.Package != "" && strategy != "script" && strategy != "go" && strategy != "ttt" && strategy != "cargo" && strategy != "gh-extension" {
-		record.RemovedPackages = append(record.RemovedPackages, record.Package)
+	if strategy != "script" && strategy != "go" && strategy != "ttt" && strategy != "cargo" && strategy != "gh-extension" {
+		record.RemovedPackages = append(record.RemovedPackages, installationPackages(record)...)
 	}
 	if len(record.PreservedFiles) > 0 {
 		record.State = "modified"
@@ -121,13 +123,14 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 func uninstallStrategy(ctx context.Context, runner CommandRunner, options Options, strategy string, record InstallationRecord) ([]string, []string, error) {
 	switch strategy {
 	case "apt", "node":
-		if record.Package == "" {
+		packages := installationPackages(record)
+		if len(packages) == 0 {
 			return nil, nil, fmt.Errorf("package missing from %s record", record.Name)
 		}
 		if repair := repairDpkg(ctx, runner, options.CommandTimeout, record.LogPath); repair.Err != nil {
 			return nil, nil, repair.Err
 		}
-		result := runAptLogged(ctx, runner, options.CommandTimeout, record.LogPath, "remove", "-y", record.Package)
+		result := runAptLogged(ctx, runner, options.CommandTimeout, record.LogPath, append([]string{"remove", "-y"}, packages...)...)
 		return nil, nil, result.Err
 	case "npm":
 		if record.Package == "" {
@@ -202,7 +205,8 @@ func validateManagedPath(path string) error {
 }
 
 func packageSharedByAnotherInstallation(p paths.Paths, target InstallationRecord) bool {
-	if target.Package == "" {
+	targetPackages := installationPackages(target)
+	if len(targetPackages) == 0 {
 		return false
 	}
 	entries, err := os.ReadDir(p.InstallationsDir())
@@ -218,15 +222,45 @@ func packageSharedByAnotherInstallation(p paths.Paths, target InstallationRecord
 			continue
 		}
 		var record InstallationRecord
-		if json.Unmarshal(payload, &record) != nil || record.Package != target.Package {
+		if json.Unmarshal(payload, &record) != nil || !installationSharesDependency(record, target, targetPackages) {
 			continue
 		}
 		if record.Source == "" {
 			record.Source = "mobdesk"
 		}
-		if record.Source == "mobdesk" && (record.State == "installed" || record.State == "installing" || record.State == "uninstalling") {
+		if record.Source == "mobdesk" && installationActive(record.State) {
 			return true
 		}
 	}
 	return false
+}
+
+func installationPackages(record InstallationRecord) []string {
+	if len(record.Packages) > 0 {
+		return append([]string(nil), record.Packages...)
+	}
+	if record.Package == "" {
+		return nil
+	}
+	return []string{record.Package}
+}
+
+func installationSharesDependency(record, target InstallationRecord, targetPackages []string) bool {
+	for _, dependency := range record.Dependencies {
+		if dependency == target.Name {
+			return true
+		}
+	}
+	for _, packageName := range installationPackages(record) {
+		for _, targetPackage := range targetPackages {
+			if packageName == targetPackage {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func installationActive(state string) bool {
+	return state == "installed" || state == "partial" || state == "installing" || state == "uninstalling"
 }

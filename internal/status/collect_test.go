@@ -286,6 +286,33 @@ func TestCollectCatalogInstallationsRecognizesToolsWithoutRecords(t *testing.T) 
 	}
 }
 
+func TestReconcileInstallationExecutablesMarksJavaPartialWhenJavacIsMissing(t *testing.T) {
+	runner := &fakeRunner{outputs: map[string]CommandResult{
+		"java --version":  {Stdout: []byte("openjdk 21\n")},
+		"javac --version": {Err: errors.New("javac missing")},
+		"jar --version":   {Stdout: []byte("jar 21\n")},
+	}}
+	values := reconcileInstallationExecutables(Options{CommandRunner: runner}, []InstallationStatus{{
+		Name: "java", State: "installed", RequiredExecutables: []install.ExecutableSpec{
+			{Name: "java", VersionArg: []string{"--version"}},
+			{Name: "javac", VersionArg: []string{"--version"}},
+			{Name: "jar", VersionArg: []string{"--version"}},
+		},
+	}})
+	if values[0].State != "partial" || len(values[0].MissingExecutables) != 1 || values[0].MissingExecutables[0] != "javac" {
+		t.Fatalf("Java partial state = %+v", values[0])
+	}
+}
+
+func TestReconcileInstallationExecutablesReportsMissingJavaDependency(t *testing.T) {
+	values := reconcileInstallationExecutables(Options{CommandRunner: &fakeRunner{}}, []InstallationStatus{{
+		Name: "gradle", State: "installed", RequiredExecutables: []install.ExecutableSpec{{Name: "gradle", VersionArg: []string{"--version"}}},
+	}})
+	if values[0].State != "partial" || len(values[0].MissingDependencies) != 1 || values[0].MissingDependencies[0] != "java" {
+		t.Fatalf("Gradle dependency state = %+v", values[0])
+	}
+}
+
 func TestCollectCatalogInstallationsAddsStorageEstimateToPersistedRecord(t *testing.T) {
 	value := enrichInstallationMetadata([]InstallationStatus{{Name: "neovim", State: "installed"}})
 	if len(value) != 1 || value[0].StorageEstimate == nil || value[0].StorageEstimate.TotalMinMB() != 15 {

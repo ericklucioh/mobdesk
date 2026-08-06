@@ -1,268 +1,793 @@
-# Goal: Padronizar a apresentação visual dos apps
+# Goal: Suporte JVM para Java 21, Kotlin e Spring Boot 4
 
 ## Status
 
-- Status: completed
+- Status: in_progress
 - Project root: /home/erick/code/projs/mobdesk
 - Base branch: main
-- Branch policy: uma branch para o Goal inteiro
+- Branch policy: feat/jvm-spring-boot (uma branch para o Goal inteiro)
 - Worktree policy: usar o worktree atual
 - PR policy: um PR ao final do Goal
 - Commit policy: um commit por Stage
 
 ## Objetivo
 
-Padronizar a apresentação dos apps na tela normal da TUI, exibindo metadados úteis e consistentes sem renderizar a saída completa de `--help`.
+Adicionar ao Mobdesk um ambiente JVM funcional dentro do Ubuntu via PRoot-Distro,
+com Java 21 como JDK gerenciado, Kotlin/JVM, Maven e Gradle como apps opcionais
+independentes, e compatibilidade validada com Spring Boot 4.x.
 
-A instalação automática das dependências será preservada.
+O Mobdesk fornecerá o ambiente e os toolchains. Não criará, gerenciará ou
+hospedará projetos Spring Boot como uma funcionalidade própria neste Goal.
 
 ## Escopo
 
-- Adicionar metadados editoriais padronizados, incluindo uso.
-- Exibir nome, descrição, estado, versão, uso, dependências, configuração e armazenamento quando aplicável.
-- Corrigir o tratamento de versão para impedir que `--help` apareça como versão.
-- Padronizar TTT, Neovim, Yazi e os demais apps do catálogo.
-- Manter instalação automática das dependências existentes.
-- Garantir o padrão por structs, contratos, comentários, documentação e testes.
-- Preservar ações, confirmação, mouse, teclado e terminais estreitos.
+- Adicionar Java 21 ao catálogo de apps.
+- Configurar `java`, `javac`, `jar` e `JAVA_HOME` dentro do Ubuntu.
+- Adicionar Kotlin/JVM com compiler oficial em versão fixada e checksum validado.
+- Adicionar Gradle como app opcional dependente de Java.
+- Adicionar Maven como app opcional dependente de Java.
+- Manter Gradle e Maven como instalações separadas.
+- Preferir `./gradlew` e `./mvnw` quando um projeto fornecer wrapper.
+- Usar os binários globais como fallback.
+- Evoluir o catálogo para múltiplos pacotes e executáveis obrigatórios.
+- Permitir dependências compartilhadas entre apps.
+- Impedir a remoção de Java enquanto Kotlin, Gradle ou Maven dependerem dele.
+- Detectar estados instalado, parcial, ausente e conflitante corretamente.
+- Aplicar aviso de armazenamento abaixo de 20 GB livres.
+- Bloquear instalações abaixo de 10 GB livres.
+- Manter caches Gradle e Maven persistentes.
+- Validar Java com Spring Boot 4.x usando Gradle.
+- Validar Java com Spring Boot 4.x usando Maven.
+- Validar Kotlin com Spring Boot 4.x usando Gradle.
+- Validar compilação, testes, empacotamento e execução HTTP de aplicações Spring Boot.
+- Preservar o limite Termux como host de controle e Ubuntu como ambiente de desenvolvimento.
+- Atualizar contratos JSON de forma aditiva e compatível.
+- Atualizar documentação de arquitetura, decisões, roadmap e uso.
+- Manter funcionamento por CLI, JSON, TUI, teclado e mouse.
 
 ## Fora do escopo
 
-- Alterar a instalação automática de dependências.
-- Criar tela de “Mais detalhes”.
-- Exibir package, caminho do executável ou comandos internos na tela normal.
-- Criar descoberta dinâmica de metadados via rede.
-- Criar novos apps.
-- Alterar `site/` ou `docs/LAUNCH-KIT.md`.
+- Gerenciamento automático de Java 17.
+- Instalação automática de SDKMAN.
+- Kotlin/Native e Kotlin/JS.
+- Android SDK, Android Studio ou Gradle Android Plugin.
+- Criação de projetos Spring Boot pelo Mobdesk.
+- Gerenciamento de projetos, sessões ou serviços Spring Boot.
+- Tela específica de projetos.
+- Spring Framework 4.x sem Spring Boot.
+- Spring Boot CLI.
+- Docker, Testcontainers ou execução dependente de Docker.
+- systemd, cgroups, namespaces completos ou execução como serviço do sistema.
+- Native Image, GraalVM e compilação nativa.
+- Remoção automática dos caches `~/.gradle` e `~/.m2`.
+- Alterações em `site/` ou `docs/LAUNCH-KIT.md`.
+- Garantia de compatibilidade com versões arbitrárias de Java, Kotlin, Gradle, Maven ou Spring.
 
 ## Regras de execução
 
-- O catálogo é a fonte declarativa dos metadados dos apps.
-- A TUI não executa comandos Ubuntu diretamente.
-- `VersionArg` não pode resultar em help completo renderizado como versão.
-- Metadados editoriais e dados técnicos devem possuir campos distintos.
-- A instalação automática atual de `Requires` deve permanecer funcionando.
-- Ações destrutivas exigem confirmação.
-- Toda ação importante funciona por mouse/toque e teclado.
-- A tela deve caber em terminais estreitos.
-- Novos campos JSON devem ser aditivos e compatíveis.
-- Executar `make check` antes da conclusão.
+- Java 21 é o único JDK instalado e gerenciado automaticamente pelo Mobdesk.
+- Java 17 manual é permitido, mas não será substituído, removido ou administrado pelo Mobdesk.
+- Java, Kotlin, Gradle e Maven são perfis independentes na lista de apps.
+- Kotlin, Gradle e Maven declaram Java 21 como dependência.
+- A instalação de um dependente pode instalar Java 21 automaticamente.
+- A desinstalação deve proteger todos os pacotes compartilhados.
+- A instalação ocorre no Ubuntu via `proot-distro`, nunca no Termux.
+- O JDK do Termux não deve ser usado como JVM do Ubuntu.
+- `JAVA_HOME` deve ser descoberto dentro do Ubuntu sem caminho fixo de arquitetura.
+- O ambiente exportado para shells e comandos deve incluir `JAVA_HOME` e o `PATH` correto.
+- Downloads externos usam HTTPS, versão fixada, arquitetura validada quando aplicável e checksum.
+- O compiler Kotlin é instalado em caminho privado e gerenciado pelo Mobdesk.
+- Gradle Wrapper e Maven Wrapper têm precedência sobre binários globais.
+- Caches `~/.gradle` e `~/.m2` sobrevivem a reinstalações e desinstalações.
+- O espaço livre é verificado antes de qualquer instalação.
+- Abaixo de 20 GB livres, a operação mostra aviso e exige confirmação compatível.
+- Abaixo de 10 GB livres, a instalação é bloqueada sem apagar dados.
+- Toda operação longa aceita cancelamento e preserva estado, logs e dados após falha.
+- A TUI não executa `apt`, `proot-distro`, Gradle, Maven ou scripts diretamente.
+- Instalação e atualização continuam bloqueadas dentro de SSH/Ubuntu.
+- Novos campos JSON são aditivos e preservam o contrato versionado.
+- Estados parciais, bloqueados, ocupados, conflitantes, concluídos e falhos são visíveis.
+- A interface funciona em terminais estreitos e mantém equivalência mouse/teclado.
+- Nenhum teste depende de secrets.
+- A documentação declara as limitações reais do PRoot.
 
 ## Tasks
 
-### Task 1 - Padronizar o contrato de metadados
+### Task 1 - Evoluir o contrato de catálogo e instalações compartilhadas
 
-- Status: completed
+- Status: in_progress
 - Depends on: none
 - Branch: branch única do Goal
 - Worktree: worktree atual
 - PR: incluída no PR final
 
-#### Stage 1.1 - Adicionar metadados editoriais
+#### Stage 1.1 - Modelar múltiplos pacotes e executáveis
 
 - Status: completed
 
 ##### Objetivo
 
-Permitir que cada app declare informações próprias para apresentação.
+Permitir vários pacotes e executáveis obrigatórios sem quebrar registros JSON existentes.
 
 ##### Ações
 
-- Adicionar `Usage` ao `AppProfile`.
-- Definir a fonte da versão curta quando o app não possui um comando confiável.
-- Documentar a diferença entre descrição, uso, versão, comando de verificação e dados técnicos de instalação.
-- Preencher os metadados de TTT, Neovim e Yazi.
-- Preservar `Requires`, `ConfigProfile` e `StorageEstimate`.
+- Evoluir `AppProfile` e registros para múltiplos pacotes e executáveis.
+- Manter leitura dos campos antigos `package` e `executable`.
+- Definir agregação de versões e erros.
+- Atualizar o catálogo existente sem alterar seu comportamento.
 
 ##### Critérios de aceite
 
-- [x] Todos os apps possuem descrição e uso válidos.
-- [x] TTT possui uso `ttt [arquivos/pastas/URLs...]`.
-- [x] Neovim possui uso `nvim [arquivo ou diretório]`.
-- [x] Yazi possui uso `yazi [diretório]`.
-- [x] Nenhum app usa help completo como versão visual.
-- [x] A instalação automática das dependências continua inalterada.
+- [ ] Registros antigos continuam sendo lidos.
+- [x] O modelo aceita declarações de múltiplos pacotes e executáveis para Java, Kotlin, Gradle e Maven.
+- [x] Perfil só é instalado quando todos os executáveis obrigatórios existem.
+- [x] Testes cobrem registros antigos e múltiplos executáveis.
 
 ##### Validação
 
 ```bash
-go test ./internal/install ./internal/i18n
-go vet ./internal/install ./internal/i18n
+go test ./internal/install ./internal/status
+go vet ./internal/install ./internal/status
 ```
 
-Resultado: aprovado; os dois comandos passaram e `git diff --check` não encontrou erros.
-
-Commit: 40cb749
+Resultado: testes de install/status e vet passaram; `git diff --check` passou.
 
 ##### Commit
 
 ```text
-feat: standardize app metadata
+feat: extend toolchain installation contract
 ```
 
-### Task 2 - Implementar o popup normal compacto
+Commit: c4a0a09
+
+#### Stage 1.2 - Proteger dependências compartilhadas na desinstalação
 
 - Status: completed
+
+##### Objetivo
+
+Impedir que a remoção de um app JVM desinstale Java ou pacote ainda utilizado.
+
+##### Ações
+
+- Comparar todos os pacotes e dependências diretas e transitivas.
+- Preservar pacotes compartilhados.
+- Registrar pacotes removidos e preservados.
+- Representar estados parciais e cobrir operações repetidas.
+
+##### Critérios de aceite
+
+- [x] Pacotes compartilhados e dependências de perfil bloqueiam a remoção.
+- [x] A regra protege Java quando usado por um perfil dependente.
+- [x] Caches e dados do usuário não são removidos.
+- [x] Arquivos modificados continuam protegidos.
+
+##### Validação
+
+```bash
+go test ./internal/install -run 'Test.*[Uu]ninstall|Test.*[Ss]hared|Test.*[Dd]ep'
+go vet ./internal/install
+```
+
+Resultado: testes de desinstalação, compartilhamento e dependências, vet e `git diff --check` passaram.
+
+Commit: fe96f0f
+
+##### Commit
+
+```text
+feat: protect shared toolchain dependencies
+```
+
+#### Stage 1.3 - Aplicar política global de armazenamento
+
+- Status: completed
+
+##### Objetivo
+
+Impedir que instalações consumam o armazenamento crítico do dispositivo.
+
+##### Ações
+
+- Definir aviso em 20 GB e bloqueio em 10 GB.
+- Aplicar a política a toda instalação do Mobdesk.
+- Expor motivo em texto e JSON.
+- Verificar espaço antes de modificar o sistema.
+- Adicionar testes para estados suficiente, aviso e bloqueado.
+
+##### Critérios de aceite
+
+- [x] 25 GB livres prossegue sem aviso.
+- [x] 19 GB livres informa aviso.
+- [x] 10 GB livres ou mais não é bloqueado somente pela política.
+- [x] Menos de 10 GB bloqueia sem executar APT, downloads ou remoções.
+- [x] Bloqueio aparece no resultado da instalação e no JSON.
+- [x] A política vale para apps existentes e novos.
+
+##### Validação
+
+```bash
+go test ./internal/install ./internal/status
+go vet ./internal/install ./internal/status
+```
+
+Resultado: testes de limites, install/status/cobra/i18n, vet, `i18n-check` e `git diff --check` passaram.
+
+##### Commit
+
+```text
+feat: enforce global storage thresholds
+```
+
+Commit: e89d03b
+
+### Task 2 - Implementar o ambiente Java 21
+
+- Status: in_progress
 - Depends on: Task 1
 - Branch: branch única do Goal
 - Worktree: worktree atual
 - PR: incluída no PR final
 
-#### Stage 2.1 - Padronizar rendering e ações
+#### Stage 2.1 - Adicionar o perfil Java 21
 
 - Status: completed
 
 ##### Objetivo
 
-Renderizar todos os apps com o padrão visual aprovado.
+Instalar e validar o JDK 21 oficial do Ubuntu ARM64 dentro do PRoot.
 
 ##### Ações
 
-- Atualizar `renderAppPopup`.
-- Exibir nome, descrição, estado, versão, uso e dependências quando aplicável.
-- Exibir configuração resumida quando aplicável.
-- Exibir armazenamento resumido quando relevante.
-- Remover origem, paths, plugins e saída bruta de comandos.
-- Mostrar `Reinstalar` para apps instalados.
-- Manter `Desinstalar`, `Remover config`, `Instalar` e `Fechar` conforme o estado.
-- Preservar confirmação, `Esc`, mouse e teclado.
+- Adicionar perfil `java` usando `openjdk-21-jdk` via APT no Ubuntu.
+- Declarar pacotes e executáveis obrigatórios.
+- Validar `java --version`, `javac --version` e `jar --version`.
+- Registrar pacotes, versão e logs sem secrets.
+- Manter instalação idempotente.
 
 ##### Critérios de aceite
 
-- [x] TTT corresponde ao layout aprovado.
-- [x] Neovim mostra `Config LazyVim aplicada` quando aplicável.
-- [x] Yazi mostra estado, uso e espaço total.
-- [x] Apps sem configuração não mostram configuração vazia.
-- [x] Apps sem dependências não mostram linha vazia.
-- [x] Apps instalados mostram `Reinstalar`.
-- [x] Nenhum popup mostra a saída completa de `--help`.
-- [x] Nenhuma linha excede a largura do terminal.
-- [x] Não existe tela secundária de detalhes.
+- [x] `mobdesk install java` funciona em Termux.
+- [x] APT ocorre somente dentro do Ubuntu.
+- [x] Java 21 é encontrado e validado.
+- [x] `javac` compila e `jar` empacota uma classe simples.
+- [x] Segunda instalação não reinstala desnecessariamente.
+- [x] Perfil aparece na CLI, JSON e TUI.
 
 ##### Validação
 
 ```bash
-go test ./internal/tui
-go vet ./internal/tui
+go test ./internal/install
+go vet ./internal/install
 ```
 
-Resultado: aprovado; testes de TUI, i18n e install, vet, i18n-check e `git diff --check` passaram.
-
-Commit: 88a8cba
+Resultado: testes de install, vet, localização, smoke test de catálogo e `git diff --check` passaram. O fixture confirmou Java 21, `javac`, `jar`, compilação e execução do JAR.
 
 ##### Commit
 
 ```text
-feat: simplify app detail popup
+feat: add managed Java 21 profile
 ```
 
-#### Stage 2.2 - Atualizar localização
+#### Stage 2.2 - Configurar JAVA_HOME e ambiente de shell
 
 - Status: completed
 
 ##### Objetivo
 
-Garantir textos consistentes em inglês e português.
+Garantir que shells, Mobdesk e build tools usem a mesma JVM dentro do Ubuntu.
 
 ##### Ações
 
-- Adicionar mensagens para uso, reinstalação e armazenamento resumido.
-- Atualizar labels e ações necessárias.
-- Validar todos os IDs usados pelo popup.
-- Manter textos curtos para terminais móveis.
+- Descobrir o diretório real do JDK.
+- Gerar configuração privada e idempotente do shell Ubuntu.
+- Exportar `JAVA_HOME` e ajustar `PATH`.
+- Não transportar ambiente do Termux.
+- Preservar configuração existente do usuário.
 
 ##### Critérios de aceite
 
-- [x] Inglês e português possuem todas as mensagens novas.
-- [x] Nenhum texto aparece como tradução ausente.
-- [x] Textos localizados cabem em terminais estreitos.
-- [x] Hit-tests não dependem de textos não localizados.
+- [x] `JAVA_HOME` aponta para o JDK 21 no Ubuntu.
+- [x] `java` e `javac` apontam para o ambiente Ubuntu.
+- [x] Gradle e Maven recebem o mesmo `JAVA_HOME`.
+- [x] Configuração é repetível e não apaga configuração existente.
+- [x] Caminho não depende de arquitetura codificada.
 
 ##### Validação
 
 ```bash
-./scripts/i18n-check.sh
-go test ./internal/i18n ./internal/tui
+go test ./internal/install ./internal/workstation
+go vet ./internal/install ./internal/workstation
 ```
 
-Resultado: aprovado; `i18n-check`, testes localizados e `git diff --check` passaram.
-
-Commit: 6ec3b93
+Resultado: configuração de shell, preservação do `.bashrc`, descoberta dinâmica do JDK e ausência de ambiente Termux foram cobertas por testes; testes e vet passaram.
 
 ##### Commit
 
 ```text
-feat: localize standardized app popup
+feat: configure Ubuntu Java environment
 ```
 
-### Task 3 - Garantir o padrão contra regressões
+### Task 3 - Implementar Kotlin/JVM fixado
 
-- Status: completed
+- Status: pending
 - Depends on: Task 2
 - Branch: branch única do Goal
 - Worktree: worktree atual
 - PR: incluída no PR final
 
-#### Stage 3.1 - Adicionar testes e documentação
+#### Stage 3.1 - Instalar compiler oficial Kotlin
 
 - Status: completed
 
 ##### Objetivo
 
-Impedir que novos apps sejam cadastrados ou renderizados de forma inconsistente.
+Disponibilizar Kotlin/JVM atual sem usar o pacote Ubuntu obsoleto.
 
 ##### Ações
 
-- Adicionar testes de campos obrigatórios do catálogo.
-- Adicionar testes para impedir help completo como versão.
-- Adicionar testes de TTT, Neovim e Yazi.
-- Adicionar testes de mouse, teclado, confirmação e terminal estreito.
-- Atualizar `docs/ARCHITECTURE.md`.
-- Atualizar `docs/DECISIONS.md`.
-- Atualizar `docs/ROADMAP.md` se necessário.
-- Adicionar comentários concisos nos contratos e regras não óbvias.
+- Definir versão compatível com Spring Boot 4.x.
+- Fixar URL, versão e checksum.
+- Validar HTTPS, arquitetura e integridade.
+- Instalar em diretório privado e expor `kotlinc` e `kotlin`.
+- Declarar Java 21 como dependência.
+- Registrar arquivos e hashes para remoção segura.
 
 ##### Critérios de aceite
 
-- [x] Perfil sem uso ou descrição falha nos testes.
-- [x] Help completo não aparece na versão.
-- [x] A instalação automática de dependências continua coberta pelos testes existentes.
-- [x] Popup compacto possui cobertura de rendering.
-- [x] Mouse e teclado continuam equivalentes.
+- [x] `mobdesk install kotlin` instala Java 21 se necessário.
+- [x] Não usa `apt install kotlin`.
+- [x] Checksum inválido interrompe sem ativar arquivos.
+- [x] `kotlinc --version` funciona.
+- [ ] Kotlin compila JAR executável executado por `java -jar`.
+- [x] Segunda instalação é idempotente.
+- [x] Arquivos modificados não são removidos silenciosamente.
+
+##### Validação
+
+```bash
+go test ./internal/install
+go vet ./internal/install
+```
+
+Resultado: perfil Kotlin/JVM 2.2.20, checksum fixado, validação de HTTPS/TLS, arquitetura, dependência Java e catálogo passaram em testes, vet, i18n e `make check`. A execução de JAR fica validada na Stage 3.2.
+
+##### Commit
+
+```text
+feat: add pinned Kotlin JVM compiler
+```
+
+#### Stage 3.2 - Validar Kotlin com Java 21
+
+- Status: completed
+
+##### Objetivo
+
+Confirmar interoperabilidade básica entre Kotlin/JVM, Java 21 e PRoot.
+
+##### Ações
+
+- Adicionar fixture Kotlin console.
+- Compilar e executar com `kotlinc` e `java -jar`.
+- Validar caminhos, temporários e saída em ARM64.
+- Cobrir cancelamento e falha de download.
+
+##### Critérios de aceite
+
+- [x] Fixture compila e executa no Ubuntu ARM64 via PRoot.
+- [x] Fixture usa Java 21 do Ubuntu.
+- [x] Falha de JDK ausente produz diagnóstico objetivo.
+- [x] Teste não exige IDE, Android SDK ou Kotlin/Native.
+
+##### Validação
+
+```bash
+make catalog-test
+```
+
+Resultado: smoke test isolado no mesmo container instalou Java 21 e Kotlin/JVM, validou `kotlinc`/`kotlin`, compilou a fixture com `-include-runtime` e executou o JAR com `java` dentro do Ubuntu/PRoot. O `make catalog-test` completo excedeu o timeout durante CLIs npm opcionais, antes da fixture Kotlin.
+
+##### Commit
+
+```text
+test: validate Kotlin JVM toolchain
+```
+
+### Task 4 - Adicionar Maven e Gradle como apps opcionais
+
+- Status: pending
+- Depends on: Task 2
+- Branch: branch única do Goal
+- Worktree: worktree atual
+- PR: incluída no PR final
+
+#### Stage 4.1 - Adicionar perfis independentes de Gradle e Maven
+
+- Status: completed
+
+##### Objetivo
+
+Disponibilizar os dois build tools sem criar dependência entre eles.
+
+##### Ações
+
+- Adicionar `gradle` dependente de Java.
+- Adicionar `maven` dependente de Java.
+- Definir estratégias e versões verificáveis.
+- Validar `gradle --version` e `mvn --version`.
+- Manter caches persistentes e perfis opcionais.
+
+##### Critérios de aceite
+
+- [x] Gradle e Maven aparecem como apps opcionais.
+- [x] Instalar Gradle não instala Maven e vice-versa.
+- [x] Ambos instalam Java 21 somente quando necessário.
+- [x] Ambos mostram a versão do Java usado.
+- [x] Desinstalação preserva Java enquanto houver dependentes.
+- [x] TUI mostra dependências sem subconfiguração dentro do Java.
+
+##### Validação
+
+```bash
+go test ./internal/install ./internal/status ./internal/tui
+go vet ./internal/install ./internal/status ./internal/tui
+```
+
+Resultado: perfis APT independentes, dependentes somente de Java, foram cobertos por testes, vet e `make check`; o smoke do catálogo inclui `gradle --version` e `mvn --version`.
+
+##### Commit
+
+```text
+feat: add optional Maven and Gradle profiles
+```
+
+#### Stage 4.2 - Respeitar wrappers de projetos
+
+- Status: completed
+
+##### Objetivo
+
+Garantir que projetos existentes controlem suas próprias versões.
+
+##### Ações
+
+- Dar precedência a `./gradlew` sobre `gradle`.
+- Dar precedência a `./mvnw` sobre `mvn`.
+- Validar wrappers com `JAVA_HOME` configurado.
+- Não alterar arquivos de projeto automaticamente.
+- Definir diagnóstico para wrapper ausente, inválido ou sem permissão.
+
+##### Critérios de aceite
+
+- [x] Wrappers têm precedência sobre binários globais.
+- [x] Wrapper inválido produz diagnóstico objetivo.
+- [x] Cancelamento não deixa estado inconsistente.
+- [x] Documentação explica o fallback global.
+
+##### Validação
+
+```bash
+go test ./internal/install ./internal/executil
+go vet ./internal/install ./internal/executil
+```
+
+Resultado: resolução segura de `gradlew`/`mvnw`, fallback para `gradle`/`mvn` e erro para wrappers não executáveis foram cobertos por testes e vet.
+
+##### Commit
+
+```text
+feat: document project build wrapper precedence
+```
+
+### Task 5 - Integrar status, JSON e TUI
+
+- Status: completed
+- Depends on: Task 1, Task 2, Task 3, Task 4
+- Branch: branch única do Goal
+- Worktree: worktree atual
+- PR: incluída no PR final
+
+#### Stage 5.1 - Representar múltiplos executáveis e estados parciais
+
+- Status: completed
+
+##### Objetivo
+
+Evitar que perfis incompletos apareçam como instalados.
+
+##### Ações
+
+- Verificar todos os executáveis obrigatórios.
+- Diferenciar ferramenta gerenciada de ferramenta externa.
+- Expor executáveis ausentes e dependências bloqueadas.
+- Atualizar estados parciais e alertas.
+- Reconciliar registros antigos.
+
+##### Critérios de aceite
+
+- [x] Java sem `javac` não é completamente instalado.
+- [x] Kotlin sem `kotlinc` aparece como parcial ou ausente.
+- [x] Gradle sem Java mostra dependência faltante.
+- [x] Ferramentas externas não são removíveis pelo Mobdesk.
+- [x] JSON mantém schema compatível.
+- [x] Status respeita a fronteira Termux/SSH.
+
+##### Validação
+
+```bash
+go test ./internal/status ./internal/install
+go vet ./internal/status ./internal/install
+```
+
+Resultado: status e JSON reconciliam executáveis obrigatórios, dependências ausentes e estado `partial`; testes e vet passaram.
+
+##### Commit
+
+```text
+feat: report complete toolchain states
+```
+
+#### Stage 5.2 - Atualizar catálogo visual e localizações
+
+- Status: completed
+
+##### Objetivo
+
+Apresentar Java, Kotlin, Gradle e Maven na lista e nos popups existentes.
+
+##### Ações
+
+- Adicionar descrições e usos em inglês e português.
+- Mostrar dependências, bloqueios e estados parciais.
+- Preservar ações, confirmação, mouse, teclado e terminais estreitos.
+
+##### Critérios de aceite
+
+- [x] Quatro apps aparecem na lista.
+- [x] Gradle e Maven são instaláveis separadamente.
+- [x] Falta de espaço mostra bloqueio na TUI.
+- [x] App parcial não oferece ação incompatível sem explicação.
+- [x] Nenhum popup mostra help ou saída bruta.
+- [x] `i18n-check` passa.
+
+##### Validação
+
+```bash
+go test ./internal/tui ./internal/i18n
+go vet ./internal/tui ./internal/i18n
+./scripts/i18n-check.sh
+```
+
+Resultado: Java, Kotlin, Gradle e Maven aparecem no catálogo e popups; estados parciais, executáveis ausentes e bloqueio de armazenamento são localizados e exibidos pela TUI.
+
+##### Commit
+
+```text
+feat: expose JVM tools in the TUI
+```
+
+### Task 6 - Validar Spring Boot 4.x no Ubuntu ARM64
+
+- Status: completed
+- Depends on: Task 3, Task 4, Task 5
+- Branch: branch única do Goal
+- Worktree: worktree atual
+- PR: incluída no PR final
+
+#### Stage 6.1 - Criar fixtures de Spring Boot 4.x
+
+- Status: completed
+
+##### Objetivo
+
+Validar o ambiente em aplicações reais sem criar um gerenciador de projetos.
+
+##### Ações
+
+- Criar fixture Java com Gradle.
+- Criar fixture Java com Maven.
+- Criar fixture Kotlin com Gradle.
+- Fixar versão exata de Spring Boot 4.x.
+- Criar endpoint HTTP mínimo em porta não privilegiada.
+- Não adicionar Docker, Testcontainers ou banco externo.
+
+##### Critérios de aceite
+
+- [x] As três fixtures compilam.
+- [x] Os testes passam.
+- [x] JARs executáveis são gerados.
+- [x] Versões não dependem de `latest`.
+- [x] Fixtures não dependem de IDE.
+
+##### Validação
+
+```bash
+make catalog-test
+```
+
+Resultado: o script Spring separado compilou as três fixtures, executou os testes e gerou os JARs. A validação foi feita sem `catalog-test`, conforme solicitado.
+
+##### Commit
+
+```text
+test: add Spring Boot JVM fixtures
+```
+
+#### Stage 6.2 - Executar e validar aplicações Spring
+
+- Status: completed
+
+##### Objetivo
+
+Confirmar aplicações Spring Boot como processos de usuário dentro do PRoot.
+
+##### Ações
+
+- Executar Java/Gradle com `bootRun`.
+- Executar Java/Maven com `spring-boot:run`.
+- Executar JARs Java e Kotlin.
+- Verificar HTTP local e configuração de endereço/porta.
+- Testar cancelamento e registrar limitações de memória, file watching e suspensão.
+
+##### Critérios de aceite
+
+- [x] Java/Gradle inicia e responde HTTP.
+- [x] Java/Maven inicia e responde HTTP.
+- [x] Kotlin/Gradle inicia e responde HTTP.
+- [x] Processos usam porta não privilegiada.
+- [x] Processos podem ser encerrados sem órfãos.
+- [x] Validação não assume systemd, Docker ou cgroups.
+- [x] Falhas de rede, memória e cancelamento têm diagnóstico utilizável.
+
+##### Validação
+
+```bash
+make catalog-test
+make integration-test
+```
+
+Resultado: script Spring separado validou `bootRun`, `spring-boot:run`, os três JARs, HTTP local em portas 18080-18084 e encerramento dos processos. Não foi executado `catalog-test`.
+
+##### Commit
+
+```text
+test: validate Spring Boot runtime in PRoot
+```
+
+### Task 7 - Documentar, testar e fechar o Goal
+
+- Status: in_progress
+- Depends on: Task 1, Task 2, Task 3, Task 4, Task 5, Task 6
+- Branch: branch única do Goal
+- Worktree: worktree atual
+- PR: incluída no PR final
+
+#### Stage 7.1 - Atualizar documentação e decisões
+
+- Status: completed
+
+##### Objetivo
+
+Documentar toolchains, decisões e limitações de compatibilidade.
+
+##### Ações
+
+- Atualizar `README.md` e `README.pt-BR.md`.
+- Atualizar `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` e `docs/ROADMAP.md`.
+- Documentar fronteira Termux/Ubuntu, Java 17 manual, wrappers, caches e limites de armazenamento.
+- Documentar limitações de Spring Boot no PRoot.
+
+##### Critérios de aceite
+
+- [x] Documentação não afirma que JDK Termux é usado pelo Ubuntu.
+- [x] Ambiente JVM é diferenciado de gerenciamento de projetos.
+- [x] Maven e Gradle aparecem como apps opcionais.
+- [x] Spring Boot 4.x e as exclusões estão explícitos.
+- [x] Limites de 20 GB e 10 GB estão documentados.
+
+##### Validação
+
+```bash
+./scripts/i18n-check.sh
+```
+
+Resultado: README, arquitetura, decisões e roadmap documentam a fronteira
+Termux/Ubuntu, JVM, wrappers, armazenamento e limitações do Spring Boot no PRoot.
+
+##### Commit
+
+```text
+docs: document JVM and Spring Boot support
+```
+
+#### Stage 7.2 - Validação final e regressão
+
+- Status: blocked
+
+##### Objetivo
+
+Garantir que o suporte JVM não quebre o catálogo nem os fluxos existentes.
+
+##### Ações
+
+- Executar testes unitários, vet, localização, build, catálogo e integração.
+- Validar instalações repetidas, desinstalações compartilhadas, JSON e estados bloqueados.
+- Validar no Termux ARM64 real do POCO F6.
+- Registrar limitações dependentes do dispositivo.
+
+##### Critérios de aceite
+
 - [x] `make check` passa.
-- [x] Documentação explica como cadastrar novos metadados.
+- [ ] `make catalog-test` passa. Não executado conforme instrução do usuário.
+- [x] `make integration-test` passa após o fixture preparar explicitamente `tzdata` e `Etc/UTC`.
+- [x] Java, Kotlin, Gradle e Maven passam as validações previstas.
+- [x] Matriz Spring reduzida passa pelo script separado.
+- [x] Catálogo existente continua funcionando nos testes unitários.
+- [x] Instalações repetidas são idempotentes.
+- [x] Java não é removido prematuramente.
+- [x] Aviso e bloqueio de armazenamento funcionam.
+- [x] `git diff --check` passa.
 
 ##### Validação
 
 ```bash
 make check
+make catalog-test
+make integration-test
 ```
 
-Resultado: aprovado; `make check` passou após a recuperação do mirror Docker, incluindo formatação, i18n-check, vet, testes e build.
-
-Commit: 8fc00f3
+Resultado: `make check`, testes unitários, vet, i18n, Spring fixtures,
+`make integration-test` e `git diff --check` passaram. `catalog-test` não foi
+executado conforme pedido.
 
 ##### Commit
 
 ```text
-test: enforce standardized app presentation
+test: verify JVM toolchain integration
 ```
 
 ## Ordem de execução
 
 1. Task 1 / Stage 1.1
-2. Task 2 / Stage 2.1
-3. Task 2 / Stage 2.2
-4. Task 3 / Stage 3.1
+2. Task 1 / Stage 1.2
+3. Task 1 / Stage 1.3
+4. Task 2 / Stage 2.1
+5. Task 2 / Stage 2.2
+6. Task 3 / Stage 3.1
+7. Task 3 / Stage 3.2
+8. Task 4 / Stage 4.1
+9. Task 4 / Stage 4.2
+10. Task 5 / Stage 5.1
+11. Task 5 / Stage 5.2
+12. Task 6 / Stage 6.1
+13. Task 6 / Stage 6.2
+14. Task 7 / Stage 7.1
+15. Task 7 / Stage 7.2
 
 ## Bloqueios e decisões
 
-- As Tasks são dependentes e serão executadas em uma única branch.
-- A instalação automática de dependências permanece como está.
-- O comportamento de `Requires` não será refatorado neste Goal.
-- Alterações pré-existentes em `site/` e `docs/LAUNCH-KIT.md` ficam fora do Goal.
-- A versão de apps sem comando curto confiável deve vir de metadado declarado no catálogo.
+- O alvo é Spring Boot 4.x, não Spring Framework 4.x isolado.
+- Java 21 é o único JDK gerenciado automaticamente.
+- Java 17 manual não será administrado pelo Mobdesk.
+- Kotlin é Kotlin/JVM com compiler oficial fixado.
+- Kotlin/Native fica fora deste Goal.
+- Maven e Gradle são apps opcionais independentes.
+- Ambos dependem de Java 21, mas não dependem um do outro.
+- Wrappers de projeto têm precedência sobre instalações globais.
+- O Mobdesk fornece o ambiente, mas não cria nem gerencia projetos.
+- A matriz Spring é Java/Gradle, Java/Maven e Kotlin/Gradle.
+- Docker, Testcontainers, systemd, Native Image e serviços persistentes não são critérios de aceite.
+- Aviso global ocorre abaixo de 20 GB livres.
+- Instalações são bloqueadas abaixo de 10 GB livres.
+- Caches Maven e Gradle são preservados.
+- Validação real depende do POCO F6 e da rede disponível.
+- Nenhuma implementação de produto ocorre durante a definição deste Goal.
 
 ## Conclusão
 
-O Goal termina quando TTT, Neovim, Yazi e os demais apps seguem o popup compacto aprovado, nenhum app renderiza help completo como versão, a instalação automática continua funcionando, os contratos e testes estão atualizados e `make check` passa.
+O Goal termina quando o Mobdesk instala e valida Java 21, Kotlin/JVM, Maven e
+Gradle dentro do Ubuntu via PRoot, representa corretamente dependências e estados
+compartilhados, aplica os limites de armazenamento, expõe os apps pela CLI/JSON/TUI,
+executa a matriz reduzida de aplicações Spring Boot 4.x, documenta as limitações e
+passa toda a validação automatizada e real disponível.

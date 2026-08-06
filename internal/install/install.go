@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -19,10 +20,18 @@ const (
 	defaultLockTimeout    = 5 * time.Minute
 	aptLockTimeoutSeconds = 300
 	ubuntuPath            = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+	storageWarningBytes   = 20 * 1024 * 1024 * 1024
+	storageBlockBytes     = 10 * 1024 * 1024 * 1024
+	StorageWarningBytes   = storageWarningBytes
+	StorageBlockBytes     = storageBlockBytes
 )
 
 var catalog = []AppProfile{
 	{Name: "go", Aliases: []string{"golang"}, DescriptionID: i18n.AppGoDescription, Usage: "go [command]", Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(180, 300, 0, 50, 0, 5)},
+	{Name: "java", Aliases: []string{"openjdk"}, DescriptionID: i18n.AppJavaDescription, Usage: "java [options] <class>", Package: "openjdk-21-jdk", Executable: "java", RequiredExecutables: []ExecutableSpec{{Name: "java", VersionArg: []string{"--version"}}, {Name: "javac", VersionArg: []string{"--version"}}, {Name: "jar", VersionArg: []string{"--version"}}}, VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(160, 340, 0, 0, 0, 5)},
+	{Name: "kotlin", Aliases: []string{"kotlin-jvm", "kotlinc"}, DescriptionID: i18n.AppKotlinDescription, Usage: "kotlinc [options] <source files>", Package: "kotlin-compiler-2.2.20", Executable: "kotlinc", RequiredExecutables: []ExecutableSpec{{Name: "kotlinc", VersionArg: []string{"-version"}}, {Name: "kotlin", VersionArg: []string{"-version"}}}, VersionArg: []string{"-version"}, Kind: "language", InstallKind: "script", Requires: []string{"java"}, UserBin: true, Script: kotlinCompilerInstallScript(), StorageEstimate: plannedStorage(85, 110, 0, 0, 1, 5)},
+	{Name: "gradle", Aliases: []string{"gradle-build"}, DescriptionID: i18n.AppGradleDescription, Usage: "gradle [options] [tasks...]", Package: "gradle-8.14.3", Executable: "gradle", VersionArg: []string{"--version"}, Kind: "build", InstallKind: "script", Requires: []string{"java"}, UserBin: true, Script: gradleInstallScript(), StorageEstimate: plannedStorage(140, 190, 0, 0, 1, 5)},
+	{Name: "maven", Aliases: []string{"mvn"}, DescriptionID: i18n.AppMavenDescription, Usage: "mvn [options] [goals...]", Package: "maven", Executable: "mvn", VersionArg: []string{"--version"}, Kind: "build", InstallKind: "apt", Requires: []string{"java"}, StorageEstimate: plannedStorage(15, 35, 0, 10, 1, 5)},
 	{Name: "python", Aliases: []string{"python3"}, DescriptionID: i18n.AppPythonDescription, Usage: "python3 [script]", Package: "python3", Executable: "python3", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(35, 60, 0, 20, 0, 5)},
 	{Name: "node", Aliases: []string{"nodejs"}, DescriptionID: i18n.AppNodeDescription, Usage: "node [script]", Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "node", StorageEstimate: plannedStorage(70, 130, 20, 60, 0, 10)},
 	{Name: "c", Aliases: []string{"c-lang"}, DescriptionID: i18n.AppCDescription, Usage: "clang [options] <files...>", Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(250, 450, 20, 80, 0, 10)},
@@ -129,6 +138,48 @@ apt-get -o DPkg::Lock::Timeout=300 install -y build-essential python3-dev libncu
 PIPX_BIN_DIR=/usr/local/bin pipx install --force TUIFIManager==5.2.6`
 }
 
+func kotlinCompilerInstallScript() string {
+	return `set -eu
+case "$(uname -m)" in
+    aarch64|arm64|x86_64|amd64) ;;
+    *) printf 'unsupported architecture: %s\n' "$(uname -m)" >&2; exit 1 ;;
+esac
+apt-get -o DPkg::Lock::Timeout=300 install -y ca-certificates curl unzip
+version=2.2.20
+archive=$(mktemp)
+temporary=$(mktemp -d)
+target="$HOME/.local/share/mobdesk/kotlin/$version"
+trap 'rm -f "$archive"; rm -rf "$temporary"' EXIT
+curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/JetBrains/kotlin/releases/download/v$version/kotlin-compiler-$version.zip" -o "$archive"
+printf '%s  %s\n' '81f0264c9073b5cbbdb3ff8418cf2c5dac076879fc156fa1a6462f5a5acc4420' "$archive" | sha256sum -c -
+unzip -q "$archive" -d "$temporary"
+test -x "$temporary/kotlinc/bin/kotlinc"
+test -x "$temporary/kotlinc/bin/kotlin"
+mkdir -p "$(dirname "$target")" "$HOME/.local/bin"
+rm -rf "$target"
+mv "$temporary/kotlinc" "$target"
+ln -sfn "$target/bin/kotlinc" "$HOME/.local/bin/kotlinc"
+ln -sfn "$target/bin/kotlin" "$HOME/.local/bin/kotlin"`
+}
+
+func gradleInstallScript() string {
+	return `set -eu
+version=8.14.3
+apt-get -o DPkg::Lock::Timeout=300 install -y ca-certificates curl unzip
+archive=$(mktemp)
+temporary=$(mktemp -d)
+target="$HOME/.local/share/mobdesk/gradle/$version"
+trap 'rm -f "$archive"; rm -rf "$temporary"' EXIT
+curl --proto '=https' --tlsv1.2 -fsSL "https://services.gradle.org/distributions/gradle-$version-bin.zip" -o "$archive"
+printf '%s  %s\n' 'bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531' "$archive" | sha256sum -c -
+unzip -q "$archive" -d "$temporary"
+test -x "$temporary/gradle-$version/bin/gradle"
+mkdir -p "$(dirname "$target")" "$HOME/.local/bin"
+rm -rf "$target"
+mv "$temporary/gradle-$version" "$target"
+ln -sfn "$target/bin/gradle" "$HOME/.local/bin/gradle"`
+}
+
 type Options struct {
 	Paths          paths.Paths
 	Runner         CommandRunner
@@ -139,6 +190,7 @@ type Options struct {
 	Progress       func(string)
 	ConfigProfiles map[string]ConfigProfile
 	Localizer      i18n.Localizer
+	StorageFree    func(string) (int64, error)
 }
 
 func Languages(localizers ...i18n.Localizer) []AppProfile {
@@ -195,6 +247,26 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	if !ok {
 		return Result{}, i18n.NewError(i18n.ServiceInstallUnsupported, "install_unsupported", map[string]any{"Name": name}, nil)
 	}
+	free, storageErr := availableStorage(options)
+	if storageErr != nil {
+		return Result{SchemaVersion: 1, Language: language.Name, State: "failed", StorageEstimate: language.StorageEstimate}, i18n.NewError(i18n.ServiceInstallStorage, "install_storage_check", map[string]any{"Detail": storageErr.Error()}, storageErr)
+	}
+	storageWarning := free < storageWarningBytes
+	if free < storageBlockBytes {
+		return Result{
+			SchemaVersion:    1,
+			Language:         language.Name,
+			Package:          language.Package,
+			Packages:         profilePackages(language),
+			Executable:       language.Executable,
+			Executables:      profileExecutables(language),
+			State:            "blocked",
+			Source:           "mobdesk",
+			StorageEstimate:  language.StorageEstimate,
+			StorageFreeBytes: free,
+			StorageBlocked:   true,
+		}, i18n.NewError(i18n.ServiceInstallStorage, "install_storage_blocked", map[string]any{"Name": language.Name, "Free": free}, nil)
+	}
 	runner := runnerFor(options)
 	for _, prerequisite := range language.Requires {
 		progress(options, i18n.ServiceInstallDependency, map[string]any{"Dependency": prerequisite, "Name": language.Name})
@@ -207,28 +279,34 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	logsDir := options.Paths.InstallLogsDir()
 	logPath := filepath.Join(logsDir, language.Name+".log")
 	result := Result{
-		SchemaVersion:   1,
-		Language:        language.Name,
-		Package:         language.Package,
-		Executable:      language.Executable,
-		State:           "installing",
-		LogPath:         logPath,
-		Source:          "mobdesk",
-		StorageEstimate: language.StorageEstimate,
+		SchemaVersion:    1,
+		Language:         language.Name,
+		Package:          language.Package,
+		Packages:         profilePackages(language),
+		Executable:       language.Executable,
+		Executables:      profileExecutables(language),
+		State:            "installing",
+		LogPath:          logPath,
+		Source:           "mobdesk",
+		StorageEstimate:  language.StorageEstimate,
+		StorageFreeBytes: free,
+		StorageWarning:   storageWarning,
 	}
 	record := InstallationRecord{
-		Name:              language.Name,
-		Kind:              language.Kind,
-		Package:           language.Package,
-		Executable:        language.Executable,
-		Strategy:          language.InstallKind,
-		Dependencies:      append([]string(nil), language.Requires...),
-		InstalledPackages: declaredInstalledPackages(language),
-		InstalledFiles:    declaredInstalledFiles(language),
-		State:             "installing",
-		Source:            "mobdesk",
-		LastAttemptAt:     now,
-		LogPath:           logPath,
+		Name:                language.Name,
+		Kind:                language.Kind,
+		Package:             language.Package,
+		Packages:            profilePackages(language),
+		Executable:          language.Executable,
+		RequiredExecutables: profileExecutables(language),
+		Strategy:            language.InstallKind,
+		Dependencies:        append([]string(nil), language.Requires...),
+		InstalledPackages:   declaredInstalledPackages(language),
+		InstalledFiles:      declaredInstalledFiles(language),
+		State:               "installing",
+		Source:              "mobdesk",
+		LastAttemptAt:       now,
+		LogPath:             logPath,
 	}
 	if err := os.MkdirAll(installationsDir, 0o700); err != nil {
 		return result, i18n.NewError(i18n.ServiceInstallState, "install_state", nil, err)
@@ -241,8 +319,8 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	}
 
 	progress(options, i18n.ServiceInstallVerify, map[string]any{"Name": language.Name})
-	version := runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
-	if version.Err != nil {
+	versions := runToolVersions(ctx, runner, options.CommandTimeout, logPath, language)
+	if versionErr := firstCommandError(versions); versionErr != nil {
 		progress(options, i18n.ServiceInstallRepair, map[string]any{"Name": language.Name})
 		if repair := repairDpkg(ctx, runner, options.CommandTimeout, logPath); repair.Err != nil {
 			err := i18n.NewError(i18n.ServiceInstallRepair, "install_repair", map[string]any{"Name": language.Name}, repair.Err)
@@ -261,13 +339,13 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		}
 		result.Changed = true
 		progress(options, i18n.ServiceInstallVerify, map[string]any{"Name": language.Name})
-		version = runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
+		versions = runToolVersions(ctx, runner, options.CommandTimeout, logPath, language)
 	}
-	if version.Err != nil {
-		err := i18n.NewError(i18n.ServiceInstallVerify, "install_verify", map[string]any{"Name": language.Name}, version.Err)
+	if versionErr := firstCommandError(versions); versionErr != nil {
+		err := i18n.NewError(i18n.ServiceInstallVerify, "install_verify", map[string]any{"Name": language.Name}, versionErr)
 		return failInstallation(installationsDir, record, result, err)
 	}
-	result.Version = commandOutput(version)
+	result.Version = commandVersions(language, versions)
 	result.Installed = true
 	result.State = "installed"
 	record.State = result.State
@@ -282,6 +360,22 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		return result, i18n.NewError(i18n.ServiceInstallRecord, "install_record", nil, err)
 	}
 	return result, nil
+}
+
+func availableStorage(options Options) (int64, error) {
+	if options.StorageFree != nil {
+		return options.StorageFree(options.Paths.Home)
+	}
+	if os.Getenv("MOBDESK_TEST_MODE") == "1" {
+		if value, err := strconv.ParseInt(os.Getenv("MOBDESK_TEST_STORAGE_FREE_BYTES"), 10, 64); err == nil && value >= 0 {
+			return value, nil
+		}
+	}
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(options.Paths.Home, &stat); err != nil {
+		return 0, err
+	}
+	return int64(stat.Bavail) * int64(stat.Bsize), nil
 }
 
 func progress(options Options, id i18n.MessageID, data map[string]any) {
@@ -301,22 +395,23 @@ func progress(options Options, id i18n.MessageID, data map[string]any) {
 }
 
 func declaredInstalledPackages(profile AppProfile) []string {
-	if profile.Package == "" {
-		return nil
-	}
-	return []string{profile.Package}
+	return profilePackages(profile)
 }
 
 func declaredInstalledFiles(profile AppProfile) []string {
-	if profile.Executable == "" {
+	executables := profileExecutables(profile)
+	if len(executables) == 0 {
 		return nil
 	}
 	binDir := "/usr/local/bin"
 	if profile.UserBin {
 		binDir = "/root/.local/bin"
 	}
-	files := []string{filepath.Join(binDir, profile.Executable)}
-	if profile.Name == "yazi" && profile.UserBin {
+	files := make([]string, 0, len(executables))
+	for _, executable := range executables {
+		files = append(files, filepath.Join(binDir, executable.Name))
+	}
+	if profile.Name == "yazi" && profile.UserBin && !containsExecutable(executables, "ya") {
 		files = append(files, filepath.Join(binDir, "ya"))
 	}
 	if profile.InstallKind == "apt" {
@@ -384,11 +479,82 @@ func acquireInstallLock(parent context.Context, options Options) (func(), error)
 }
 
 func runToolVersion(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool AppProfile) CommandResult {
-	if !tool.UserBin {
-		return runUbuntuLogged(ctx, runner, timeout, logPath, tool.Executable, tool.VersionArg...)
+	executables := profileExecutables(tool)
+	if len(executables) == 0 {
+		return CommandResult{Err: fmt.Errorf("profile %s has no required executable", tool.Name)}
 	}
-	args := append([]string{"-ec", `PATH="$HOME/.local/bin:$PATH"; exec "$@"`, "--", tool.Executable}, tool.VersionArg...)
+	return runToolVersionSpec(ctx, runner, timeout, logPath, tool, executables[0])
+}
+
+func runToolVersions(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool AppProfile) []CommandResult {
+	executables := profileExecutables(tool)
+	results := make([]CommandResult, 0, len(executables))
+	for _, executable := range executables {
+		results = append(results, runToolVersionSpec(ctx, runner, timeout, logPath, tool, executable))
+	}
+	return results
+}
+
+func runToolVersionSpec(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool AppProfile, executable ExecutableSpec) CommandResult {
+	if !tool.UserBin {
+		return runUbuntuLogged(ctx, runner, timeout, logPath, executable.Name, executable.VersionArg...)
+	}
+	args := append([]string{"-ec", `PATH="$HOME/.local/bin:$PATH"; exec "$@"`, "--", executable.Name}, executable.VersionArg...)
 	return runUbuntuLogged(ctx, runner, timeout, logPath, "sh", args...)
+}
+
+func firstCommandError(results []CommandResult) error {
+	for _, result := range results {
+		if result.Err != nil {
+			return result.Err
+		}
+	}
+	return nil
+}
+
+func commandVersions(profile AppProfile, results []CommandResult) string {
+	executables := profileExecutables(profile)
+	values := make([]string, 0, len(results))
+	for index, result := range results {
+		if index >= len(executables) {
+			break
+		}
+		output := commandOutput(result)
+		if len(executables) == 1 {
+			return output
+		}
+		values = append(values, executables[index].Name+": "+output)
+	}
+	return strings.Join(values, "\n")
+}
+
+func profilePackages(profile AppProfile) []string {
+	if len(profile.Packages) > 0 {
+		return append([]string(nil), profile.Packages...)
+	}
+	if profile.Package == "" {
+		return nil
+	}
+	return []string{profile.Package}
+}
+
+func profileExecutables(profile AppProfile) []ExecutableSpec {
+	if len(profile.RequiredExecutables) > 0 {
+		return append([]ExecutableSpec(nil), profile.RequiredExecutables...)
+	}
+	if profile.Executable == "" {
+		return nil
+	}
+	return []ExecutableSpec{{Name: profile.Executable, VersionArg: append([]string(nil), profile.VersionArg...)}}
+}
+
+func containsExecutable(executables []ExecutableSpec, name string) bool {
+	for _, executable := range executables {
+		if executable.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func installTool(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool AppProfile) CommandResult {
@@ -422,7 +588,7 @@ func installTool(ctx context.Context, runner CommandRunner, timeout time.Duratio
 	case "gh-extension":
 		return runUbuntuLogged(ctx, runner, timeout, logPath, "gh", "extension", "install", tool.Package)
 	default:
-		return runAptLogged(ctx, runner, timeout, logPath, "install", "-y", tool.Package)
+		return runAptLogged(ctx, runner, timeout, logPath, append([]string{"install", "-y"}, profilePackages(tool)...)...)
 	}
 }
 

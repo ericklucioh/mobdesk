@@ -176,10 +176,21 @@ func toolListItemsLocalized(value status.SystemStatus, installing string, locali
 		items = append(items, toolListItem{
 			entry:      entry,
 			installed:  toolInstalled(value, entry),
+			partial:    toolPartial(value, entry),
 			installing: entry.profile.Name == installing,
 		})
 	}
 	return items
+}
+
+func toolPartial(value status.SystemStatus, entry toolEntry) bool {
+	for _, installation := range value.Installations {
+		matches := installation.Name == entry.profile.Name || installation.Package == entry.profile.Package || installation.Executable == entry.profile.Executable
+		if matches && installation.State == "partial" {
+			return true
+		}
+	}
+	return false
 }
 
 func toolInstalled(value status.SystemStatus, entry toolEntry) bool {

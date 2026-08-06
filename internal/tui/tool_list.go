@@ -11,6 +11,7 @@ import (
 type toolListItem struct {
 	entry      toolEntry
 	installed  bool
+	partial    bool
 	installing bool
 }
 
@@ -38,11 +39,11 @@ func renderToolItemLocalized(value toolListItem, index, selected, width int, loc
 	}
 	app := ansi.Truncate(toolAppLabel(value.entry), leftWidth, "…")
 	phrase := ansi.Truncate(value.entry.profile.Description, leftWidth, "…")
-	state := ansi.Truncate(toolDisplayStateLocalized(value.installed, value.installing, localizer), stateWidth, "…")
+	state := ansi.Truncate(toolDisplayStateLocalized(value.installed, value.partial, value.installing, localizer), stateWidth, "…")
 	stateStyle := bodyStyle.Bold(true)
 	if value.installed {
 		stateStyle = stateStyle.Foreground(lipgloss.Color(colorGreen))
-	} else if value.installing {
+	} else if value.partial || value.installing {
 		stateStyle = stateStyle.Foreground(lipgloss.Color(colorYellow))
 	}
 	appView := appStyle.Render(app)
@@ -77,15 +78,18 @@ func renderToolItemsLocalized(items []toolListItem, selected, width, height int,
 }
 
 func toolDisplayState(installed, installing bool) string {
-	return toolDisplayStateLocalized(installed, installing, i18n.New(i18n.LocaleENUS))
+	return toolDisplayStateLocalized(installed, false, installing, i18n.New(i18n.LocaleENUS))
 }
 
-func toolDisplayStateLocalized(installed, installing bool, localizer i18n.Localizer) string {
+func toolDisplayStateLocalized(installed, partial, installing bool, localizer i18n.Localizer) string {
 	if installed {
 		return localizer.Text(i18n.TUIToolStateInstalled, nil)
 	}
 	if installing {
 		return localizer.Text(i18n.TUIToolStateInstalling, nil)
+	}
+	if partial {
+		return localizer.Text(i18n.TUIToolStatePartial, nil)
 	}
 	return localizer.Text(i18n.TUIToolStateInstall, nil)
 }

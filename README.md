@@ -27,7 +27,8 @@ systemd, a graphical desktop or kernel modules.
 - a dedicated Mobdesk SSH server on port `8022`;
 - local Ubuntu shell access with `mobdesk shell`;
 - human-readable and JSON output for automation and the TUI;
-- idempotent installation of Go, Python, Node.js, C, C++ and Lua profiles;
+- idempotent installation of Go, Python, Node.js, C, C++, Lua, Java 21 and Kotlin/JVM profiles;
+- optional Gradle 8.14.3 and Maven build profiles, both using Ubuntu Java 21;
 - status, setup, tools, shell and update screens in the TUI;
 - app configuration profiles, starting with Neovim/LazyVim;
 - verified binary updates with rollback and recovery handling;
@@ -36,13 +37,27 @@ systemd, a graphical desktop or kernel modules.
 Projects, persistent sessions, services and a web interface remain outside the
 current MVP and belong to later roadmap stages.
 
+### JVM and Spring Boot
+
+Mobdesk installs Java 21 inside Ubuntu, not a Termux JDK. The generated Ubuntu
+shell discovers the real JDK path and exports `JAVA_HOME`; Gradle and Maven
+inherit it. Kotlin/JVM 2.2.20 and Gradle 8.14.3 are downloaded from pinned
+official distributions with SHA-256 verification. Maven is an independent
+optional APT profile. In projects, executable `./gradlew` and `./mvnw` wrappers
+take precedence over global commands; Mobdesk does not modify project files.
+
+Spring Boot 4.x fixtures are validation examples, not a project manager. They
+use ports above 1024 and should be treated as lightweight development
+workloads. PRoot does not provide systemd, cgroups, Docker or a separate kernel.
+
 ## Requirements
 
 - Android phone with ARM64 architecture;
 - Termux from a trusted source, preferably [F-Droid](https://f-droid.org/packages/com.termux/)
   or the [official releases](https://github.com/termux/termux-app/releases);
 - approximately 1.5 GB of free storage for the base Ubuntu installation;
-- additional storage for projects and installed tools;
+- additional storage for projects and installed tools; Mobdesk warns below
+  20 GB free and blocks new installations below 10 GB;
 - a trusted local network if connecting from another computer.
 
 Mobdesk does not require root. Performance and reliability depend on the

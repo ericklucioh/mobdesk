@@ -105,6 +105,31 @@ release authenticity.
 Concurrent setup is serialized, state is private, and a failed setup can be
 repeated without deleting Ubuntu, the workspace or projects.
 
+### JVM toolchains are Ubuntu-owned
+
+Java 21 is the managed JVM for the Ubuntu environment. Termux Java is not
+forwarded into PRoot. Kotlin/JVM 2.2.20 and Gradle 8.14.3 use pinned official
+archives with SHA-256 checksums; Maven is an independent optional APT profile.
+This keeps build tools on one JVM while preserving optional installation.
+
+### Project wrappers control project builds
+
+Executable `./gradlew` and `./mvnw` wrappers take precedence over global tools.
+Invalid wrappers fail with an explicit diagnostic and missing wrappers fall back
+to the corresponding global command. Mobdesk never edits project files.
+
+### Storage thresholds are global
+
+Installations warn below 20 GB of free storage and block new changes below
+10 GB. The rule is applied before package changes, downloads or removals and is
+visible in CLI, JSON, status and TUI flows.
+
+### Spring fixtures are validation-only
+
+Spring Boot 4.0.0 Java and Kotlin fixtures validate PRoot, Java 21, Gradle and
+Maven without introducing a project manager, Docker, Testcontainers, systemd or
+an external database. Runtime ports remain unprivileged and local.
+
 ## Deferred alternatives
 
 - Termux-native development as the primary runtime may be faster but has glibc,

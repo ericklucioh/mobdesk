@@ -130,6 +130,21 @@ localized description, concise usage, installation profile and storage
 estimate. Optional configuration and dependencies are rendered only when they
 apply to the current state.
 
+## JVM toolchain
+
+Java 21 is installed and verified inside Ubuntu through the declared PRoot
+boundary. The generated shell configuration discovers the resolved `javac`
+path, exports `JAVA_HOME` and prepends its `bin` directory without importing
+Termux environment variables. Kotlin/JVM 2.2.20 and Gradle 8.14.3 use pinned
+official archives and checksums; Maven remains an independent Ubuntu APT
+profile. All three build tools inherit the same `JAVA_HOME`.
+
+Installation records retain required executables and status reconciliation can
+report missing executables or dependencies as `partial`. The TUI consumes those
+fields and does not offer storage-blocked installation actions. Project
+wrappers are selected before global `gradle` or `mvn` commands and are never
+rewritten.
+
 ## Layer contracts
 
 CLI commands are the public execution boundary. The real TUI backend expects a

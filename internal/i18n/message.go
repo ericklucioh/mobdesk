@@ -77,40 +77,45 @@ const (
 	ValidationExactArgs          MessageID = "validation.exact_args"
 	ValidationNoArgs             MessageID = "validation.no_args"
 
-	OutputStartWarning     MessageID = "output.start.warning"
-	OutputStartCompleted   MessageID = "output.start.completed"
-	OutputStartLocalSSH    MessageID = "output.start.local_ssh"
-	OutputStartRemoteSSH   MessageID = "output.start.remote_ssh"
-	OutputStartReady       MessageID = "output.start.ready"
-	OutputStopStale        MessageID = "output.stop.stale"
-	OutputStopAlready      MessageID = "output.stop.already"
-	OutputStopCompleted    MessageID = "output.stop.completed"
-	OutputSetupCompleted   MessageID = "output.setup.completed"
-	OutputSetupBase        MessageID = "output.setup.base"
-	OutputSetupSSH         MessageID = "output.setup.ssh"
-	OutputInstallInstalled MessageID = "output.install.installed"
-	OutputInstallAlready   MessageID = "output.install.already"
-	OutputUninstallRemoved MessageID = "output.uninstall.removed"
-	OutputUninstallAlready MessageID = "output.uninstall.already"
-	OutputUpdateCurrent    MessageID = "output.update.current"
-	OutputUpdateAvailable  MessageID = "output.update.available"
-	OutputUpdateUpdated    MessageID = "output.update.updated"
-	OutputVersion          MessageID = "output.version"
-	OutputLogsEmpty        MessageID = "output.logs.empty"
-	OutputLogsNameEmpty    MessageID = "output.logs.name_empty"
-	OutputLogsLabel        MessageID = "output.logs.label"
-	OutputLogsError        MessageID = "output.logs.error"
-	OutputLogsMissing      MessageID = "output.logs.missing"
-	OutputLogsContentEmpty MessageID = "output.logs.content_empty"
-	OutputConfigApplied    MessageID = "output.config.applied"
-	OutputConfigRemoved    MessageID = "output.config.removed"
-	OutputConfigFailed     MessageID = "output.config.failed"
+	OutputStartWarning          MessageID = "output.start.warning"
+	OutputStartCompleted        MessageID = "output.start.completed"
+	OutputStartLocalSSH         MessageID = "output.start.local_ssh"
+	OutputStartRemoteSSH        MessageID = "output.start.remote_ssh"
+	OutputStartReady            MessageID = "output.start.ready"
+	OutputStopStale             MessageID = "output.stop.stale"
+	OutputStopAlready           MessageID = "output.stop.already"
+	OutputStopCompleted         MessageID = "output.stop.completed"
+	OutputSetupCompleted        MessageID = "output.setup.completed"
+	OutputSetupBase             MessageID = "output.setup.base"
+	OutputSetupSSH              MessageID = "output.setup.ssh"
+	OutputInstallInstalled      MessageID = "output.install.installed"
+	OutputInstallAlready        MessageID = "output.install.already"
+	OutputInstallStorageWarning MessageID = "output.install.storage_warning"
+	OutputUninstallRemoved      MessageID = "output.uninstall.removed"
+	OutputUninstallAlready      MessageID = "output.uninstall.already"
+	OutputUpdateCurrent         MessageID = "output.update.current"
+	OutputUpdateAvailable       MessageID = "output.update.available"
+	OutputUpdateUpdated         MessageID = "output.update.updated"
+	OutputVersion               MessageID = "output.version"
+	OutputLogsEmpty             MessageID = "output.logs.empty"
+	OutputLogsNameEmpty         MessageID = "output.logs.name_empty"
+	OutputLogsLabel             MessageID = "output.logs.label"
+	OutputLogsError             MessageID = "output.logs.error"
+	OutputLogsMissing           MessageID = "output.logs.missing"
+	OutputLogsContentEmpty      MessageID = "output.logs.content_empty"
+	OutputConfigApplied         MessageID = "output.config.applied"
+	OutputConfigRemoved         MessageID = "output.config.removed"
+	OutputConfigFailed          MessageID = "output.config.failed"
 
 	LocaleEnglishName      MessageID = "locale.english_name"
 	LocalePortugueseBRName MessageID = "locale.portuguese_br_name"
 	ErrorMissingMessage    MessageID = "error.missing_message"
 
 	AppGoDescription          MessageID = "app.go.description"
+	AppJavaDescription        MessageID = "app.java.description"
+	AppKotlinDescription      MessageID = "app.kotlin.description"
+	AppGradleDescription      MessageID = "app.gradle.description"
+	AppMavenDescription       MessageID = "app.maven.description"
 	AppPythonDescription      MessageID = "app.python.description"
 	AppNodeDescription        MessageID = "app.node.description"
 	AppCDescription           MessageID = "app.c.description"
@@ -150,6 +155,7 @@ const (
 	ServiceInstallHash        MessageID = "service.install.hash"
 	ServiceInstallLock        MessageID = "service.install.lock"
 	ServiceInstallWait        MessageID = "service.install.wait"
+	ServiceInstallStorage     MessageID = "service.install.storage"
 	ServiceConfigError        MessageID = "service.config.error"
 	ServiceConfigProgress     MessageID = "service.config.progress"
 	ServiceConfigPlugin       MessageID = "service.config.plugin"
@@ -317,6 +323,7 @@ const (
 	TUIToolStateInstalled          MessageID = "tui.tool.state.installed"
 	TUIToolStateInstalling         MessageID = "tui.tool.state.installing"
 	TUIToolStateInstall            MessageID = "tui.tool.state.install"
+	TUIToolStatePartial            MessageID = "tui.tool.state.partial"
 	TUIShellTag                    MessageID = "tui.shell.tag"
 	TUIShellTitle                  MessageID = "tui.shell.title"
 	TUIShellBody                   MessageID = "tui.shell.body"
@@ -376,6 +383,7 @@ const (
 	TUIPopupVersion                MessageID = "tui.popup.version"
 	TUIPopupUsage                  MessageID = "tui.popup.usage"
 	TUIPopupDependencies           MessageID = "tui.popup.dependencies"
+	TUIPopupMissingExecutables     MessageID = "tui.popup.missing_executables"
 	TUIPopupConfig                 MessageID = "tui.popup.config"
 	TUIPopupPaths                  MessageID = "tui.popup.paths"
 	TUIPopupPlugins                MessageID = "tui.popup.plugins"
@@ -383,6 +391,7 @@ const (
 	TUIPopupStorage                MessageID = "tui.popup.storage"
 	TUIPopupStorageTotal           MessageID = "tui.popup.storage_total"
 	TUIPopupStorageShort           MessageID = "tui.popup.storage_short"
+	TUIPopupStorageBlocked         MessageID = "tui.popup.storage_blocked"
 	TUIPopupActions                MessageID = "tui.popup.actions"
 	TUIPopupInstall                MessageID = "tui.popup.install"
 	TUIPopupReinstall              MessageID = "tui.popup.reinstall"
@@ -504,6 +513,7 @@ var requiredMessageIDs = []MessageID{
 	OutputSetupSSH,
 	OutputInstallInstalled,
 	OutputInstallAlready,
+	OutputInstallStorageWarning,
 	OutputUninstallRemoved,
 	OutputUninstallAlready,
 	OutputUpdateCurrent,
@@ -522,7 +532,7 @@ var requiredMessageIDs = []MessageID{
 	LocaleEnglishName,
 	LocalePortugueseBRName,
 	ErrorMissingMessage,
-	AppGoDescription, AppPythonDescription, AppNodeDescription, AppCDescription,
+	AppGoDescription, AppJavaDescription, AppKotlinDescription, AppGradleDescription, AppMavenDescription, AppPythonDescription, AppNodeDescription, AppCDescription,
 	AppCPPDescription, AppLuaDescription, AppGitDescription, AppGHDescription,
 	AppTmuxDescription, AppZellijDescription, AppMicroDescription, AppLazygitDescription,
 	AppTreeDescription, AppTTTDescription, AppHtopDescription, AppNcduDescription,
@@ -531,7 +541,7 @@ var requiredMessageIDs = []MessageID{
 	AppClaudeDescription, AppLeetgoDescription, ProfileLazyVimDescription,
 	ServiceInstallUnsupported, ServiceInstallDependency, ServiceInstallState, ServiceInstallLogs,
 	ServiceInstallRecord, ServiceInstallVerify, ServiceInstallRepair, ServiceInstallUpdate, ServiceInstallTool,
-	ServiceInstallHash, ServiceInstallLock, ServiceInstallWait, ServiceConfigError,
+	ServiceInstallHash, ServiceInstallLock, ServiceInstallWait, ServiceInstallStorage, ServiceConfigError,
 	ServiceConfigProgress, ServiceConfigPlugin, ServiceUninstallError, ServiceUninstallProgress,
 	ServiceWorkstationError, ServiceWorkstationWarning, ServiceWorkstationPID, ServiceUpdateError, ServiceLogsError,
 	ServiceUninstallDetected, ServiceUninstallState, ServiceUninstallShared, ServiceExecError,
@@ -567,7 +577,7 @@ var tuiMessageIDs = []MessageID{
 	TUISetupDirectoriesDetail, TUISetupPackages, TUISetupPackagesDetail, TUISetupUbuntu, TUISetupUbuntuDetail,
 	TUISetupWorkspace, TUISetupWorkspaceDetail, TUISetupAdvanced, TUISetupAdvancedTitle, TUISetupAdvancedBody,
 	TUISetupAdvancedHint, TUIToolsTag, TUIToolsTitle, TUIToolsBody, TUIToolsRemoteTitle, TUIToolsRemoteBody,
-	TUIToolStateInstalled, TUIToolStateInstalling, TUIToolStateInstall, TUIShellTag, TUIShellTitle, TUIShellBody,
+	TUIToolStateInstalled, TUIToolStateInstalling, TUIToolStateInstall, TUIToolStatePartial, TUIShellTag, TUIShellTitle, TUIShellBody,
 	TUIShellOpen, TUIShellOpenDetail, TUIShellBack, TUIShellBackDetail, TUISystemTag, TUISystemTitle,
 	TUISystemBody, TUISystemUpdate, TUISystemCheck, TUISystemAdvanced, TUISystemAdvancedTitle,
 	TUISystemAdvancedBody, TUISystemResult, TUISystemUpdateHint, TUISystemVersion, TUISystemChannel,
@@ -579,8 +589,8 @@ var tuiMessageIDs = []MessageID{
 	TUIConfirmationStop, TUIConfirmationDestructive, TUIConfirmationYes, TUIConfirmationNo, TUIActionCancelled,
 	TUIHostRestriction, TUIHostOnlyTitle, TUIHostOnlySetup, TUIHostOnlyTools, TUIHostOnlySystem,
 	TUIHostOnlyHomeStatus, TUIHostOnlyHomeShell, TUIPopupTag, TUIPopupState, TUIPopupSource, TUIPopupVersion, TUIPopupUsage,
-	TUIPopupDependencies, TUIPopupConfig, TUIPopupPaths, TUIPopupPlugins, TUIPopupConfigUnavailable,
-	TUIPopupStorage, TUIPopupStorageTotal, TUIPopupStorageShort, TUIPopupActions, TUIPopupInstall, TUIPopupReinstall, TUIPopupUninstall,
+	TUIPopupDependencies, TUIPopupMissingExecutables, TUIPopupConfig, TUIPopupPaths, TUIPopupPlugins, TUIPopupConfigUnavailable,
+	TUIPopupStorage, TUIPopupStorageTotal, TUIPopupStorageShort, TUIPopupStorageBlocked, TUIPopupActions, TUIPopupInstall, TUIPopupReinstall, TUIPopupUninstall,
 	TUIPopupApplyConfig, TUIPopupRemoveConfig, TUIPopupClose, TUIPopupInstallShort, TUIPopupUninstallShort,
 	TUIPopupApplyConfigShort, TUIPopupRemoveConfigShort, TUIPopupAlreadyInstalled, TUIPopupDetectedReason,
 	TUIPopupInstallFirst, TUIPopupConflict, TUIPopupNotApplied, TUIPopupConfirm, TUIPopupDetected, TUIPopupMobdesk,

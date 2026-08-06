@@ -193,6 +193,13 @@ if [ -r /usr/share/bash-completion/bash_completion ]; then
     . /usr/share/bash-completion/bash_completion
 fi
 export PATH="$HOME/.local/bin:$PATH"
+if command -v javac >/dev/null 2>&1; then
+    mobdesk_javac=$(command -v javac)
+    mobdesk_javac=$(readlink -f "$mobdesk_javac" 2>/dev/null || printf '%%s' "$mobdesk_javac")
+    JAVA_HOME=${mobdesk_javac%%%%/bin/javac}
+    export JAVA_HOME
+    export PATH="$JAVA_HOME/bin:$PATH"
+fi
 export SHELL="$HOME/.config/mobdesk/shell"
 export CGO_ENABLED=0
 PS1='\[\e[35m\]\u@\h\[\e[0m\]:\[\e[36m\]\w\[\e[0m\]\$ '

@@ -48,6 +48,9 @@ func (ExecRunner) Run(ctx context.Context, name string, args ...string) CommandR
 type InteractiveRunner struct{}
 
 func (InteractiveRunner) Run(ctx context.Context, name string, args ...string) CommandResult {
+	if name == "proot-distro" && containsArgument(args, "apt-get") {
+		args = addUbuntuEnvironment(args, "DEBIAN_FRONTEND=noninteractive")
+	}
 	command, err := executil.CommandContext(ctx, name, args...)
 	if err != nil {
 		return CommandResult{Err: err}
@@ -97,6 +100,15 @@ func (InteractiveRunner) Run(ctx context.Context, name string, args ...string) C
 		waitErr = ctx.Err()
 	}
 	return CommandResult{Stdout: output.Bytes(), Err: waitErr}
+}
+
+func containsArgument(args []string, value string) bool {
+	for _, arg := range args {
+		if arg == value {
+			return true
+		}
+	}
+	return false
 }
 
 func copyTerminalInput(ctx context.Context, destination io.Writer, source *os.File) {

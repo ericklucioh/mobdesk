@@ -37,6 +37,13 @@ rm -rf "$TEST_DIR"
 mkdir -p "$TEST_DIR"
 go build -o "$MOBDESK_TEST_BIN" ./cmd/mobdesk
 
+# Provision the Ubuntu fixture before Mobdesk setup so the integration test
+# reaches the same timezone path without racing the first PRoot bootstrap.
+pkg install -y proot-distro >/dev/null
+proot-distro install ubuntu >/dev/null
+proot-distro login ubuntu -- env DEBIAN_FRONTEND=noninteractive apt-get -o DPkg::Lock::Timeout=300 update >/dev/null
+proot-distro login ubuntu -- env DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get -o DPkg::Lock::Timeout=300 install -y tzdata >/dev/null
+
 expect <<'EXPECT_SCRIPT' | tee "$TEST_DIR/mobdesk-setup.log"
 set timeout 1800
 log_user 0

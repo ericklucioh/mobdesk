@@ -56,8 +56,25 @@ func TestSetupOrchestratesAllPhasesWithExplicitPaths(t *testing.T) {
 	if commands[10] != "proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y bash-completion" {
 		t.Fatalf("unexpected completion installation: %q", commands[10])
 	}
-	if !strings.Contains(commands[11], "bash_completion") || !strings.Contains(commands[11], "PATH=\"$HOME/.local/bin:$PATH\"") || !strings.Contains(commands[11], "CGO_ENABLED=0") || !strings.Contains(commands[11], "PS1=") {
+	if !strings.Contains(commands[11], "bash_completion") || !strings.Contains(commands[11], "command -v javac") || !strings.Contains(commands[11], "JAVA_HOME") || !strings.Contains(commands[11], "PATH=\"$JAVA_HOME/bin:$PATH\"") || !strings.Contains(commands[11], "CGO_ENABLED=0") || !strings.Contains(commands[11], "PS1=") {
 		t.Fatalf("shell configuration missing: %q", commands[11])
+	}
+}
+
+func TestRenderUbuntuShellConfigPreservesUserBashrcAndUsesDynamicJDKPath(t *testing.T) {
+	config := renderUbuntuShellConfig(paths.New("/termux/home", "/termux/prefix"))
+	for _, fragment := range []string{
+		`[ "$HOME/.bashrc" != "/root/.config/mobdesk/bashrc" ]`,
+		`readlink -f "$mobdesk_javac"`,
+		`JAVA_HOME=${mobdesk_javac%%/bin/javac}`,
+		`export PATH="$JAVA_HOME/bin:$PATH"`,
+	} {
+		if !strings.Contains(config, fragment) {
+			t.Fatalf("generated shell config missing %q:\n%s", fragment, config)
+		}
+	}
+	if strings.Contains(config, "/termux/prefix") || strings.Contains(config, "PREFIX=") {
+		t.Fatalf("generated shell config leaked Termux environment: %s", config)
 	}
 }
 

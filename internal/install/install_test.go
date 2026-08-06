@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -67,6 +68,73 @@ func TestAppProfileContract(t *testing.T) {
 	}
 }
 
+func TestAppProfileSupportsMultiplePackagesAndExecutables(t *testing.T) {
+	profile := AppProfile{
+		Name:       "java",
+		Package:    "legacy-java-package",
+		Packages:   []string{"openjdk-21-jdk", "openjdk-21-jdk-headless"},
+		Executable: "java",
+		RequiredExecutables: []ExecutableSpec{
+			{Name: "java", VersionArg: []string{"--version"}},
+			{Name: "javac", VersionArg: []string{"--version"}},
+			{Name: "jar", VersionArg: []string{"--version"}},
+		},
+	}
+
+	if got := profilePackages(profile); !slices.Equal(got, profile.Packages) {
+		t.Fatalf("packages = %v, want %v", got, profile.Packages)
+	}
+	if got := profileExecutables(profile); !slices.EqualFunc(got, profile.RequiredExecutables, func(left, right ExecutableSpec) bool {
+		return left.Name == right.Name && slices.Equal(left.VersionArg, right.VersionArg)
+	}) {
+		t.Fatalf("executables = %v, want %v", got, profile.RequiredExecutables)
+	}
+}
+
+func TestLegacyProfileFieldsRemainNormalized(t *testing.T) {
+	profile := AppProfile{Package: "golang", Executable: "go", VersionArg: []string{"version"}}
+	if !slices.Equal(profilePackages(profile), []string{"golang"}) {
+		t.Fatal("legacy package was not normalized")
+	}
+	executables := profileExecutables(profile)
+	if len(executables) != 1 || executables[0].Name != "go" || !slices.Equal(executables[0].VersionArg, []string{"version"}) {
+		t.Fatalf("legacy executable was not normalized: %v", executables)
+	}
+}
+
+func TestRequiredExecutablesMustAllVerify(t *testing.T) {
+	runner := &fakeRunner{}
+	profile := AppProfile{
+		Name: "java",
+		RequiredExecutables: []ExecutableSpec{
+			{Name: "java", VersionArg: []string{"--version"}},
+			{Name: "javac", VersionArg: []string{"--version"}},
+			{Name: "jar", VersionArg: []string{"--version"}},
+		},
+	}
+	results := []CommandResult{
+		{Stdout: []byte("openjdk 21\n")},
+		{Stdout: []byte("javac 21\n")},
+		{Stdout: []byte("jar 21\n")},
+	}
+	runner.results = map[string][]CommandResult{}
+	for _, executable := range profile.RequiredExecutables {
+		command := "proot-distro login ubuntu -- env PATH=" + ubuntuPath + " " + executable.Name + " --version"
+		runner.results[command] = []CommandResult{results[0]}
+		results = results[1:]
+	}
+	verified := runToolVersions(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", profile)
+	if len(verified) != 3 || firstCommandError(verified) != nil {
+		t.Fatalf("verification results = %+v, want three successful checks", verified)
+	}
+
+	runner.results["proot-distro login ubuntu -- env PATH="+ubuntuPath+" javac --version"] = []CommandResult{{Err: errors.New("javac missing")}}
+	failed := runToolVersions(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", profile)
+	if firstCommandError(failed) == nil {
+		t.Fatal("verification succeeded despite a missing required executable")
+	}
+}
+
 func TestCanonicalAppAndConfigStates(t *testing.T) {
 	appStates := []AppState{
 		AppStateAvailable,
@@ -95,8 +163,8 @@ func TestCanonicalAppAndConfigStates(t *testing.T) {
 
 func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
 	profiles := Tools()
-	if len(profiles) != 26 {
-		t.Fatalf("catalog has %d profiles, want 26", len(profiles))
+	if len(profiles) != 30 {
+		t.Fatalf("catalog has %d profiles, want 30", len(profiles))
 	}
 	seen := make(map[string]bool, len(profiles))
 	for _, profile := range profiles {
@@ -131,9 +199,64 @@ func TestCatalogHelpChecksHaveShortDisplayVersions(t *testing.T) {
 	}
 }
 
+func TestJavaProfileUsesJDK21AndAllRequiredExecutables(t *testing.T) {
+	java, ok := Resolve("java")
+	if !ok || java.Package != "openjdk-21-jdk" || java.InstallKind != "apt" {
+		t.Fatalf("unexpected Java profile: %+v", java)
+	}
+	want := []string{"java", "javac", "jar"}
+	executables := profileExecutables(java)
+	if len(executables) != len(want) {
+		t.Fatalf("Java executables = %v, want %v", executables, want)
+	}
+	for index, executable := range executables {
+		if executable.Name != want[index] || !slices.Equal(executable.VersionArg, []string{"--version"}) {
+			t.Fatalf("Java executable %d = %+v", index, executable)
+		}
+	}
+}
+
+func TestKotlinProfileUsesPinnedJVMCompilerAndJavaDependency(t *testing.T) {
+	kotlin, ok := Resolve("kotlin")
+	if !ok || kotlin.InstallKind != "script" || !kotlin.UserBin || !slices.Contains(kotlin.Requires, "java") {
+		t.Fatalf("unexpected Kotlin profile: %+v", kotlin)
+	}
+	if kotlin.Package != "kotlin-compiler-2.2.20" || !strings.Contains(kotlin.Script, "kotlin-compiler-$version.zip") || !strings.Contains(kotlin.Script, "sha256sum -c") || strings.Contains(kotlin.Script, "apt-get install kotlin") {
+		t.Fatalf("unexpected Kotlin installation script: %+v", kotlin)
+	}
+	wantExecutables := []ExecutableSpec{{Name: "kotlinc", VersionArg: []string{"-version"}}, {Name: "kotlin", VersionArg: []string{"-version"}}}
+	if len(kotlin.RequiredExecutables) != len(wantExecutables) || kotlin.RequiredExecutables[0].Name != wantExecutables[0].Name || kotlin.RequiredExecutables[1].Name != wantExecutables[1].Name || !slices.Equal(kotlin.RequiredExecutables[0].VersionArg, wantExecutables[0].VersionArg) || !slices.Equal(kotlin.RequiredExecutables[1].VersionArg, wantExecutables[1].VersionArg) {
+		t.Fatalf("unexpected Kotlin executables: %+v", kotlin.RequiredExecutables)
+	}
+}
+
+func TestBuildToolProfilesAreIndependentJavaDependents(t *testing.T) {
+	gradle, gradleOK := Resolve("gradle")
+	maven, mavenOK := Resolve("mvn")
+	if !gradleOK || !mavenOK || gradle.Package != "gradle-8.14.3" || gradle.InstallKind != "script" || !gradle.UserBin || maven.Package != "maven" || !slices.Contains(gradle.Requires, "java") || !slices.Contains(maven.Requires, "java") {
+		t.Fatalf("unexpected build profiles: gradle=%+v maven=%+v", gradle, maven)
+	}
+	if !strings.Contains(gradle.Script, "gradle-$version-bin.zip") || !strings.Contains(gradle.Script, "sha256sum -c") {
+		t.Fatalf("Gradle script is not pinned: %+v", gradle)
+	}
+	if slices.Contains(gradle.Requires, "maven") || slices.Contains(maven.Requires, "gradle") {
+		t.Fatalf("build tools are not independent: gradle=%v maven=%v", gradle.Requires, maven.Requires)
+	}
+}
+
 func TestCatalogProfilesUseSelectedLocale(t *testing.T) {
-	english := Tools(i18n.New(i18n.LocaleENUS))[0].Description
-	brazilianPortuguese := Tools(i18n.New(i18n.LocalePTBR))[0].Description
+	english := ""
+	brazilianPortuguese := ""
+	for _, profile := range Tools(i18n.New(i18n.LocaleENUS)) {
+		if profile.Name == "go" {
+			english = profile.Description
+		}
+	}
+	for _, profile := range Tools(i18n.New(i18n.LocalePTBR)) {
+		if profile.Name == "go" {
+			brazilianPortuguese = profile.Description
+		}
+	}
 	if english != i18n.New(i18n.LocaleENUS).Text(i18n.AppGoDescription, nil) || brazilianPortuguese != i18n.New(i18n.LocalePTBR).Text(i18n.AppGoDescription, nil) || english == brazilianPortuguese {
 		t.Fatalf("localized descriptions = %q / %q", english, brazilianPortuguese)
 	}
@@ -165,8 +288,54 @@ func TestStorageEstimateTotals(t *testing.T) {
 	}
 }
 
+func TestInstallStoragePolicyBlocksBelowTenGB(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{}}
+	options := testOptions(t, runner)
+	options.StorageFree = func(string) (int64, error) { return 9 * 1024 * 1024 * 1024, nil }
+
+	result, err := Install(context.Background(), "go", options)
+	if err == nil || result.State != "blocked" || !result.StorageBlocked {
+		t.Fatalf("unexpected storage block result: %+v, %v", result, err)
+	}
+	if len(runner.commands) != 0 {
+		t.Fatalf("storage block executed commands: %v", runner.commands)
+	}
+}
+
+func TestInstallStoragePolicyWarnsBelowTwentyGB(t *testing.T) {
+	versionCommand := "proot-distro login ubuntu -- env PATH=" + ubuntuPath + " go version"
+	runner := &fakeRunner{results: map[string][]CommandResult{
+		versionCommand: {{Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
+	}}
+	options := testOptions(t, runner)
+	options.StorageFree = func(string) (int64, error) { return 19 * 1024 * 1024 * 1024, nil }
+
+	result, err := Install(context.Background(), "go", options)
+	if err != nil || !result.StorageWarning || result.StorageBlocked || result.State != "installed" {
+		t.Fatalf("unexpected storage warning result: %+v, %v", result, err)
+	}
+}
+
+func TestInstallStoragePolicyAllowsAtOrAboveTenGB(t *testing.T) {
+	for _, free := range []int64{10 * 1024 * 1024 * 1024, 25 * 1024 * 1024 * 1024} {
+		t.Run(fmt.Sprintf("%dGB", free/(1024*1024*1024)), func(t *testing.T) {
+			versionCommand := "proot-distro login ubuntu -- env PATH=" + ubuntuPath + " go version"
+			runner := &fakeRunner{results: map[string][]CommandResult{
+				versionCommand: {{Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
+			}}
+			options := testOptions(t, runner)
+			options.StorageFree = func(string) (int64, error) { return free, nil }
+
+			result, err := Install(context.Background(), "go", options)
+			if err != nil || result.State != "installed" || result.StorageBlocked || (free >= storageWarningBytes && result.StorageWarning) {
+				t.Fatalf("unexpected storage boundary result: %+v, %v", result, err)
+			}
+		})
+	}
+}
+
 func TestResolveLanguagesAndAliases(t *testing.T) {
-	for _, name := range []string{"go", "golang", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4"} {
+	for _, name := range []string{"java", "openjdk", "go", "golang", "kotlin", "kotlin-jvm", "kotlinc", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4"} {
 		if _, ok := Resolve(name); !ok {
 			t.Fatalf("Resolve(%q) returned false", name)
 		}
