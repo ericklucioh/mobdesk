@@ -12,6 +12,11 @@ Ubuntu through PRoot remains the primary development environment.
 | 3 | MVP | Persistent environment | Recover sessions, services and remote access |
 | 4 | Application | Mobdesk Manager | Manage projects, sessions and services |
 
+The current JVM support Goal adds an Ubuntu-owned Java 21 environment, pinned
+Kotlin/JVM 2.2.20 and Gradle 8.14.3, optional Maven, project-wrapper precedence,
+partial toolchain status and Spring Boot 4.0.0 validation fixtures. It does not
+turn Mobdesk into a project manager; projects and services remain future scope.
+
 ## Stage 1 - Ubuntu bootstrap
 
 **Status:** initial implementation complete and tested on a real Android/Termux

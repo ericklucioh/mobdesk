@@ -27,7 +27,8 @@ gráfico ou módulos do kernel.
 - servidor SSH dedicado do Mobdesk na porta `8022`;
 - acesso local ao Ubuntu com `mobdesk shell`;
 - saída humana e JSON para automação e para a TUI;
-- instalação idempotente de perfis de Go, Python, Node.js, C, C++ e Lua;
+- instalação idempotente de perfis de Go, Python, Node.js, C, C++, Lua, Java 21 e Kotlin/JVM;
+- perfis opcionais independentes de Gradle 8.14.3 e Maven, ambos usando Java 21 do Ubuntu;
 - telas de status, setup, ferramentas, shell e atualização na TUI;
 - perfis de configuração de aplicativos, começando por Neovim/LazyVim;
 - atualização verificável do binário com rollback e recuperação;
@@ -36,6 +37,21 @@ gráfico ou módulos do kernel.
 Projetos, sessões persistentes, serviços e uma interface web permanecem fora do
 MVP atual e pertencem aos próximos estágios do roadmap.
 
+### JVM e Spring Boot
+
+O Mobdesk instala Java 21 dentro do Ubuntu, não um JDK do Termux. O shell Ubuntu
+gerado descobre o caminho real do JDK e exporta `JAVA_HOME`; Gradle e Maven
+herdam esse ambiente. Kotlin/JVM 2.2.20 e Gradle 8.14.3 são baixados de
+distribuições oficiais fixadas e verificados por SHA-256. Maven é um perfil APT
+opcional e independente. Em projetos, wrappers executáveis `./gradlew` e
+`./mvnw` têm precedência sobre comandos globais; o Mobdesk não modifica arquivos
+do projeto.
+
+As fixtures Spring Boot 4.x são exemplos de validação, não um gerenciador de
+projetos. Elas usam portas acima de 1024 e devem ser tratadas como cargas leves
+de desenvolvimento. PRoot não fornece systemd, cgroups, Docker nem um kernel
+separado.
+
 ## Requisitos
 
 - celular Android com arquitetura ARM64;
@@ -43,7 +59,8 @@ MVP atual e pertencem aos próximos estágios do roadmap.
   [F-Droid](https://f-droid.org/packages/com.termux/) ou os
   [releases oficiais](https://github.com/termux/termux-app/releases);
 - aproximadamente 1,5 GB de espaço livre para a instalação base do Ubuntu;
-- espaço adicional para projetos e ferramentas instaladas;
+- espaço adicional para projetos e ferramentas instaladas; o Mobdesk avisa
+  abaixo de 20 GB livres e bloqueia novas instalações abaixo de 10 GB;
 - rede local confiável se você for conectar outro computador.
 
 O Mobdesk não exige root. O desempenho e a estabilidade dependem da memória,

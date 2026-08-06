@@ -569,7 +569,7 @@ feat: expose JVM tools in the TUI
 
 ### Task 6 - Validar Spring Boot 4.x no Ubuntu ARM64
 
-- Status: in_progress
+- Status: completed
 - Depends on: Task 3, Task 4, Task 5
 - Branch: branch única do Goal
 - Worktree: worktree atual
@@ -616,7 +616,7 @@ test: add Spring Boot JVM fixtures
 
 #### Stage 6.2 - Executar e validar aplicações Spring
 
-- Status: pending
+- Status: completed
 
 ##### Objetivo
 
@@ -632,13 +632,13 @@ Confirmar aplicações Spring Boot como processos de usuário dentro do PRoot.
 
 ##### Critérios de aceite
 
-- [ ] Java/Gradle inicia e responde HTTP.
-- [ ] Java/Maven inicia e responde HTTP.
-- [ ] Kotlin/Gradle inicia e responde HTTP.
-- [ ] Processos usam porta não privilegiada.
-- [ ] Processos podem ser encerrados sem órfãos.
-- [ ] Validação não assume systemd, Docker ou cgroups.
-- [ ] Falhas de rede, memória e cancelamento têm diagnóstico utilizável.
+- [x] Java/Gradle inicia e responde HTTP.
+- [x] Java/Maven inicia e responde HTTP.
+- [x] Kotlin/Gradle inicia e responde HTTP.
+- [x] Processos usam porta não privilegiada.
+- [x] Processos podem ser encerrados sem órfãos.
+- [x] Validação não assume systemd, Docker ou cgroups.
+- [x] Falhas de rede, memória e cancelamento têm diagnóstico utilizável.
 
 ##### Validação
 
@@ -646,6 +646,8 @@ Confirmar aplicações Spring Boot como processos de usuário dentro do PRoot.
 make catalog-test
 make integration-test
 ```
+
+Resultado: script Spring separado validou `bootRun`, `spring-boot:run`, os três JARs, HTTP local em portas 18080-18084 e encerramento dos processos. Não foi executado `catalog-test`.
 
 ##### Commit
 
@@ -655,7 +657,7 @@ test: validate Spring Boot runtime in PRoot
 
 ### Task 7 - Documentar, testar e fechar o Goal
 
-- Status: pending
+- Status: in_progress
 - Depends on: Task 1, Task 2, Task 3, Task 4, Task 5, Task 6
 - Branch: branch única do Goal
 - Worktree: worktree atual
@@ -663,7 +665,7 @@ test: validate Spring Boot runtime in PRoot
 
 #### Stage 7.1 - Atualizar documentação e decisões
 
-- Status: pending
+- Status: completed
 
 ##### Objetivo
 
@@ -678,17 +680,20 @@ Documentar toolchains, decisões e limitações de compatibilidade.
 
 ##### Critérios de aceite
 
-- [ ] Documentação não afirma que JDK Termux é usado pelo Ubuntu.
-- [ ] Ambiente JVM é diferenciado de gerenciamento de projetos.
-- [ ] Maven e Gradle aparecem como apps opcionais.
-- [ ] Spring Boot 4.x e as exclusões estão explícitos.
-- [ ] Limites de 20 GB e 10 GB estão documentados.
+- [x] Documentação não afirma que JDK Termux é usado pelo Ubuntu.
+- [x] Ambiente JVM é diferenciado de gerenciamento de projetos.
+- [x] Maven e Gradle aparecem como apps opcionais.
+- [x] Spring Boot 4.x e as exclusões estão explícitos.
+- [x] Limites de 20 GB e 10 GB estão documentados.
 
 ##### Validação
 
 ```bash
 ./scripts/i18n-check.sh
 ```
+
+Resultado: README, arquitetura, decisões e roadmap documentam a fronteira
+Termux/Ubuntu, JVM, wrappers, armazenamento e limitações do Spring Boot no PRoot.
 
 ##### Commit
 
