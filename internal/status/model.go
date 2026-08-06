@@ -82,6 +82,8 @@ type SetupStatus struct {
 
 type StorageStatus struct {
 	State       CheckState `json:"state"`
+	Warning     bool       `json:"warning,omitempty"`
+	Blocked     bool       `json:"blocked,omitempty"`
 	DeviceTotal int64      `json:"device_total_bytes"`
 	DeviceUsed  int64      `json:"device_used_bytes"`
 	DeviceFree  int64      `json:"device_free_bytes"`
@@ -147,6 +149,8 @@ type InstallationStatus struct {
 	Packages            []string                 `json:"packages,omitempty"`
 	Executable          string                   `json:"executable"`
 	RequiredExecutables []install.ExecutableSpec `json:"required_executables,omitempty"`
+	MissingExecutables  []string                 `json:"missing_executables,omitempty"`
+	MissingDependencies []string                 `json:"missing_dependencies,omitempty"`
 	Strategy            string                   `json:"strategy,omitempty"`
 	Dependencies        []string                 `json:"dependencies,omitempty"`
 	InstalledPackages   []string                 `json:"installed_packages,omitempty"`

@@ -166,6 +166,8 @@ func collectStorage(ctx context.Context, o Options) StorageStatus {
 		result.DeviceFree = int64(stat.Bavail) * blockSize
 		result.DeviceUsed = result.DeviceTotal - int64(stat.Bfree)*blockSize
 		result.State = CheckOK
+		result.Warning = result.DeviceFree < install.StorageWarningBytes
+		result.Blocked = result.DeviceFree < install.StorageBlockBytes
 	}
 	if ctx.Err() != nil {
 		result.State = CheckUnknown
@@ -390,6 +392,7 @@ func collectInstallations(o Options) []InstallationStatus {
 	}
 	result = normalizeInstallationProvenance(result)
 	result = enrichInstallationMetadata(result)
+	result = reconcileInstallationExecutables(o, result)
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Name < result[j].Name
 	})
@@ -555,6 +558,7 @@ func reconcileInstallationConfigurations(installations []InstallationStatus, con
 func collectCatalogInstallations(o Options, persisted []InstallationStatus) []InstallationStatus {
 	persisted = normalizeInstallationProvenance(persisted)
 	persisted = enrichInstallationMetadata(persisted)
+	persisted = reconcileInstallationExecutables(o, persisted)
 	if !o.termux || !commandAvailable(o, "proot-distro") {
 		return persisted
 	}
@@ -620,6 +624,65 @@ func enrichInstallationMetadata(values []InstallationStatus) []InstallationStatu
 		}
 	}
 	return values
+}
+
+func reconcileInstallationExecutables(o Options, values []InstallationStatus) []InstallationStatus {
+	installed := make(map[string]bool, len(values))
+	for _, value := range values {
+		if value.State == "installed" {
+			installed[value.Name] = true
+		}
+	}
+	for index := range values {
+		if values[index].State != "installed" && values[index].State != "partial" {
+			continue
+		}
+		profile, ok := install.Resolve(values[index].Name)
+		if !ok {
+			continue
+		}
+		missingDependencies := make([]string, 0)
+		for _, dependency := range profile.Requires {
+			if !installed[dependency] {
+				missingDependencies = append(missingDependencies, dependency)
+			}
+		}
+		values[index].MissingDependencies = missingDependencies
+		executables := values[index].RequiredExecutables
+		if len(executables) == 0 {
+			executables = profile.RequiredExecutables
+		}
+		if len(executables) == 0 {
+			continue
+		}
+		missing := make([]string, 0)
+		for _, executable := range executables {
+			if !installationExecutableAvailable(o, profile.UserBin, executable) {
+				missing = append(missing, executable.Name)
+			}
+		}
+		values[index].MissingExecutables = missing
+		if len(missing) > 0 || len(missingDependencies) > 0 {
+			values[index].State = "partial"
+		} else if values[index].State == "partial" {
+			values[index].State = "installed"
+		}
+	}
+	return values
+}
+
+func installationExecutableAvailable(o Options, userBin bool, executable install.ExecutableSpec) bool {
+	if o.termux {
+		path := "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+		if userBin {
+			path = "$HOME/.local/bin:" + path
+		}
+		args := []string{"login", "ubuntu", "--", "env", "PATH=" + path, executable.Name}
+		args = append(args, executable.VersionArg...)
+		return runWithTimeout(context.Background(), o, "proot-distro", args...).Err == nil
+	}
+	args := append([]string{executable.Name}, executable.VersionArg...)
+	return runWithTimeout(context.Background(), o, args[0], args[1:]...).Err == nil
 }
 
 func catalogStatusArgs(tools []install.AppProfile) []string {

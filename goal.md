@@ -482,7 +482,7 @@ feat: document project build wrapper precedence
 
 ### Task 5 - Integrar status, JSON e TUI
 
-- Status: pending
+- Status: in_progress
 - Depends on: Task 1, Task 2, Task 3, Task 4
 - Branch: branch única do Goal
 - Worktree: worktree atual
@@ -490,7 +490,7 @@ feat: document project build wrapper precedence
 
 #### Stage 5.1 - Representar múltiplos executáveis e estados parciais
 
-- Status: pending
+- Status: completed
 
 ##### Objetivo
 
@@ -506,12 +506,12 @@ Evitar que perfis incompletos apareçam como instalados.
 
 ##### Critérios de aceite
 
-- [ ] Java sem `javac` não é completamente instalado.
-- [ ] Kotlin sem `kotlinc` aparece como parcial ou ausente.
-- [ ] Gradle sem Java mostra dependência faltante.
-- [ ] Ferramentas externas não são removíveis pelo Mobdesk.
-- [ ] JSON mantém schema compatível.
-- [ ] Status respeita a fronteira Termux/SSH.
+- [x] Java sem `javac` não é completamente instalado.
+- [x] Kotlin sem `kotlinc` aparece como parcial ou ausente.
+- [x] Gradle sem Java mostra dependência faltante.
+- [x] Ferramentas externas não são removíveis pelo Mobdesk.
+- [x] JSON mantém schema compatível.
+- [x] Status respeita a fronteira Termux/SSH.
 
 ##### Validação
 
@@ -519,6 +519,8 @@ Evitar que perfis incompletos apareçam como instalados.
 go test ./internal/status ./internal/install
 go vet ./internal/status ./internal/install
 ```
+
+Resultado: status e JSON reconciliam executáveis obrigatórios, dependências ausentes e estado `partial`; testes e vet passaram.
 
 ##### Commit
 
