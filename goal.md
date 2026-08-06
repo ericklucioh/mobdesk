@@ -720,7 +720,7 @@ Garantir que o suporte JVM não quebre o catálogo nem os fluxos existentes.
 
 - [x] `make check` passa.
 - [ ] `make catalog-test` passa. Não executado conforme instrução do usuário.
-- [ ] `make integration-test` passa. O fixture falha no bootstrap de timezone; o comando isolado passa.
+- [x] `make integration-test` passa após o fixture preparar explicitamente `tzdata` e `Etc/UTC`.
 - [x] Java, Kotlin, Gradle e Maven passam as validações previstas.
 - [x] Matriz Spring reduzida passa pelo script separado.
 - [x] Catálogo existente continua funcionando nos testes unitários.
@@ -737,10 +737,9 @@ make catalog-test
 make integration-test
 ```
 
-Resultado: `make check`, testes unitários, vet, i18n, Spring fixtures e
-`git diff --check` passaram. `catalog-test` não foi executado conforme pedido.
-`integration-test` permanece bloqueado por falha de bootstrap do fixture na
-configuração de timezone, embora o comando de timezone isolado passe.
+Resultado: `make check`, testes unitários, vet, i18n, Spring fixtures,
+`make integration-test` e `git diff --check` passaram. `catalog-test` não foi
+executado conforme pedido.
 
 ##### Commit
 
