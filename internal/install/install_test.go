@@ -163,8 +163,8 @@ func TestCanonicalAppAndConfigStates(t *testing.T) {
 
 func TestCatalogProfilesDeclareDescriptionAndStorageEstimate(t *testing.T) {
 	profiles := Tools()
-	if len(profiles) != 26 {
-		t.Fatalf("catalog has %d profiles, want 26", len(profiles))
+	if len(profiles) != 27 {
+		t.Fatalf("catalog has %d profiles, want 27", len(profiles))
 	}
 	seen := make(map[string]bool, len(profiles))
 	for _, profile := range profiles {
@@ -199,9 +199,36 @@ func TestCatalogHelpChecksHaveShortDisplayVersions(t *testing.T) {
 	}
 }
 
+func TestJavaProfileUsesJDK21AndAllRequiredExecutables(t *testing.T) {
+	java, ok := Resolve("java")
+	if !ok || java.Package != "openjdk-21-jdk" || java.InstallKind != "apt" {
+		t.Fatalf("unexpected Java profile: %+v", java)
+	}
+	want := []string{"java", "javac", "jar"}
+	executables := profileExecutables(java)
+	if len(executables) != len(want) {
+		t.Fatalf("Java executables = %v, want %v", executables, want)
+	}
+	for index, executable := range executables {
+		if executable.Name != want[index] || !slices.Equal(executable.VersionArg, []string{"--version"}) {
+			t.Fatalf("Java executable %d = %+v", index, executable)
+		}
+	}
+}
+
 func TestCatalogProfilesUseSelectedLocale(t *testing.T) {
-	english := Tools(i18n.New(i18n.LocaleENUS))[0].Description
-	brazilianPortuguese := Tools(i18n.New(i18n.LocalePTBR))[0].Description
+	english := ""
+	brazilianPortuguese := ""
+	for _, profile := range Tools(i18n.New(i18n.LocaleENUS)) {
+		if profile.Name == "go" {
+			english = profile.Description
+		}
+	}
+	for _, profile := range Tools(i18n.New(i18n.LocalePTBR)) {
+		if profile.Name == "go" {
+			brazilianPortuguese = profile.Description
+		}
+	}
 	if english != i18n.New(i18n.LocaleENUS).Text(i18n.AppGoDescription, nil) || brazilianPortuguese != i18n.New(i18n.LocalePTBR).Text(i18n.AppGoDescription, nil) || english == brazilianPortuguese {
 		t.Fatalf("localized descriptions = %q / %q", english, brazilianPortuguese)
 	}
@@ -280,7 +307,7 @@ func TestInstallStoragePolicyAllowsAtOrAboveTenGB(t *testing.T) {
 }
 
 func TestResolveLanguagesAndAliases(t *testing.T) {
-	for _, name := range []string{"go", "golang", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4"} {
+	for _, name := range []string{"java", "openjdk", "go", "golang", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4"} {
 		if _, ok := Resolve(name); !ok {
 			t.Fatalf("Resolve(%q) returned false", name)
 		}

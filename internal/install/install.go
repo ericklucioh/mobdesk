@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -24,6 +25,7 @@ const (
 )
 
 var catalog = []AppProfile{
+	{Name: "java", Aliases: []string{"openjdk"}, DescriptionID: i18n.AppJavaDescription, Usage: "java [options] <class>", Package: "openjdk-21-jdk", Executable: "java", RequiredExecutables: []ExecutableSpec{{Name: "java", VersionArg: []string{"--version"}}, {Name: "javac", VersionArg: []string{"--version"}}, {Name: "jar", VersionArg: []string{"--version"}}}, VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(160, 340, 0, 0, 0, 5)},
 	{Name: "go", Aliases: []string{"golang"}, DescriptionID: i18n.AppGoDescription, Usage: "go [command]", Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(180, 300, 0, 50, 0, 5)},
 	{Name: "python", Aliases: []string{"python3"}, DescriptionID: i18n.AppPythonDescription, Usage: "python3 [script]", Package: "python3", Executable: "python3", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(35, 60, 0, 20, 0, 5)},
 	{Name: "node", Aliases: []string{"nodejs"}, DescriptionID: i18n.AppNodeDescription, Usage: "node [script]", Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "node", StorageEstimate: plannedStorage(70, 130, 20, 60, 0, 10)},
@@ -316,6 +318,11 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 func availableStorage(options Options) (int64, error) {
 	if options.StorageFree != nil {
 		return options.StorageFree(options.Paths.Home)
+	}
+	if os.Getenv("MOBDESK_TEST_MODE") == "1" {
+		if value, err := strconv.ParseInt(os.Getenv("MOBDESK_TEST_STORAGE_FREE_BYTES"), 10, 64); err == nil && value >= 0 {
+			return value, nil
+		}
 	}
 	var stat syscall.Statfs_t
 	if err := syscall.Statfs(options.Paths.Home, &stat); err != nil {

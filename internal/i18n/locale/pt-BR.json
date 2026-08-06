@@ -95,6 +95,7 @@
   "locale.english_name": "Inglês",
   "locale.portuguese_br_name": "Português do Brasil",
   "app.go.description": "Linguagem compilada",
+  "app.java.description": "kit de desenvolvimento JVM",
   "app.python.description": "Scripts e automação",
   "app.node.description": "JavaScript no servidor",
   "app.c.description": "Compilador C",

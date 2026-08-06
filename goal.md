@@ -231,7 +231,7 @@ Commit: e89d03b
 
 #### Stage 2.1 - Adicionar o perfil Java 21
 
-- Status: in_progress
+- Status: completed
 
 ##### Objetivo
 
@@ -247,12 +247,12 @@ Instalar e validar o JDK 21 oficial do Ubuntu ARM64 dentro do PRoot.
 
 ##### Critérios de aceite
 
-- [ ] `mobdesk install java` funciona em Termux.
-- [ ] APT ocorre somente dentro do Ubuntu.
-- [ ] Java 21 é encontrado e validado.
-- [ ] `javac` compila e `jar` empacota uma classe simples.
-- [ ] Segunda instalação não reinstala desnecessariamente.
-- [ ] Perfil aparece na CLI, JSON e TUI.
+- [x] `mobdesk install java` funciona em Termux.
+- [x] APT ocorre somente dentro do Ubuntu.
+- [x] Java 21 é encontrado e validado.
+- [x] `javac` compila e `jar` empacota uma classe simples.
+- [x] Segunda instalação não reinstala desnecessariamente.
+- [x] Perfil aparece na CLI, JSON e TUI.
 
 ##### Validação
 
@@ -260,6 +260,8 @@ Instalar e validar o JDK 21 oficial do Ubuntu ARM64 dentro do PRoot.
 go test ./internal/install
 go vet ./internal/install
 ```
+
+Resultado: testes de install, vet, localização, smoke test de catálogo e `git diff --check` passaram. O fixture confirmou Java 21, `javac`, `jar`, compilação e execução do JAR.
 
 ##### Commit
 
