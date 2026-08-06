@@ -22,13 +22,15 @@ const (
 	ubuntuPath            = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 	storageWarningBytes   = 20 * 1024 * 1024 * 1024
 	storageBlockBytes     = 10 * 1024 * 1024 * 1024
+	StorageWarningBytes   = storageWarningBytes
+	StorageBlockBytes     = storageBlockBytes
 )
 
 var catalog = []AppProfile{
 	{Name: "go", Aliases: []string{"golang"}, DescriptionID: i18n.AppGoDescription, Usage: "go [command]", Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(180, 300, 0, 50, 0, 5)},
 	{Name: "java", Aliases: []string{"openjdk"}, DescriptionID: i18n.AppJavaDescription, Usage: "java [options] <class>", Package: "openjdk-21-jdk", Executable: "java", RequiredExecutables: []ExecutableSpec{{Name: "java", VersionArg: []string{"--version"}}, {Name: "javac", VersionArg: []string{"--version"}}, {Name: "jar", VersionArg: []string{"--version"}}}, VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(160, 340, 0, 0, 0, 5)},
 	{Name: "kotlin", Aliases: []string{"kotlin-jvm", "kotlinc"}, DescriptionID: i18n.AppKotlinDescription, Usage: "kotlinc [options] <source files>", Package: "kotlin-compiler-2.2.20", Executable: "kotlinc", RequiredExecutables: []ExecutableSpec{{Name: "kotlinc", VersionArg: []string{"-version"}}, {Name: "kotlin", VersionArg: []string{"-version"}}}, VersionArg: []string{"-version"}, Kind: "language", InstallKind: "script", Requires: []string{"java"}, UserBin: true, Script: kotlinCompilerInstallScript(), StorageEstimate: plannedStorage(85, 110, 0, 0, 1, 5)},
-	{Name: "gradle", Aliases: []string{"gradle-build"}, DescriptionID: i18n.AppGradleDescription, Usage: "gradle [options] [tasks...]", Package: "gradle", Executable: "gradle", VersionArg: []string{"--version"}, Kind: "build", InstallKind: "apt", Requires: []string{"java"}, StorageEstimate: plannedStorage(45, 90, 0, 20, 1, 5)},
+	{Name: "gradle", Aliases: []string{"gradle-build"}, DescriptionID: i18n.AppGradleDescription, Usage: "gradle [options] [tasks...]", Package: "gradle-8.14.3", Executable: "gradle", VersionArg: []string{"--version"}, Kind: "build", InstallKind: "script", Requires: []string{"java"}, UserBin: true, Script: gradleInstallScript(), StorageEstimate: plannedStorage(140, 190, 0, 0, 1, 5)},
 	{Name: "maven", Aliases: []string{"mvn"}, DescriptionID: i18n.AppMavenDescription, Usage: "mvn [options] [goals...]", Package: "maven", Executable: "mvn", VersionArg: []string{"--version"}, Kind: "build", InstallKind: "apt", Requires: []string{"java"}, StorageEstimate: plannedStorage(15, 35, 0, 10, 1, 5)},
 	{Name: "python", Aliases: []string{"python3"}, DescriptionID: i18n.AppPythonDescription, Usage: "python3 [script]", Package: "python3", Executable: "python3", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt", StorageEstimate: plannedStorage(35, 60, 0, 20, 0, 5)},
 	{Name: "node", Aliases: []string{"nodejs"}, DescriptionID: i18n.AppNodeDescription, Usage: "node [script]", Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "node", StorageEstimate: plannedStorage(70, 130, 20, 60, 0, 10)},
@@ -158,6 +160,24 @@ rm -rf "$target"
 mv "$temporary/kotlinc" "$target"
 ln -sfn "$target/bin/kotlinc" "$HOME/.local/bin/kotlinc"
 ln -sfn "$target/bin/kotlin" "$HOME/.local/bin/kotlin"`
+}
+
+func gradleInstallScript() string {
+	return `set -eu
+version=8.14.3
+apt-get -o DPkg::Lock::Timeout=300 install -y ca-certificates curl unzip
+archive=$(mktemp)
+temporary=$(mktemp -d)
+target="$HOME/.local/share/mobdesk/gradle/$version"
+trap 'rm -f "$archive"; rm -rf "$temporary"' EXIT
+curl --proto '=https' --tlsv1.2 -fsSL "https://services.gradle.org/distributions/gradle-$version-bin.zip" -o "$archive"
+printf '%s  %s\n' 'bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531' "$archive" | sha256sum -c -
+unzip -q "$archive" -d "$temporary"
+test -x "$temporary/gradle-$version/bin/gradle"
+mkdir -p "$(dirname "$target")" "$HOME/.local/bin"
+rm -rf "$target"
+mv "$temporary/gradle-$version" "$target"
+ln -sfn "$target/bin/gradle" "$HOME/.local/bin/gradle"`
 }
 
 type Options struct {

@@ -233,8 +233,11 @@ func TestKotlinProfileUsesPinnedJVMCompilerAndJavaDependency(t *testing.T) {
 func TestBuildToolProfilesAreIndependentJavaDependents(t *testing.T) {
 	gradle, gradleOK := Resolve("gradle")
 	maven, mavenOK := Resolve("mvn")
-	if !gradleOK || !mavenOK || gradle.Package != "gradle" || maven.Package != "maven" || !slices.Contains(gradle.Requires, "java") || !slices.Contains(maven.Requires, "java") {
+	if !gradleOK || !mavenOK || gradle.Package != "gradle-8.14.3" || gradle.InstallKind != "script" || !gradle.UserBin || maven.Package != "maven" || !slices.Contains(gradle.Requires, "java") || !slices.Contains(maven.Requires, "java") {
 		t.Fatalf("unexpected build profiles: gradle=%+v maven=%+v", gradle, maven)
+	}
+	if !strings.Contains(gradle.Script, "gradle-8.14.3-bin.zip") || !strings.Contains(gradle.Script, "sha256sum -c") {
+		t.Fatalf("Gradle script is not pinned: %+v", gradle)
 	}
 	if slices.Contains(gradle.Requires, "maven") || slices.Contains(maven.Requires, "gradle") {
 		t.Fatalf("build tools are not independent: gradle=%v maven=%v", gradle.Requires, maven.Requires)
