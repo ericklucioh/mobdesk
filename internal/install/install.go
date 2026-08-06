@@ -210,25 +210,29 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		SchemaVersion:   1,
 		Language:        language.Name,
 		Package:         language.Package,
+		Packages:        profilePackages(language),
 		Executable:      language.Executable,
+		Executables:     profileExecutables(language),
 		State:           "installing",
 		LogPath:         logPath,
 		Source:          "mobdesk",
 		StorageEstimate: language.StorageEstimate,
 	}
 	record := InstallationRecord{
-		Name:              language.Name,
-		Kind:              language.Kind,
-		Package:           language.Package,
-		Executable:        language.Executable,
-		Strategy:          language.InstallKind,
-		Dependencies:      append([]string(nil), language.Requires...),
-		InstalledPackages: declaredInstalledPackages(language),
-		InstalledFiles:    declaredInstalledFiles(language),
-		State:             "installing",
-		Source:            "mobdesk",
-		LastAttemptAt:     now,
-		LogPath:           logPath,
+		Name:                language.Name,
+		Kind:                language.Kind,
+		Package:             language.Package,
+		Packages:            profilePackages(language),
+		Executable:          language.Executable,
+		RequiredExecutables: profileExecutables(language),
+		Strategy:            language.InstallKind,
+		Dependencies:        append([]string(nil), language.Requires...),
+		InstalledPackages:   declaredInstalledPackages(language),
+		InstalledFiles:      declaredInstalledFiles(language),
+		State:               "installing",
+		Source:              "mobdesk",
+		LastAttemptAt:       now,
+		LogPath:             logPath,
 	}
 	if err := os.MkdirAll(installationsDir, 0o700); err != nil {
 		return result, i18n.NewError(i18n.ServiceInstallState, "install_state", nil, err)
@@ -241,8 +245,8 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	}
 
 	progress(options, i18n.ServiceInstallVerify, map[string]any{"Name": language.Name})
-	version := runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
-	if version.Err != nil {
+	versions := runToolVersions(ctx, runner, options.CommandTimeout, logPath, language)
+	if versionErr := firstCommandError(versions); versionErr != nil {
 		progress(options, i18n.ServiceInstallRepair, map[string]any{"Name": language.Name})
 		if repair := repairDpkg(ctx, runner, options.CommandTimeout, logPath); repair.Err != nil {
 			err := i18n.NewError(i18n.ServiceInstallRepair, "install_repair", map[string]any{"Name": language.Name}, repair.Err)
@@ -261,13 +265,13 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		}
 		result.Changed = true
 		progress(options, i18n.ServiceInstallVerify, map[string]any{"Name": language.Name})
-		version = runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
+		versions = runToolVersions(ctx, runner, options.CommandTimeout, logPath, language)
 	}
-	if version.Err != nil {
-		err := i18n.NewError(i18n.ServiceInstallVerify, "install_verify", map[string]any{"Name": language.Name}, version.Err)
+	if versionErr := firstCommandError(versions); versionErr != nil {
+		err := i18n.NewError(i18n.ServiceInstallVerify, "install_verify", map[string]any{"Name": language.Name}, versionErr)
 		return failInstallation(installationsDir, record, result, err)
 	}
-	result.Version = commandOutput(version)
+	result.Version = commandVersions(language, versions)
 	result.Installed = true
 	result.State = "installed"
 	record.State = result.State
@@ -301,22 +305,23 @@ func progress(options Options, id i18n.MessageID, data map[string]any) {
 }
 
 func declaredInstalledPackages(profile AppProfile) []string {
-	if profile.Package == "" {
-		return nil
-	}
-	return []string{profile.Package}
+	return profilePackages(profile)
 }
 
 func declaredInstalledFiles(profile AppProfile) []string {
-	if profile.Executable == "" {
+	executables := profileExecutables(profile)
+	if len(executables) == 0 {
 		return nil
 	}
 	binDir := "/usr/local/bin"
 	if profile.UserBin {
 		binDir = "/root/.local/bin"
 	}
-	files := []string{filepath.Join(binDir, profile.Executable)}
-	if profile.Name == "yazi" && profile.UserBin {
+	files := make([]string, 0, len(executables))
+	for _, executable := range executables {
+		files = append(files, filepath.Join(binDir, executable.Name))
+	}
+	if profile.Name == "yazi" && profile.UserBin && !containsExecutable(executables, "ya") {
 		files = append(files, filepath.Join(binDir, "ya"))
 	}
 	if profile.InstallKind == "apt" {
@@ -384,11 +389,82 @@ func acquireInstallLock(parent context.Context, options Options) (func(), error)
 }
 
 func runToolVersion(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool AppProfile) CommandResult {
-	if !tool.UserBin {
-		return runUbuntuLogged(ctx, runner, timeout, logPath, tool.Executable, tool.VersionArg...)
+	executables := profileExecutables(tool)
+	if len(executables) == 0 {
+		return CommandResult{Err: fmt.Errorf("profile %s has no required executable", tool.Name)}
 	}
-	args := append([]string{"-ec", `PATH="$HOME/.local/bin:$PATH"; exec "$@"`, "--", tool.Executable}, tool.VersionArg...)
+	return runToolVersionSpec(ctx, runner, timeout, logPath, tool, executables[0])
+}
+
+func runToolVersions(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool AppProfile) []CommandResult {
+	executables := profileExecutables(tool)
+	results := make([]CommandResult, 0, len(executables))
+	for _, executable := range executables {
+		results = append(results, runToolVersionSpec(ctx, runner, timeout, logPath, tool, executable))
+	}
+	return results
+}
+
+func runToolVersionSpec(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool AppProfile, executable ExecutableSpec) CommandResult {
+	if !tool.UserBin {
+		return runUbuntuLogged(ctx, runner, timeout, logPath, executable.Name, executable.VersionArg...)
+	}
+	args := append([]string{"-ec", `PATH="$HOME/.local/bin:$PATH"; exec "$@"`, "--", executable.Name}, executable.VersionArg...)
 	return runUbuntuLogged(ctx, runner, timeout, logPath, "sh", args...)
+}
+
+func firstCommandError(results []CommandResult) error {
+	for _, result := range results {
+		if result.Err != nil {
+			return result.Err
+		}
+	}
+	return nil
+}
+
+func commandVersions(profile AppProfile, results []CommandResult) string {
+	executables := profileExecutables(profile)
+	values := make([]string, 0, len(results))
+	for index, result := range results {
+		if index >= len(executables) {
+			break
+		}
+		output := commandOutput(result)
+		if len(executables) == 1 {
+			return output
+		}
+		values = append(values, executables[index].Name+": "+output)
+	}
+	return strings.Join(values, "\n")
+}
+
+func profilePackages(profile AppProfile) []string {
+	if len(profile.Packages) > 0 {
+		return append([]string(nil), profile.Packages...)
+	}
+	if profile.Package == "" {
+		return nil
+	}
+	return []string{profile.Package}
+}
+
+func profileExecutables(profile AppProfile) []ExecutableSpec {
+	if len(profile.RequiredExecutables) > 0 {
+		return append([]ExecutableSpec(nil), profile.RequiredExecutables...)
+	}
+	if profile.Executable == "" {
+		return nil
+	}
+	return []ExecutableSpec{{Name: profile.Executable, VersionArg: append([]string(nil), profile.VersionArg...)}}
+}
+
+func containsExecutable(executables []ExecutableSpec, name string) bool {
+	for _, executable := range executables {
+		if executable.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func installTool(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool AppProfile) CommandResult {
@@ -422,7 +498,7 @@ func installTool(ctx context.Context, runner CommandRunner, timeout time.Duratio
 	case "gh-extension":
 		return runUbuntuLogged(ctx, runner, timeout, logPath, "gh", "extension", "install", tool.Package)
 	default:
-		return runAptLogged(ctx, runner, timeout, logPath, "install", "-y", tool.Package)
+		return runAptLogged(ctx, runner, timeout, logPath, append([]string{"install", "-y"}, profilePackages(tool)...)...)
 	}
 }
 

@@ -67,6 +67,73 @@ func TestAppProfileContract(t *testing.T) {
 	}
 }
 
+func TestAppProfileSupportsMultiplePackagesAndExecutables(t *testing.T) {
+	profile := AppProfile{
+		Name:       "java",
+		Package:    "legacy-java-package",
+		Packages:   []string{"openjdk-21-jdk", "openjdk-21-jdk-headless"},
+		Executable: "java",
+		RequiredExecutables: []ExecutableSpec{
+			{Name: "java", VersionArg: []string{"--version"}},
+			{Name: "javac", VersionArg: []string{"--version"}},
+			{Name: "jar", VersionArg: []string{"--version"}},
+		},
+	}
+
+	if got := profilePackages(profile); !slices.Equal(got, profile.Packages) {
+		t.Fatalf("packages = %v, want %v", got, profile.Packages)
+	}
+	if got := profileExecutables(profile); !slices.EqualFunc(got, profile.RequiredExecutables, func(left, right ExecutableSpec) bool {
+		return left.Name == right.Name && slices.Equal(left.VersionArg, right.VersionArg)
+	}) {
+		t.Fatalf("executables = %v, want %v", got, profile.RequiredExecutables)
+	}
+}
+
+func TestLegacyProfileFieldsRemainNormalized(t *testing.T) {
+	profile := AppProfile{Package: "golang", Executable: "go", VersionArg: []string{"version"}}
+	if !slices.Equal(profilePackages(profile), []string{"golang"}) {
+		t.Fatal("legacy package was not normalized")
+	}
+	executables := profileExecutables(profile)
+	if len(executables) != 1 || executables[0].Name != "go" || !slices.Equal(executables[0].VersionArg, []string{"version"}) {
+		t.Fatalf("legacy executable was not normalized: %v", executables)
+	}
+}
+
+func TestRequiredExecutablesMustAllVerify(t *testing.T) {
+	runner := &fakeRunner{}
+	profile := AppProfile{
+		Name: "java",
+		RequiredExecutables: []ExecutableSpec{
+			{Name: "java", VersionArg: []string{"--version"}},
+			{Name: "javac", VersionArg: []string{"--version"}},
+			{Name: "jar", VersionArg: []string{"--version"}},
+		},
+	}
+	results := []CommandResult{
+		{Stdout: []byte("openjdk 21\n")},
+		{Stdout: []byte("javac 21\n")},
+		{Stdout: []byte("jar 21\n")},
+	}
+	runner.results = map[string][]CommandResult{}
+	for _, executable := range profile.RequiredExecutables {
+		command := "proot-distro login ubuntu -- env PATH=" + ubuntuPath + " " + executable.Name + " --version"
+		runner.results[command] = []CommandResult{results[0]}
+		results = results[1:]
+	}
+	verified := runToolVersions(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", profile)
+	if len(verified) != 3 || firstCommandError(verified) != nil {
+		t.Fatalf("verification results = %+v, want three successful checks", verified)
+	}
+
+	runner.results["proot-distro login ubuntu -- env PATH="+ubuntuPath+" javac --version"] = []CommandResult{{Err: errors.New("javac missing")}}
+	failed := runToolVersions(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", profile)
+	if firstCommandError(failed) == nil {
+		t.Fatal("verification succeeded despite a missing required executable")
+	}
+}
+
 func TestCanonicalAppAndConfigStates(t *testing.T) {
 	appStates := []AppState{
 		AppStateAvailable,

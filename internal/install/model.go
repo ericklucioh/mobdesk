@@ -39,13 +39,15 @@ type AppProfile struct {
 	Aliases []string `json:"aliases"`
 	// Description is localized presentation text; Usage is the concise command
 	// form shown to users. Neither field controls installation.
-	Description   string         `json:"description,omitempty"`
-	Usage         string         `json:"usage,omitempty"`
-	DescriptionID i18n.MessageID `json:"-"`
-	Kind          string         `json:"kind,omitempty"`
-	Package       string         `json:"package"`
-	Executable    string         `json:"executable"`
-	VersionArg    []string       `json:"version_arg"`
+	Description         string           `json:"description,omitempty"`
+	Usage               string           `json:"usage,omitempty"`
+	DescriptionID       i18n.MessageID   `json:"-"`
+	Kind                string           `json:"kind,omitempty"`
+	Package             string           `json:"package"`
+	Packages            []string         `json:"packages,omitempty"`
+	Executable          string           `json:"executable"`
+	RequiredExecutables []ExecutableSpec `json:"required_executables,omitempty"`
+	VersionArg          []string         `json:"version_arg"`
 	// CatalogVersion is a short display fallback when VersionArg is not a
 	// reliable, concise version source, such as an app's help command.
 	CatalogVersion   string           `json:"catalog_version,omitempty"`
@@ -60,6 +62,13 @@ type AppProfile struct {
 	MinimumVersion   string           `json:"minimum_version,omitempty"`
 	ProfileVersion   string           `json:"profile_version,omitempty"`
 	StorageEstimate  *StorageEstimate `json:"storage_estimate,omitempty"`
+}
+
+// ExecutableSpec describes one command that must be available for a profile
+// to be considered installed. The legacy executable fields remain supported.
+type ExecutableSpec struct {
+	Name       string   `json:"name"`
+	VersionArg []string `json:"version_arg,omitempty"`
 }
 
 type StorageEstimate struct {
@@ -87,7 +96,9 @@ type Result struct {
 	SchemaVersion   int              `json:"schema_version"`
 	Language        string           `json:"language"`
 	Package         string           `json:"package"`
+	Packages        []string         `json:"packages,omitempty"`
 	Executable      string           `json:"executable"`
+	Executables     []ExecutableSpec `json:"executables,omitempty"`
 	Version         string           `json:"version"`
 	Installed       bool             `json:"installed"`
 	Changed         bool             `json:"changed"`
@@ -103,7 +114,9 @@ type InstallationRecord struct {
 	Name                string            `json:"name"`
 	Kind                string            `json:"kind"`
 	Package             string            `json:"package"`
+	Packages            []string          `json:"packages,omitempty"`
 	Executable          string            `json:"executable"`
+	RequiredExecutables []ExecutableSpec  `json:"required_executables,omitempty"`
 	Strategy            string            `json:"strategy,omitempty"`
 	Dependencies        []string          `json:"dependencies,omitempty"`
 	InstalledPackages   []string          `json:"installed_packages,omitempty"`
