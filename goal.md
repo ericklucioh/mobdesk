@@ -271,7 +271,7 @@ feat: add managed Java 21 profile
 
 #### Stage 2.2 - Configurar JAVA_HOME e ambiente de shell
 
-- Status: pending
+- Status: completed
 
 ##### Objetivo
 
@@ -287,11 +287,11 @@ Garantir que shells, Mobdesk e build tools usem a mesma JVM dentro do Ubuntu.
 
 ##### Critérios de aceite
 
-- [ ] `JAVA_HOME` aponta para o JDK 21 no Ubuntu.
-- [ ] `java` e `javac` apontam para o ambiente Ubuntu.
-- [ ] Gradle e Maven recebem o mesmo `JAVA_HOME`.
-- [ ] Configuração é repetível e não apaga configuração existente.
-- [ ] Caminho não depende de arquitetura codificada.
+- [x] `JAVA_HOME` aponta para o JDK 21 no Ubuntu.
+- [x] `java` e `javac` apontam para o ambiente Ubuntu.
+- [x] Gradle e Maven recebem o mesmo `JAVA_HOME`.
+- [x] Configuração é repetível e não apaga configuração existente.
+- [x] Caminho não depende de arquitetura codificada.
 
 ##### Validação
 
@@ -299,6 +299,8 @@ Garantir que shells, Mobdesk e build tools usem a mesma JVM dentro do Ubuntu.
 go test ./internal/install ./internal/workstation
 go vet ./internal/install ./internal/workstation
 ```
+
+Resultado: configuração de shell, preservação do `.bashrc`, descoberta dinâmica do JDK e ausência de ambiente Termux foram cobertas por testes; testes e vet passaram.
 
 ##### Commit
 
