@@ -1,793 +1,541 @@
-# Goal: Suporte JVM para Java 21, Kotlin e Spring Boot 4
+# Goal: Otimizar o catalog-test
 
 ## Status
 
-- Status: in_progress
+- Status: pending
 - Project root: /home/erick/code/projs/mobdesk
 - Base branch: main
-- Branch policy: feat/jvm-spring-boot (uma branch para o Goal inteiro)
-- Worktree policy: usar o worktree atual
+- Branch policy: feat/optimize-catalog-test (uma branch para o Goal inteiro)
+- Worktree policy: worktree atual, após criação da branch
 - PR policy: um PR ao final do Goal
 - Commit policy: um commit por Stage
 
 ## Objetivo
 
-Adicionar ao Mobdesk um ambiente JVM funcional dentro do Ubuntu via PRoot-Distro,
-com Java 21 como JDK gerenciado, Kotlin/JVM, Maven e Gradle como apps opcionais
-independentes, e compatibilidade validada com Spring Boot 4.x.
+Reduzir significativamente o tempo de execução do `catalog-test` sem remover
+a cobertura completa de instalação, verificação, idempotência e execução dos
+aplicativos do catálogo.
 
-O Mobdesk fornecerá o ambiente e os toolchains. Não criará, gerenciará ou
-hospedará projetos Spring Boot como uma funcionalidade própria neste Goal.
+O projeto terá uma validação rápida para o ciclo normal de desenvolvimento e
+uma validação completa para execução manual ou periódica. A validação completa
+continuará exercitando todos os perfis reais e downloads externos.
+
+## Resultado esperado
+
+- `catalog-test-fast` executa em tempo compatível com o ciclo normal de PR.
+- `catalog-test-full` preserva a cobertura completa existente.
+- O teste identifica claramente qual ferramenta consumiu tempo.
+- Verificações redundantes de PRoot são reduzidas.
+- Caches de downloads relevantes são reutilizados entre execuções.
+- O comportamento de instalação do produto não muda.
+- A redução de tempo não depende de paralelizar operações incompatíveis com
+  APT, DPKG ou o lock global do Mobdesk.
 
 ## Escopo
 
-- Adicionar Java 21 ao catálogo de apps.
-- Configurar `java`, `javac`, `jar` e `JAVA_HOME` dentro do Ubuntu.
-- Adicionar Kotlin/JVM com compiler oficial em versão fixada e checksum validado.
-- Adicionar Gradle como app opcional dependente de Java.
-- Adicionar Maven como app opcional dependente de Java.
-- Manter Gradle e Maven como instalações separadas.
-- Preferir `./gradlew` e `./mvnw` quando um projeto fornecer wrapper.
-- Usar os binários globais como fallback.
-- Evoluir o catálogo para múltiplos pacotes e executáveis obrigatórios.
-- Permitir dependências compartilhadas entre apps.
-- Impedir a remoção de Java enquanto Kotlin, Gradle ou Maven dependerem dele.
-- Detectar estados instalado, parcial, ausente e conflitante corretamente.
-- Aplicar aviso de armazenamento abaixo de 20 GB livres.
-- Bloquear instalações abaixo de 10 GB livres.
-- Manter caches Gradle e Maven persistentes.
-- Validar Java com Spring Boot 4.x usando Gradle.
-- Validar Java com Spring Boot 4.x usando Maven.
-- Validar Kotlin com Spring Boot 4.x usando Gradle.
-- Validar compilação, testes, empacotamento e execução HTTP de aplicações Spring Boot.
-- Preservar o limite Termux como host de controle e Ubuntu como ambiente de desenvolvimento.
-- Atualizar contratos JSON de forma aditiva e compatível.
-- Atualizar documentação de arquitetura, decisões, roadmap e uso.
-- Manter funcionamento por CLI, JSON, TUI, teclado e mouse.
+- Medir o tempo individual de cada instalação e etapa do catálogo.
+- Criar modo rápido para validação representativa por estratégia de instalação.
+- Manter modo completo para todos os aplicativos do catálogo.
+- Reduzir chamadas redundantes a `proot-distro login`.
+- Agrupar verificações finais em poucas sessões Ubuntu.
+- Reutilizar caches seguros de APT, Go, npm e pip quando aplicável.
+- Manter validação de dependências compartilhadas.
+- Manter validação de idempotência.
+- Documentar quando usar cada modo.
+- Atualizar `Makefile`, scripts de teste, Docker Compose e documentação
+  relacionada.
 
 ## Fora do escopo
 
-- Gerenciamento automático de Java 17.
-- Instalação automática de SDKMAN.
-- Kotlin/Native e Kotlin/JS.
-- Android SDK, Android Studio ou Gradle Android Plugin.
-- Criação de projetos Spring Boot pelo Mobdesk.
-- Gerenciamento de projetos, sessões ou serviços Spring Boot.
-- Tela específica de projetos.
-- Spring Framework 4.x sem Spring Boot.
-- Spring Boot CLI.
-- Docker, Testcontainers ou execução dependente de Docker.
-- systemd, cgroups, namespaces completos ou execução como serviço do sistema.
-- Native Image, GraalVM e compilação nativa.
-- Remoção automática dos caches `~/.gradle` e `~/.m2`.
-- Alterações em `site/` ou `docs/LAUNCH-KIT.md`.
-- Garantia de compatibilidade com versões arbitrárias de Java, Kotlin, Gradle, Maven ou Spring.
+- Alterar o comportamento de instalação em produção.
+- Criar um novo comando público de instalação em lote.
+- Remover aplicativos do catálogo.
+- Remover a validação completa de qualquer aplicativo no modo full.
+- Paralelizar instalações que compartilham APT, DPKG ou o lock do Mobdesk.
+- Substituir instalações reais por mocks no `catalog-test-full`.
+- Ignorar checksums, versões fixadas ou validações de executáveis.
+- Alterar o contrato JSON ou a TUI.
+- Executar `catalog-test` durante a definição deste Goal.
+- Adicionar dependência de secrets.
+- Alterar o ambiente real do dispositivo Termux fora dos fixtures Docker.
 
 ## Regras de execução
 
-- Java 21 é o único JDK instalado e gerenciado automaticamente pelo Mobdesk.
-- Java 17 manual é permitido, mas não será substituído, removido ou administrado pelo Mobdesk.
-- Java, Kotlin, Gradle e Maven são perfis independentes na lista de apps.
-- Kotlin, Gradle e Maven declaram Java 21 como dependência.
-- A instalação de um dependente pode instalar Java 21 automaticamente.
-- A desinstalação deve proteger todos os pacotes compartilhados.
-- A instalação ocorre no Ubuntu via `proot-distro`, nunca no Termux.
-- O JDK do Termux não deve ser usado como JVM do Ubuntu.
-- `JAVA_HOME` deve ser descoberto dentro do Ubuntu sem caminho fixo de arquitetura.
-- O ambiente exportado para shells e comandos deve incluir `JAVA_HOME` e o `PATH` correto.
-- Downloads externos usam HTTPS, versão fixada, arquitetura validada quando aplicável e checksum.
-- O compiler Kotlin é instalado em caminho privado e gerenciado pelo Mobdesk.
-- Gradle Wrapper e Maven Wrapper têm precedência sobre binários globais.
-- Caches `~/.gradle` e `~/.m2` sobrevivem a reinstalações e desinstalações.
-- O espaço livre é verificado antes de qualquer instalação.
-- Abaixo de 20 GB livres, a operação mostra aviso e exige confirmação compatível.
-- Abaixo de 10 GB livres, a instalação é bloqueada sem apagar dados.
-- Toda operação longa aceita cancelamento e preserva estado, logs e dados após falha.
-- A TUI não executa `apt`, `proot-distro`, Gradle, Maven ou scripts diretamente.
-- Instalação e atualização continuam bloqueadas dentro de SSH/Ubuntu.
-- Novos campos JSON são aditivos e preservam o contrato versionado.
-- Estados parciais, bloqueados, ocupados, conflitantes, concluídos e falhos são visíveis.
-- A interface funciona em terminais estreitos e mantém equivalência mouse/teclado.
-- Nenhum teste depende de secrets.
-- A documentação declara as limitações reais do PRoot.
+- O modo fast deve validar pelo menos uma ferramenta de cada estratégia:
+  APT, script/download, Go, npm e pipx.
+- O modo fast deve validar pelo menos uma dependência compartilhada.
+- O modo fast deve validar pelo menos uma ferramenta com configuração.
+- O modo fast deve validar uma instalação repetida.
+- O modo full deve continuar instalando todos os perfis atualmente cobertos.
+- O modo full deve continuar verificando os executáveis instalados.
+- O modo full deve continuar validando downloads, checksums e versões reais.
+- Instalações devem permanecer seriais quando houver lock compartilhado.
+- Caches persistentes não podem mascarar a ausência de instalação no Ubuntu.
+- A fixture deve continuar reproduzível quando os caches forem removidos.
+- O teste deve continuar funcionando em `TERMUX_ARCH=latest` e ARM64 quando
+  o perfil exigir arquitetura específica.
+- Falhas devem identificar a ferramenta e a etapa responsável.
+- O tempo medido deve ser escrito de forma legível sem poluir contratos JSON.
+- Nenhuma alteração de produção será feita apenas para acelerar o teste.
 
 ## Tasks
 
-### Task 1 - Evoluir o contrato de catálogo e instalações compartilhadas
+### Task 1 - Medir o custo real do catalog-test
 
-- Status: in_progress
+- Status: pending
 - Depends on: none
-- Branch: branch única do Goal
+- Branch: feat/optimize-catalog-test
 - Worktree: worktree atual
 - PR: incluída no PR final
 
-#### Stage 1.1 - Modelar múltiplos pacotes e executáveis
+#### Stage 1.1 - Instrumentar etapas e ferramentas
 
-- Status: completed
+- Status: pending
 
 ##### Objetivo
 
-Permitir vários pacotes e executáveis obrigatórios sem quebrar registros JSON existentes.
+Obter uma decomposição objetiva do tempo gasto por build, provisionamento,
+instalação, verificação e segunda passada.
 
 ##### Ações
 
-- Evoluir `AppProfile` e registros para múltiplos pacotes e executáveis.
-- Manter leitura dos campos antigos `package` e `executable`.
-- Definir agregação de versões e erros.
-- Atualizar o catálogo existente sem alterar seu comportamento.
+- Medir a duração do build da imagem.
+- Medir a duração do provisionamento da fixture Ubuntu.
+- Medir cada chamada `mobdesk install`.
+- Medir a segunda instalação de cada ferramenta.
+- Medir as verificações de versão e fixtures de compilação.
+- Identificar falhas e timeouts por etapa.
+- Manter a saída resumida e legível no final do teste.
 
 ##### Critérios de aceite
 
-- [ ] Registros antigos continuam sendo lidos.
-- [x] O modelo aceita declarações de múltiplos pacotes e executáveis para Java, Kotlin, Gradle e Maven.
-- [x] Perfil só é instalado quando todos os executáveis obrigatórios existem.
-- [x] Testes cobrem registros antigos e múltiplos executáveis.
+- [ ] Cada instalação do catálogo aparece com duração individual.
+- [ ] A primeira e a segunda passadas são distinguíveis.
+- [ ] O resumo identifica as cinco etapas mais lentas.
+- [ ] A instrumentação não altera o resultado de sucesso ou falha.
+- [ ] A saída não contém secrets.
+- [ ] O timeout continua encerrando o teste corretamente.
 
 ##### Validação
 
 ```bash
-go test ./internal/install ./internal/status
-go vet ./internal/install ./internal/status
+make catalog-test
+make integration-test
+git diff --check
 ```
-
-Resultado: testes de install/status e vet passaram; `git diff --check` passou.
 
 ##### Commit
 
 ```text
-feat: extend toolchain installation contract
+test: measure catalog test stages
 ```
 
-Commit: c4a0a09
+### Task 2 - Criar o modo catalog-test-fast
 
-#### Stage 1.2 - Proteger dependências compartilhadas na desinstalação
-
-- Status: completed
-
-##### Objetivo
-
-Impedir que a remoção de um app JVM desinstale Java ou pacote ainda utilizado.
-
-##### Ações
-
-- Comparar todos os pacotes e dependências diretas e transitivas.
-- Preservar pacotes compartilhados.
-- Registrar pacotes removidos e preservados.
-- Representar estados parciais e cobrir operações repetidas.
-
-##### Critérios de aceite
-
-- [x] Pacotes compartilhados e dependências de perfil bloqueiam a remoção.
-- [x] A regra protege Java quando usado por um perfil dependente.
-- [x] Caches e dados do usuário não são removidos.
-- [x] Arquivos modificados continuam protegidos.
-
-##### Validação
-
-```bash
-go test ./internal/install -run 'Test.*[Uu]ninstall|Test.*[Ss]hared|Test.*[Dd]ep'
-go vet ./internal/install
-```
-
-Resultado: testes de desinstalação, compartilhamento e dependências, vet e `git diff --check` passaram.
-
-Commit: fe96f0f
-
-##### Commit
-
-```text
-feat: protect shared toolchain dependencies
-```
-
-#### Stage 1.3 - Aplicar política global de armazenamento
-
-- Status: completed
-
-##### Objetivo
-
-Impedir que instalações consumam o armazenamento crítico do dispositivo.
-
-##### Ações
-
-- Definir aviso em 20 GB e bloqueio em 10 GB.
-- Aplicar a política a toda instalação do Mobdesk.
-- Expor motivo em texto e JSON.
-- Verificar espaço antes de modificar o sistema.
-- Adicionar testes para estados suficiente, aviso e bloqueado.
-
-##### Critérios de aceite
-
-- [x] 25 GB livres prossegue sem aviso.
-- [x] 19 GB livres informa aviso.
-- [x] 10 GB livres ou mais não é bloqueado somente pela política.
-- [x] Menos de 10 GB bloqueia sem executar APT, downloads ou remoções.
-- [x] Bloqueio aparece no resultado da instalação e no JSON.
-- [x] A política vale para apps existentes e novos.
-
-##### Validação
-
-```bash
-go test ./internal/install ./internal/status
-go vet ./internal/install ./internal/status
-```
-
-Resultado: testes de limites, install/status/cobra/i18n, vet, `i18n-check` e `git diff --check` passaram.
-
-##### Commit
-
-```text
-feat: enforce global storage thresholds
-```
-
-Commit: e89d03b
-
-### Task 2 - Implementar o ambiente Java 21
-
-- Status: in_progress
+- Status: pending
 - Depends on: Task 1
-- Branch: branch única do Goal
+- Branch: feat/optimize-catalog-test
 - Worktree: worktree atual
 - PR: incluída no PR final
 
-#### Stage 2.1 - Adicionar o perfil Java 21
-
-- Status: completed
-
-##### Objetivo
-
-Instalar e validar o JDK 21 oficial do Ubuntu ARM64 dentro do PRoot.
-
-##### Ações
-
-- Adicionar perfil `java` usando `openjdk-21-jdk` via APT no Ubuntu.
-- Declarar pacotes e executáveis obrigatórios.
-- Validar `java --version`, `javac --version` e `jar --version`.
-- Registrar pacotes, versão e logs sem secrets.
-- Manter instalação idempotente.
-
-##### Critérios de aceite
-
-- [x] `mobdesk install java` funciona em Termux.
-- [x] APT ocorre somente dentro do Ubuntu.
-- [x] Java 21 é encontrado e validado.
-- [x] `javac` compila e `jar` empacota uma classe simples.
-- [x] Segunda instalação não reinstala desnecessariamente.
-- [x] Perfil aparece na CLI, JSON e TUI.
-
-##### Validação
-
-```bash
-go test ./internal/install
-go vet ./internal/install
-```
-
-Resultado: testes de install, vet, localização, smoke test de catálogo e `git diff --check` passaram. O fixture confirmou Java 21, `javac`, `jar`, compilação e execução do JAR.
-
-##### Commit
-
-```text
-feat: add managed Java 21 profile
-```
-
-#### Stage 2.2 - Configurar JAVA_HOME e ambiente de shell
-
-- Status: completed
-
-##### Objetivo
-
-Garantir que shells, Mobdesk e build tools usem a mesma JVM dentro do Ubuntu.
-
-##### Ações
-
-- Descobrir o diretório real do JDK.
-- Gerar configuração privada e idempotente do shell Ubuntu.
-- Exportar `JAVA_HOME` e ajustar `PATH`.
-- Não transportar ambiente do Termux.
-- Preservar configuração existente do usuário.
-
-##### Critérios de aceite
-
-- [x] `JAVA_HOME` aponta para o JDK 21 no Ubuntu.
-- [x] `java` e `javac` apontam para o ambiente Ubuntu.
-- [x] Gradle e Maven recebem o mesmo `JAVA_HOME`.
-- [x] Configuração é repetível e não apaga configuração existente.
-- [x] Caminho não depende de arquitetura codificada.
-
-##### Validação
-
-```bash
-go test ./internal/install ./internal/workstation
-go vet ./internal/install ./internal/workstation
-```
-
-Resultado: configuração de shell, preservação do `.bashrc`, descoberta dinâmica do JDK e ausência de ambiente Termux foram cobertas por testes; testes e vet passaram.
-
-##### Commit
-
-```text
-feat: configure Ubuntu Java environment
-```
-
-### Task 3 - Implementar Kotlin/JVM fixado
+#### Stage 2.1 - Definir matriz rápida por estratégia
 
 - Status: pending
-- Depends on: Task 2
-- Branch: branch única do Goal
-- Worktree: worktree atual
-- PR: incluída no PR final
-
-#### Stage 3.1 - Instalar compiler oficial Kotlin
-
-- Status: completed
 
 ##### Objetivo
 
-Disponibilizar Kotlin/JVM atual sem usar o pacote Ubuntu obsoleto.
+Validar as principais estratégias de instalação sem reinstalar todos os
+aplicativos a cada ciclo de desenvolvimento.
 
 ##### Ações
 
-- Definir versão compatível com Spring Boot 4.x.
-- Fixar URL, versão e checksum.
-- Validar HTTPS, arquitetura e integridade.
-- Instalar em diretório privado e expor `kotlinc` e `kotlin`.
-- Declarar Java 21 como dependência.
-- Registrar arquivos e hashes para remoção segura.
+- Definir um conjunto mínimo de perfis representativos:
+  - APT;
+  - script com download e checksum;
+  - Go;
+  - npm;
+  - pipx;
+  - ferramenta com configuração;
+  - dependência compartilhada.
+- Incluir Java ou outra dependência compartilhada necessária aos perfis.
+- Preservar pelo menos uma ferramenta com múltiplos executáveis.
+- Preservar pelo menos uma ferramenta com binário em `~/.local/bin`.
+- Preservar pelo menos uma ferramenta com validação de configuração.
+- Criar alvo explícito `catalog-test-fast`.
+- Permitir que o script selecione o modo sem duplicar toda a lógica.
 
 ##### Critérios de aceite
 
-- [x] `mobdesk install kotlin` instala Java 21 se necessário.
-- [x] Não usa `apt install kotlin`.
-- [x] Checksum inválido interrompe sem ativar arquivos.
-- [x] `kotlinc --version` funciona.
-- [ ] Kotlin compila JAR executável executado por `java -jar`.
-- [x] Segunda instalação é idempotente.
-- [x] Arquivos modificados não são removidos silenciosamente.
+- [ ] O modo fast executa todos os grupos de estratégia definidos.
+- [ ] O modo fast valida instalação inicial e instalação repetida.
+- [ ] O modo fast valida versões e executáveis.
+- [ ] O modo fast valida pelo menos uma dependência compartilhada.
+- [ ] O modo fast não instala todos os perfis do catálogo.
+- [ ] O alvo fast é separado e explícito no `Makefile`.
+- [ ] A documentação explica que fast não substitui full.
 
 ##### Validação
 
 ```bash
-go test ./internal/install
-go vet ./internal/install
-```
-
-Resultado: perfil Kotlin/JVM 2.2.20, checksum fixado, validação de HTTPS/TLS, arquitetura, dependência Java e catálogo passaram em testes, vet, i18n e `make check`. A execução de JAR fica validada na Stage 3.2.
-
-##### Commit
-
-```text
-feat: add pinned Kotlin JVM compiler
-```
-
-#### Stage 3.2 - Validar Kotlin com Java 21
-
-- Status: completed
-
-##### Objetivo
-
-Confirmar interoperabilidade básica entre Kotlin/JVM, Java 21 e PRoot.
-
-##### Ações
-
-- Adicionar fixture Kotlin console.
-- Compilar e executar com `kotlinc` e `java -jar`.
-- Validar caminhos, temporários e saída em ARM64.
-- Cobrir cancelamento e falha de download.
-
-##### Critérios de aceite
-
-- [x] Fixture compila e executa no Ubuntu ARM64 via PRoot.
-- [x] Fixture usa Java 21 do Ubuntu.
-- [x] Falha de JDK ausente produz diagnóstico objetivo.
-- [x] Teste não exige IDE, Android SDK ou Kotlin/Native.
-
-##### Validação
-
-```bash
-make catalog-test
-```
-
-Resultado: smoke test isolado no mesmo container instalou Java 21 e Kotlin/JVM, validou `kotlinc`/`kotlin`, compilou a fixture com `-include-runtime` e executou o JAR com `java` dentro do Ubuntu/PRoot. O `make catalog-test` completo excedeu o timeout durante CLIs npm opcionais, antes da fixture Kotlin.
-
-##### Commit
-
-```text
-test: validate Kotlin JVM toolchain
-```
-
-### Task 4 - Adicionar Maven e Gradle como apps opcionais
-
-- Status: pending
-- Depends on: Task 2
-- Branch: branch única do Goal
-- Worktree: worktree atual
-- PR: incluída no PR final
-
-#### Stage 4.1 - Adicionar perfis independentes de Gradle e Maven
-
-- Status: completed
-
-##### Objetivo
-
-Disponibilizar os dois build tools sem criar dependência entre eles.
-
-##### Ações
-
-- Adicionar `gradle` dependente de Java.
-- Adicionar `maven` dependente de Java.
-- Definir estratégias e versões verificáveis.
-- Validar `gradle --version` e `mvn --version`.
-- Manter caches persistentes e perfis opcionais.
-
-##### Critérios de aceite
-
-- [x] Gradle e Maven aparecem como apps opcionais.
-- [x] Instalar Gradle não instala Maven e vice-versa.
-- [x] Ambos instalam Java 21 somente quando necessário.
-- [x] Ambos mostram a versão do Java usado.
-- [x] Desinstalação preserva Java enquanto houver dependentes.
-- [x] TUI mostra dependências sem subconfiguração dentro do Java.
-
-##### Validação
-
-```bash
-go test ./internal/install ./internal/status ./internal/tui
-go vet ./internal/install ./internal/status ./internal/tui
-```
-
-Resultado: perfis APT independentes, dependentes somente de Java, foram cobertos por testes, vet e `make check`; o smoke do catálogo inclui `gradle --version` e `mvn --version`.
-
-##### Commit
-
-```text
-feat: add optional Maven and Gradle profiles
-```
-
-#### Stage 4.2 - Respeitar wrappers de projetos
-
-- Status: completed
-
-##### Objetivo
-
-Garantir que projetos existentes controlem suas próprias versões.
-
-##### Ações
-
-- Dar precedência a `./gradlew` sobre `gradle`.
-- Dar precedência a `./mvnw` sobre `mvn`.
-- Validar wrappers com `JAVA_HOME` configurado.
-- Não alterar arquivos de projeto automaticamente.
-- Definir diagnóstico para wrapper ausente, inválido ou sem permissão.
-
-##### Critérios de aceite
-
-- [x] Wrappers têm precedência sobre binários globais.
-- [x] Wrapper inválido produz diagnóstico objetivo.
-- [x] Cancelamento não deixa estado inconsistente.
-- [x] Documentação explica o fallback global.
-
-##### Validação
-
-```bash
-go test ./internal/install ./internal/executil
-go vet ./internal/install ./internal/executil
-```
-
-Resultado: resolução segura de `gradlew`/`mvnw`, fallback para `gradle`/`mvn` e erro para wrappers não executáveis foram cobertos por testes e vet.
-
-##### Commit
-
-```text
-feat: document project build wrapper precedence
-```
-
-### Task 5 - Integrar status, JSON e TUI
-
-- Status: completed
-- Depends on: Task 1, Task 2, Task 3, Task 4
-- Branch: branch única do Goal
-- Worktree: worktree atual
-- PR: incluída no PR final
-
-#### Stage 5.1 - Representar múltiplos executáveis e estados parciais
-
-- Status: completed
-
-##### Objetivo
-
-Evitar que perfis incompletos apareçam como instalados.
-
-##### Ações
-
-- Verificar todos os executáveis obrigatórios.
-- Diferenciar ferramenta gerenciada de ferramenta externa.
-- Expor executáveis ausentes e dependências bloqueadas.
-- Atualizar estados parciais e alertas.
-- Reconciliar registros antigos.
-
-##### Critérios de aceite
-
-- [x] Java sem `javac` não é completamente instalado.
-- [x] Kotlin sem `kotlinc` aparece como parcial ou ausente.
-- [x] Gradle sem Java mostra dependência faltante.
-- [x] Ferramentas externas não são removíveis pelo Mobdesk.
-- [x] JSON mantém schema compatível.
-- [x] Status respeita a fronteira Termux/SSH.
-
-##### Validação
-
-```bash
-go test ./internal/status ./internal/install
-go vet ./internal/status ./internal/install
-```
-
-Resultado: status e JSON reconciliam executáveis obrigatórios, dependências ausentes e estado `partial`; testes e vet passaram.
-
-##### Commit
-
-```text
-feat: report complete toolchain states
-```
-
-#### Stage 5.2 - Atualizar catálogo visual e localizações
-
-- Status: completed
-
-##### Objetivo
-
-Apresentar Java, Kotlin, Gradle e Maven na lista e nos popups existentes.
-
-##### Ações
-
-- Adicionar descrições e usos em inglês e português.
-- Mostrar dependências, bloqueios e estados parciais.
-- Preservar ações, confirmação, mouse, teclado e terminais estreitos.
-
-##### Critérios de aceite
-
-- [x] Quatro apps aparecem na lista.
-- [x] Gradle e Maven são instaláveis separadamente.
-- [x] Falta de espaço mostra bloqueio na TUI.
-- [x] App parcial não oferece ação incompatível sem explicação.
-- [x] Nenhum popup mostra help ou saída bruta.
-- [x] `i18n-check` passa.
-
-##### Validação
-
-```bash
-go test ./internal/tui ./internal/i18n
-go vet ./internal/tui ./internal/i18n
-./scripts/i18n-check.sh
-```
-
-Resultado: Java, Kotlin, Gradle e Maven aparecem no catálogo e popups; estados parciais, executáveis ausentes e bloqueio de armazenamento são localizados e exibidos pela TUI.
-
-##### Commit
-
-```text
-feat: expose JVM tools in the TUI
-```
-
-### Task 6 - Validar Spring Boot 4.x no Ubuntu ARM64
-
-- Status: completed
-- Depends on: Task 3, Task 4, Task 5
-- Branch: branch única do Goal
-- Worktree: worktree atual
-- PR: incluída no PR final
-
-#### Stage 6.1 - Criar fixtures de Spring Boot 4.x
-
-- Status: completed
-
-##### Objetivo
-
-Validar o ambiente em aplicações reais sem criar um gerenciador de projetos.
-
-##### Ações
-
-- Criar fixture Java com Gradle.
-- Criar fixture Java com Maven.
-- Criar fixture Kotlin com Gradle.
-- Fixar versão exata de Spring Boot 4.x.
-- Criar endpoint HTTP mínimo em porta não privilegiada.
-- Não adicionar Docker, Testcontainers ou banco externo.
-
-##### Critérios de aceite
-
-- [x] As três fixtures compilam.
-- [x] Os testes passam.
-- [x] JARs executáveis são gerados.
-- [x] Versões não dependem de `latest`.
-- [x] Fixtures não dependem de IDE.
-
-##### Validação
-
-```bash
-make catalog-test
-```
-
-Resultado: o script Spring separado compilou as três fixtures, executou os testes e gerou os JARs. A validação foi feita sem `catalog-test`, conforme solicitado.
-
-##### Commit
-
-```text
-test: add Spring Boot JVM fixtures
-```
-
-#### Stage 6.2 - Executar e validar aplicações Spring
-
-- Status: completed
-
-##### Objetivo
-
-Confirmar aplicações Spring Boot como processos de usuário dentro do PRoot.
-
-##### Ações
-
-- Executar Java/Gradle com `bootRun`.
-- Executar Java/Maven com `spring-boot:run`.
-- Executar JARs Java e Kotlin.
-- Verificar HTTP local e configuração de endereço/porta.
-- Testar cancelamento e registrar limitações de memória, file watching e suspensão.
-
-##### Critérios de aceite
-
-- [x] Java/Gradle inicia e responde HTTP.
-- [x] Java/Maven inicia e responde HTTP.
-- [x] Kotlin/Gradle inicia e responde HTTP.
-- [x] Processos usam porta não privilegiada.
-- [x] Processos podem ser encerrados sem órfãos.
-- [x] Validação não assume systemd, Docker ou cgroups.
-- [x] Falhas de rede, memória e cancelamento têm diagnóstico utilizável.
-
-##### Validação
-
-```bash
-make catalog-test
-make integration-test
-```
-
-Resultado: script Spring separado validou `bootRun`, `spring-boot:run`, os três JARs, HTTP local em portas 18080-18084 e encerramento dos processos. Não foi executado `catalog-test`.
-
-##### Commit
-
-```text
-test: validate Spring Boot runtime in PRoot
-```
-
-### Task 7 - Documentar, testar e fechar o Goal
-
-- Status: in_progress
-- Depends on: Task 1, Task 2, Task 3, Task 4, Task 5, Task 6
-- Branch: branch única do Goal
-- Worktree: worktree atual
-- PR: incluída no PR final
-
-#### Stage 7.1 - Atualizar documentação e decisões
-
-- Status: completed
-
-##### Objetivo
-
-Documentar toolchains, decisões e limitações de compatibilidade.
-
-##### Ações
-
-- Atualizar `README.md` e `README.pt-BR.md`.
-- Atualizar `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` e `docs/ROADMAP.md`.
-- Documentar fronteira Termux/Ubuntu, Java 17 manual, wrappers, caches e limites de armazenamento.
-- Documentar limitações de Spring Boot no PRoot.
-
-##### Critérios de aceite
-
-- [x] Documentação não afirma que JDK Termux é usado pelo Ubuntu.
-- [x] Ambiente JVM é diferenciado de gerenciamento de projetos.
-- [x] Maven e Gradle aparecem como apps opcionais.
-- [x] Spring Boot 4.x e as exclusões estão explícitos.
-- [x] Limites de 20 GB e 10 GB estão documentados.
-
-##### Validação
-
-```bash
-./scripts/i18n-check.sh
-```
-
-Resultado: README, arquitetura, decisões e roadmap documentam a fronteira
-Termux/Ubuntu, JVM, wrappers, armazenamento e limitações do Spring Boot no PRoot.
-
-##### Commit
-
-```text
-docs: document JVM and Spring Boot support
-```
-
-#### Stage 7.2 - Validação final e regressão
-
-- Status: blocked
-
-##### Objetivo
-
-Garantir que o suporte JVM não quebre o catálogo nem os fluxos existentes.
-
-##### Ações
-
-- Executar testes unitários, vet, localização, build, catálogo e integração.
-- Validar instalações repetidas, desinstalações compartilhadas, JSON e estados bloqueados.
-- Validar no Termux ARM64 real do POCO F6.
-- Registrar limitações dependentes do dispositivo.
-
-##### Critérios de aceite
-
-- [x] `make check` passa.
-- [ ] `make catalog-test` passa. Não executado conforme instrução do usuário.
-- [x] `make integration-test` passa após o fixture preparar explicitamente `tzdata` e `Etc/UTC`.
-- [x] Java, Kotlin, Gradle e Maven passam as validações previstas.
-- [x] Matriz Spring reduzida passa pelo script separado.
-- [x] Catálogo existente continua funcionando nos testes unitários.
-- [x] Instalações repetidas são idempotentes.
-- [x] Java não é removido prematuramente.
-- [x] Aviso e bloqueio de armazenamento funcionam.
-- [x] `git diff --check` passa.
-
-##### Validação
-
-```bash
+make catalog-test-fast
 make check
-make catalog-test
-make integration-test
+git diff --check
 ```
-
-Resultado: `make check`, testes unitários, vet, i18n, Spring fixtures,
-`make integration-test` e `git diff --check` passaram. `catalog-test` não foi
-executado conforme pedido.
 
 ##### Commit
 
 ```text
-test: verify JVM toolchain integration
+test: add fast catalog validation mode
+```
+
+#### Stage 2.2 - Agrupar sessões de verificação Ubuntu
+
+- Status: pending
+
+##### Objetivo
+
+Reduzir o overhead de inicializar PRoot repetidamente durante as verificações
+que não modificam o ambiente.
+
+##### Ações
+
+- Consolidar verificações de versão compatíveis em uma sessão
+  `proot-distro login ubuntu`.
+- Consolidar verificações de executáveis relacionados.
+- Evitar chamadas repetidas de `uname -m`.
+- Manter comandos de instalação separados quando necessário para preservar
+  locks, logs e diagnósticos.
+- Preservar mensagens de erro específicas por ferramenta.
+
+##### Critérios de aceite
+
+- [ ] O número de sessões PRoot de verificação diminui.
+- [ ] Cada executável obrigatório continua sendo validado.
+- [ ] Uma falha identifica o executável ou ferramenta responsável.
+- [ ] Instalações não são paralelizadas nem agrupadas de forma insegura.
+- [ ] O modo fast continua compilando e executando suas fixtures.
+- [ ] O modo full continua verificando todos os aplicativos.
+
+##### Validação
+
+```bash
+make catalog-test-fast
+make catalog-test-full
+git diff --check
+```
+
+##### Commit
+
+```text
+test: consolidate Ubuntu catalog checks
+```
+
+### Task 3 - Reutilizar caches sem perder reprodutibilidade
+
+- Status: pending
+- Depends on: Task 1
+- Branch: feat/optimize-catalog-test
+- Worktree: worktree atual
+- PR: incluída no PR final
+
+#### Stage 3.1 - Persistir caches de downloads
+
+- Status: pending
+
+##### Objetivo
+
+Evitar downloads repetidos entre execuções sem persistir o estado instalado
+dos aplicativos.
+
+##### Ações
+
+- Avaliar e adicionar volumes para caches seguros de APT.
+- Avaliar cache npm utilizado pelos perfis npm.
+- Avaliar cache pip/pipx utilizado pelo perfil pipx.
+- Preservar os volumes Go existentes.
+- Garantir que caches sejam montados apenas nos caminhos de cache.
+- Não montar o rootfs Ubuntu inteiro como volume persistente.
+- Não transformar uma execução anterior em pré-condição para uma execução
+  limpa.
+
+##### Critérios de aceite
+
+- [ ] Segunda execução com caches reutiliza downloads disponíveis.
+- [ ] Execução sem caches continua funcionando.
+- [ ] Remover caches não deixa ferramentas falsamente instaladas.
+- [ ] Os caches não incluem estado privado ou secrets.
+- [ ] O modo full continua executando instalações reais.
+- [ ] A documentação identifica os caches persistentes.
+
+##### Validação
+
+```bash
+make catalog-test-fast
+make catalog-test-full
+docker compose config
+git diff --check
+```
+
+##### Commit
+
+```text
+test: persist catalog download caches
+```
+
+#### Stage 3.2 - Validar execução limpa e cacheada
+
+- Status: pending
+
+##### Objetivo
+
+Comprovar que a otimização de cache melhora a segunda execução sem quebrar
+a reprodutibilidade da primeira.
+
+##### Ações
+
+- Validar execução sem volumes de cache.
+- Validar execução com volumes de cache.
+- Comparar tempos das duas execuções.
+- Confirmar que a fixture Ubuntu continua correta nos dois casos.
+- Registrar o ganho observado e qualquer custo residual.
+
+##### Critérios de aceite
+
+- [ ] Execução limpa passa.
+- [ ] Execução cacheada passa.
+- [ ] Execução cacheada não depende de estado instalado anterior.
+- [ ] O resumo registra a diferença de duração.
+- [ ] Falhas de cache produzem fallback ou diagnóstico objetivo.
+
+##### Validação
+
+```bash
+make catalog-test-fast
+make catalog-test-fast
+make catalog-test-full
+```
+
+##### Commit
+
+```text
+test: verify clean and cached catalog runs
+```
+
+### Task 4 - Preservar cobertura completa no modo full
+
+- Status: pending
+- Depends on: Task 2, Task 3
+- Branch: feat/optimize-catalog-test
+- Worktree: worktree atual
+- PR: incluída no PR final
+
+#### Stage 4.1 - Separar full da matriz rápida
+
+- Status: pending
+
+##### Objetivo
+
+Garantir que o modo full continue sendo a autoridade para cobertura real de
+todo o catálogo.
+
+##### Ações
+
+- Criar alvo explícito `catalog-test-full`.
+- Mover a lista completa de perfis para o modo full.
+- Manter a segunda instalação dos perfis necessários para idempotência.
+- Manter verificações reais de cada executável.
+- Manter a validação condicional de `zellij` em ARM64.
+- Manter as fixtures Java e Kotlin existentes.
+- Evitar duplicar código entre fast e full.
+
+##### Critérios de aceite
+
+- [ ] Todos os perfis atualmente cobertos continuam no modo full.
+- [ ] Todos os executáveis atualmente verificados continuam sendo verificados.
+- [ ] Checksums e downloads reais continuam sendo executados.
+- [ ] Idempotência continua coberta.
+- [ ] O resultado do full diferencia instalação, verificação e fixture.
+- [ ] O full não depende de o fast ter sido executado antes.
+
+##### Validação
+
+```bash
+make catalog-test-full
+make check
+git diff --check
+```
+
+##### Commit
+
+```text
+test: preserve complete catalog validation
+```
+
+#### Stage 4.2 - Validar cobertura contra o catálogo declarativo
+
+- Status: pending
+
+##### Objetivo
+
+Evitar que novos perfis sejam adicionados ao catálogo sem decisão explícita
+sobre sua cobertura live.
+
+##### Ações
+
+- Comparar os perfis declarados em `internal/install/install.go` com as listas
+  de fast e full.
+- Definir como o teste reage a um novo perfil sem cobertura.
+- Preferir uma verificação automática para o modo full.
+- Registrar exceções arquiteturais como `zellij`.
+
+##### Critérios de aceite
+
+- [ ] O modo full cobre todos os perfis declarados ou falha com diagnóstico.
+- [ ] O modo fast documenta seus perfis representativos.
+- [ ] Perfis condicionais por arquitetura são tratados explicitamente.
+- [ ] A verificação não exige rede.
+- [ ] A manutenção futura do catálogo não depende de memória manual.
+
+##### Validação
+
+```bash
+make test
+make check
+make catalog-test-fast
+```
+
+##### Commit
+
+```text
+test: verify catalog coverage declarations
+```
+
+### Task 5 - Documentar uso e concluir o Goal
+
+- Status: pending
+- Depends on: Task 4
+- Branch: feat/optimize-catalog-test
+- Worktree: worktree atual
+- PR: incluída no PR final
+
+#### Stage 5.1 - Documentar os modos e resultados
+
+- Status: pending
+
+##### Objetivo
+
+Tornar claro quando executar cada validação e quais garantias cada uma
+oferece.
+
+##### Ações
+
+- Documentar `catalog-test-fast`.
+- Documentar `catalog-test-full`.
+- Documentar caches persistentes e execução limpa.
+- Documentar que full pode ser lento por downloads externos e PRoot.
+- Documentar ausência de paralelismo nas instalações.
+- Registrar tempos observados após a otimização.
+- Atualizar documentação de desenvolvimento e decisões quando necessário.
+
+##### Critérios de aceite
+
+- [ ] README ou documentação de desenvolvimento explica os dois modos.
+- [ ] O `Makefile` descreve corretamente os alvos.
+- [ ] A diferença de cobertura está explícita.
+- [ ] O uso dos caches está documentado.
+- [ ] O tempo observado e as limitações externas estão registrados.
+- [ ] `i18n-check` passa.
+
+##### Validação
+
+```bash
+./scripts/i18n-check.sh
+make check
+git diff --check
+```
+
+##### Commit
+
+```text
+docs: document catalog test modes
+```
+
+#### Stage 5.2 - Validação final e fechamento
+
+- Status: pending
+
+##### Objetivo
+
+Confirmar o ganho de tempo, a preservação de cobertura e a ausência de
+regressões.
+
+##### Ações
+
+- Executar `catalog-test-fast`.
+- Executar `catalog-test-full`.
+- Executar `make check`.
+- Executar `make integration-test`.
+- Comparar os tempos instrumentados com a linha de base.
+- Revisar o diff completo.
+- Atualizar este Goal com resultados reais.
+- Validar o branch antes do PR.
+
+##### Critérios de aceite
+
+- [ ] `catalog-test-fast` passa.
+- [ ] `catalog-test-full` passa.
+- [ ] `make check` passa.
+- [ ] `make integration-test` passa.
+- [ ] O fast é substancialmente mais rápido que o full.
+- [ ] A cobertura full não foi reduzida.
+- [ ] Instalações e verificações continuam idempotentes.
+- [ ] `git diff --check` passa.
+- [ ] O worktree contém apenas alterações relacionadas ao Goal.
+
+##### Validação
+
+```bash
+make catalog-test-fast
+make catalog-test-full
+make check
+make integration-test
+git status --short
+```
+
+##### Commit
+
+```text
+test: finalize catalog test optimization
 ```
 
 ## Ordem de execução
 
 1. Task 1 / Stage 1.1
-2. Task 1 / Stage 1.2
-3. Task 1 / Stage 1.3
-4. Task 2 / Stage 2.1
-5. Task 2 / Stage 2.2
-6. Task 3 / Stage 3.1
-7. Task 3 / Stage 3.2
-8. Task 4 / Stage 4.1
-9. Task 4 / Stage 4.2
-10. Task 5 / Stage 5.1
-11. Task 5 / Stage 5.2
-12. Task 6 / Stage 6.1
-13. Task 6 / Stage 6.2
-14. Task 7 / Stage 7.1
-15. Task 7 / Stage 7.2
+2. Task 2 / Stage 2.1
+3. Task 2 / Stage 2.2
+4. Task 3 / Stage 3.1
+5. Task 3 / Stage 3.2
+6. Task 4 / Stage 4.1
+7. Task 4 / Stage 4.2
+8. Task 5 / Stage 5.1
+9. Task 5 / Stage 5.2
 
 ## Bloqueios e decisões
 
-- O alvo é Spring Boot 4.x, não Spring Framework 4.x isolado.
-- Java 21 é o único JDK gerenciado automaticamente.
-- Java 17 manual não será administrado pelo Mobdesk.
-- Kotlin é Kotlin/JVM com compiler oficial fixado.
-- Kotlin/Native fica fora deste Goal.
-- Maven e Gradle são apps opcionais independentes.
-- Ambos dependem de Java 21, mas não dependem um do outro.
-- Wrappers de projeto têm precedência sobre instalações globais.
-- O Mobdesk fornece o ambiente, mas não cria nem gerencia projetos.
-- A matriz Spring é Java/Gradle, Java/Maven e Kotlin/Gradle.
-- Docker, Testcontainers, systemd, Native Image e serviços persistentes não são critérios de aceite.
-- Aviso global ocorre abaixo de 20 GB livres.
-- Instalações são bloqueadas abaixo de 10 GB livres.
-- Caches Maven e Gradle são preservados.
-- Validação real depende do POCO F6 e da rede disponível.
-- Nenhuma implementação de produto ocorre durante a definição deste Goal.
+- O `catalog-test` completo não será executado durante a definição deste
+  Goal.
+- O modo full continua sendo obrigatório para preservar a cobertura real.
+- O modo fast é uma validação adicional, não uma substituição silenciosa.
+- Instalações APT, DPKG e operações protegidas pelo lock do Mobdesk permanecem
+  seriais.
+- Ainda não está decidido se os caches APT, npm e pip produzirão ganho
+  relevante; a medição da Task 1 orienta a implementação.
+- O ganho mínimo aceitável do modo fast será definido após a linha de base.
+- O ambiente real Termux/ARM64 continua sendo a validação final de integração.
 
 ## Conclusão
 
-O Goal termina quando o Mobdesk instala e valida Java 21, Kotlin/JVM, Maven e
-Gradle dentro do Ubuntu via PRoot, representa corretamente dependências e estados
-compartilhados, aplica os limites de armazenamento, expõe os apps pela CLI/JSON/TUI,
-executa a matriz reduzida de aplicações Spring Boot 4.x, documenta as limitações e
-passa toda a validação automatizada e real disponível.
+O Goal termina quando existirem modos fast e full claramente separados,
+o modo full preservar a cobertura completa do catálogo, os caches forem
+validados sem comprometer reprodutibilidade, os tempos forem medidos e
+documentados, e todas as validações finais passarem.

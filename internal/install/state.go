@@ -36,14 +36,17 @@ func loadInstallationRecord(p paths.Paths, app string) (InstallationRecord, erro
 	if err := validateStateName(app); err != nil {
 		return InstallationRecord{}, err
 	}
+
 	payload, err := os.ReadFile(filepath.Join(p.InstallationsDir(), app+".json"))
 	if err != nil {
 		return InstallationRecord{}, err
 	}
+
 	var record InstallationRecord
 	if err := json.Unmarshal(payload, &record); err != nil {
 		return InstallationRecord{}, i18n.NewError(i18n.ServiceInstallState, "install_read_state", map[string]any{"Detail": app}, err)
 	}
+	
 	return record, nil
 }
 
