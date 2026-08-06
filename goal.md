@@ -444,7 +444,7 @@ feat: add optional Maven and Gradle profiles
 
 #### Stage 4.2 - Respeitar wrappers de projetos
 
-- Status: pending
+- Status: completed
 
 ##### Objetivo
 
@@ -460,10 +460,10 @@ Garantir que projetos existentes controlem suas próprias versões.
 
 ##### Critérios de aceite
 
-- [ ] Wrappers têm precedência sobre binários globais.
-- [ ] Wrapper inválido produz diagnóstico objetivo.
-- [ ] Cancelamento não deixa estado inconsistente.
-- [ ] Documentação explica o fallback global.
+- [x] Wrappers têm precedência sobre binários globais.
+- [x] Wrapper inválido produz diagnóstico objetivo.
+- [x] Cancelamento não deixa estado inconsistente.
+- [x] Documentação explica o fallback global.
 
 ##### Validação
 
@@ -471,6 +471,8 @@ Garantir que projetos existentes controlem suas próprias versões.
 go test ./internal/install ./internal/executil
 go vet ./internal/install ./internal/executil
 ```
+
+Resultado: resolução segura de `gradlew`/`mvnw`, fallback para `gradle`/`mvn` e erro para wrappers não executáveis foram cobertos por testes e vet.
 
 ##### Commit
 
