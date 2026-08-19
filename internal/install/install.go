@@ -16,33 +16,43 @@ import (
 const (
 	defaultCommandTimeout = 10 * time.Minute
 	defaultLockTimeout    = 5 * time.Minute
-	aptLockTimeoutSeconds = 300
 )
 
 var catalog = []Language{
-	{Name: "go", Aliases: []string{"golang"}, Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "apt"},
-	{Name: "python", Aliases: []string{"python3"}, Package: "python3", Executable: "python3", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt"},
-	{Name: "node", Aliases: []string{"nodejs"}, Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "node"},
-	{Name: "c", Aliases: []string{"c-lang"}, Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt"},
-	{Name: "cpp", Aliases: []string{"c++", "cplusplus"}, Package: "clang", Executable: "clang++", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "apt"},
-	{Name: "lua", Aliases: []string{"lua5.4"}, Package: "lua5.4", Executable: "lua5.4", VersionArg: []string{"-v"}, Kind: "language", InstallKind: "apt"},
-	{Name: "git", Package: "git", Executable: "git", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
-	{Name: "gh", Aliases: []string{"github-cli"}, Package: "gh", Executable: "gh", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "apt"},
-	{Name: "tmux", Package: "tmux", Executable: "tmux", VersionArg: []string{"-V"}, Kind: "terminal", InstallKind: "apt"},
-	{Name: "zellij", Package: "zellij", Executable: "zellij", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "script", UserBin: true, Script: "apt-get install -y ca-certificates curl tar; mkdir -p \"$HOME/.local/bin\"; archive=$(mktemp); curl -fsSL https://github.com/zellij-org/zellij/releases/download/v0.44.3/zellij-aarch64-unknown-linux-musl.tar.gz -o \"$archive\"; printf '%s  %s\\n' '15e6534d42644d66973d136c590c49739dcfd6a1a2a0d3d917973f16c81b45fb' \"$archive\" | sha256sum -c -; tar -xzf \"$archive\" -C \"$HOME/.local/bin\" zellij; chmod 0755 \"$HOME/.local/bin/zellij\"; rm -f \"$archive\""},
-	{Name: "micro", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
-	{Name: "lazygit", Package: "github.com/jesseduffield/lazygit@latest", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "go", Requires: []string{"go"}},
-	{Name: "tree", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "apt"},
+	{Name: "go", Aliases: []string{"golang"}, Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "pkg"},
+	{Name: "python", Aliases: []string{"python3"}, Package: "python", Executable: "python", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg"},
+	{Name: "node", Aliases: []string{"nodejs"}, Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg"},
+	{Name: "c", Aliases: []string{"c-lang"}, Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg"},
+	{Name: "cpp", Aliases: []string{"c++", "cplusplus"}, Package: "clang", Executable: "clang++", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg"},
+	{Name: "lua", Aliases: []string{"lua5.4"}, Package: "lua", Executable: "lua", VersionArg: []string{"-v"}, Kind: "language", InstallKind: "pkg"},
+	{Name: "java", Aliases: []string{"openjdk", "openjdk-21"}, Package: "openjdk-21", Executable: "java", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg"},
+	{Name: "kotlin", Package: "kotlin", Executable: "kotlin", VersionArg: []string{"-version"}, Kind: "language", InstallKind: "pkg", Requires: []string{"java"}},
+	{Name: "gradle", Package: "gradle", Executable: "gradle", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg", Requires: []string{"java"}},
+	{Name: "maven", Aliases: []string{"mvn"}, Package: "maven", Executable: "mvn", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg", Requires: []string{"java"}},
+	{Name: "git", Package: "git", Executable: "git", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg"},
+	{Name: "gh", Aliases: []string{"github-cli"}, Package: "gh", Executable: "gh", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg"},
+	{Name: "tmux", Package: "tmux", Executable: "tmux", VersionArg: []string{"-V"}, Kind: "terminal", InstallKind: "pkg"},
+	{Name: "zellij", Package: "zellij", Executable: "zellij", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg"},
+	{Name: "micro", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg"},
+	{Name: "neovim", Aliases: []string{"nvim"}, Package: "neovim", Executable: "nvim", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg"},
+	{Name: "lazygit", Package: "lazygit", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg"},
+	{Name: "tree", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg"},
 	{Name: "ttt", Package: "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0", Executable: "ttt", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "ttt", Requires: []string{"go"}},
-	{Name: "htop", Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
-	{Name: "ncdu", Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
-	{Name: "inxi", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
-	{Name: "speedtest-cli", Package: "speedtest-cli", Executable: "speedtest-cli", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "apt"},
-	{Name: "posting", Package: "posting", Executable: "posting", VersionArg: []string{"--help"}, Kind: "terminal", InstallKind: "pipx", Requires: []string{"python"}},
+	{Name: "htop", Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg"},
+	{Name: "ncdu", Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg"},
+	{Name: "inxi", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg"},
+	{Name: "speedtest-cli", Package: "speedtest-cli", Executable: "speedtest-cli", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg"},
+	{Name: "posting", Package: "posting", Executable: "posting", VersionArg: []string{"--help"}, Kind: "terminal", InstallKind: "pkg"},
 	{Name: "opencode-cli", Aliases: []string{"opencode"}, Package: "opencode-ai", Executable: "opencode", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
 	{Name: "codex-cli", Aliases: []string{"codex"}, Package: "@openai/codex", Executable: "codex", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
 	{Name: "claudecode-cli", Aliases: []string{"claude-code"}, Package: "@anthropic-ai/claude-code", Executable: "claude", VersionArg: []string{"--version"}, Kind: "ai", InstallKind: "npm", Requires: []string{"node"}, UserBin: true},
 	{Name: "leetgo", Package: "github.com/j178/leetgo@latest", Executable: "leetgo", VersionArg: []string{"--help"}, Kind: "development", InstallKind: "go", Requires: []string{"go"}},
+}
+
+func init() {
+	for index := range catalog {
+		catalog[index].Targets = []Target{{Runtime: RuntimeTermux, Package: catalog[index].Package, InstallKind: catalog[index].InstallKind}}
+	}
 }
 
 type Options struct {
@@ -95,11 +105,50 @@ func Install(ctx context.Context, name string, options Options) (Result, error) 
 	return install(ctx, name, options)
 }
 
+// MigrateLegacyInstallations reinstalls records created by the Ubuntu-first
+// catalog with their Termux-native targets. Failed tools remain recorded so the
+// user can retry them after resolving the reported package issue.
+func MigrateLegacyInstallations(ctx context.Context, options Options) ([]Result, error) {
+	entries, err := os.ReadDir(options.Paths.InstallationsDir())
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("ler instalações legadas: %w", err)
+	}
+	var results []Result
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
+			continue
+		}
+		payload, err := os.ReadFile(filepath.Join(options.Paths.InstallationsDir(), entry.Name()))
+		if err != nil {
+			return results, fmt.Errorf("ler instalação legada %s: %w", entry.Name(), err)
+		}
+		var record InstallationRecord
+		if err := json.Unmarshal(payload, &record); err != nil || record.Name == "" || record.State != "installed" || record.Runtime == RuntimeTermux {
+			continue
+		}
+		result, err := Install(ctx, record.Name, options)
+		if err != nil {
+			return results, fmt.Errorf("migrar %s para Termux: %w", record.Name, err)
+		}
+		results = append(results, result)
+	}
+	return results, nil
+}
+
 func install(ctx context.Context, name string, options Options) (Result, error) {
 	language, ok := Resolve(name)
 	if !ok {
 		return Result{}, fmt.Errorf("linguagem não suportada %q", name)
 	}
+	target, ok := language.Target(RuntimeTermux)
+	if !ok {
+		return Result{}, fmt.Errorf("%s não possui instalação nativa para Termux", language.Name)
+	}
+	language.Package = target.Package
+	language.InstallKind = target.InstallKind
 	runner := options.Runner
 	if runner == nil {
 		runner = ExecRunner{}
@@ -121,6 +170,7 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		Executable:    language.Executable,
 		State:         "installing",
 		LogPath:       logPath,
+		Runtime:       RuntimeTermux,
 	}
 	record := InstallationRecord{
 		Name:          language.Name,
@@ -130,6 +180,7 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		State:         "installing",
 		LastAttemptAt: now,
 		LogPath:       logPath,
+		Runtime:       RuntimeTermux,
 	}
 	if err := os.MkdirAll(installationsDir, 0o700); err != nil {
 		return result, fmt.Errorf("criar estado da instalação: %w", err)
@@ -144,10 +195,10 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	progress(options, fmt.Sprintf("Verificando %s", language.Name))
 	version := runToolVersion(ctx, runner, options.CommandTimeout, logPath, language)
 	if version.Err != nil {
-		progress(options, "Atualizando índices do Ubuntu")
+		progress(options, "Atualizando repositórios do Termux")
 		progress(options, "Aguardando gerenciador de pacotes")
-		if update := runAptLogged(ctx, runner, options.CommandTimeout, logPath, "update"); update.Err != nil {
-			err := fmt.Errorf("atualizar índices do Ubuntu para %s: %w", language.Name, update.Err)
+		if update := runPkgLogged(ctx, runner, options.CommandTimeout, logPath, "update"); update.Err != nil {
+			err := fmt.Errorf("atualizar repositórios do Termux para %s: %w", language.Name, update.Err)
 			return failInstallation(installationsDir, record, result, err)
 		}
 		progress(options, fmt.Sprintf("Instalando %s", language.Name))
@@ -220,58 +271,47 @@ func acquireInstallLock(parent context.Context, options Options) (func(), error)
 
 func runToolVersion(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool Language) CommandResult {
 	if !tool.UserBin {
-		return runUbuntuLogged(ctx, runner, timeout, logPath, tool.Executable, tool.VersionArg...)
+		return runTermuxLogged(ctx, runner, timeout, logPath, tool.Executable, tool.VersionArg...)
 	}
 	args := append([]string{"-ec", `PATH="$HOME/.local/bin:$PATH"; exec "$@"`, "--", tool.Executable}, tool.VersionArg...)
-	return runUbuntuLogged(ctx, runner, timeout, logPath, "sh", args...)
+	return runTermuxLogged(ctx, runner, timeout, logPath, "sh", args...)
 }
 
 func installTool(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, tool Language) CommandResult {
 	switch tool.InstallKind {
-	case "node":
-		return runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "nodejs", "npm")
 	case "npm":
-		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "npm"); result.Err != nil {
-			return result
-		}
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "NPM_CONFIG_PREFIX=/root/.local", "npm", "install", "-g", tool.Package)
-	case "pipx":
-		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "pipx"); result.Err != nil {
-			return result
-		}
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "PIPX_BIN_DIR=/usr/local/bin", "pipx", "install", tool.Package)
+		return runTermuxLogged(ctx, runner, timeout, logPath, "sh", "-ec", "NPM_CONFIG_PREFIX=\"$HOME/.local\" npm install -g \"$1\"", "--", tool.Package)
 	case "go":
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "GOBIN=/usr/local/bin", "go", "install", tool.Package)
+		return runTermuxLogged(ctx, runner, timeout, logPath, "sh", "-ec", "mkdir -p \"$HOME/.local/bin\"; GOBIN=\"$HOME/.local/bin\" go install \"$1\"", "--", tool.Package)
 	case "ttt":
-		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "git", "ripgrep"); result.Err != nil {
+		if result := runPkgLogged(ctx, runner, timeout, logPath, "install", "-y", "git", "ripgrep"); result.Err != nil {
 			return result
 		}
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "GOBIN=/usr/local/bin", "go", "install", tool.Package)
+		return runTermuxLogged(ctx, runner, timeout, logPath, "sh", "-ec", "mkdir -p \"$HOME/.local/bin\"; GOBIN=\"$HOME/.local/bin\" go install \"$1\"", "--", tool.Package)
 	case "cargo":
-		if result := runAptLogged(ctx, runner, timeout, logPath, "install", "-y", "cargo"); result.Err != nil {
+		if result := runPkgLogged(ctx, runner, timeout, logPath, "install", "-y", "cargo"); result.Err != nil {
 			return result
 		}
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "env", "CARGO_INSTALL_ROOT=/usr/local", "cargo", "install", "--locked", tool.Package)
+		return runTermuxLogged(ctx, runner, timeout, logPath, "sh", "-ec", "CARGO_INSTALL_ROOT=\"$HOME/.local\" cargo install --locked \"$1\"", "--", tool.Package)
 	case "script":
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "sh", "-ec", tool.Script)
+		return runTermuxLogged(ctx, runner, timeout, logPath, "sh", "-ec", tool.Script)
 	case "gh-extension":
-		return runUbuntuLogged(ctx, runner, timeout, logPath, "gh", "extension", "install", tool.Package)
+		return runTermuxLogged(ctx, runner, timeout, logPath, "gh", "extension", "install", tool.Package)
 	default:
-		return runAptLogged(ctx, runner, timeout, logPath, "install", "-y", tool.Package)
+		return runPkgLogged(ctx, runner, timeout, logPath, "install", "-y", tool.Package)
 	}
 }
 
-func runAptLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, args ...string) CommandResult {
-	aptArgs := append([]string{"-o", fmt.Sprintf("DPkg::Lock::Timeout=%d", aptLockTimeoutSeconds)}, args...)
-	return runUbuntuLogged(ctx, runner, timeout, logPath, "apt-get", aptArgs...)
+func runPkgLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, args ...string) CommandResult {
+	return runTermuxLogged(ctx, runner, timeout, logPath, "pkg", args...)
 }
 
-func runUbuntuLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, name string, args ...string) CommandResult {
+func runTermuxLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, name string, args ...string) CommandResult {
 	commandContext, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	loginArgs := append([]string{"login", "ubuntu", "--", name}, args...)
-	result := runner.Run(commandContext, "proot-distro", loginArgs...)
-	_ = appendLog(logPath, loginArgs, result)
+	commandArgs := append([]string{name}, args...)
+	result := runner.Run(commandContext, name, args...)
+	_ = appendLog(logPath, commandArgs, result)
 	return result
 }
 
@@ -281,7 +321,7 @@ func appendLog(path string, args []string, result CommandResult) error {
 		return err
 	}
 	defer func() { _ = file.Close() }()
-	if _, err := fmt.Fprintf(file, "\n$ proot-distro %s\n", strings.Join(args, " ")); err != nil {
+	if _, err := fmt.Fprintf(file, "\n$ %s\n", strings.Join(args, " ")); err != nil {
 		return err
 	}
 	if len(result.Stdout) > 0 {

@@ -52,7 +52,7 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			m.navigate(statusScreen)
 		} else if blockContainsAt(lines, bodyIndex, mouse.X, "Apps e linguagens") {
 			m.navigate(toolsScreen)
-		} else if blockContainsAt(lines, bodyIndex, mouse.X, "Shell Ubuntu") {
+		} else if blockContainsAt(lines, bodyIndex, mouse.X, "Shell Termux") {
 			m.navigate(shellScreen)
 		} else if blockContainsAt(lines, bodyIndex, mouse.X, "Sistema") {
 			m.navigate(systemScreen)

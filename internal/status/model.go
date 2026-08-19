@@ -1,6 +1,10 @@
 package status
 
-import "time"
+import (
+	"time"
+
+	"github.com/ericklucioh/mobdesk/internal/install"
+)
 
 type OverallState string
 
@@ -75,6 +79,7 @@ type UbuntuStatus struct {
 	Workspace     bool       `json:"workspace"`
 	WorkspacePath string     `json:"workspace_path"`
 	Error         string     `json:"error,omitempty"`
+	Optional      bool       `json:"optional"`
 }
 
 type SSHStatus struct {
@@ -119,16 +124,17 @@ type WiFiStatus struct {
 }
 
 type InstallationStatus struct {
-	Name          string    `json:"name"`
-	Kind          string    `json:"kind"`
-	Package       string    `json:"package"`
-	Executable    string    `json:"executable"`
-	State         string    `json:"state"`
-	Version       string    `json:"version,omitempty"`
-	InstalledAt   time.Time `json:"installed_at,omitempty"`
-	LastAttemptAt time.Time `json:"last_attempt_at"`
-	LastError     string    `json:"last_error,omitempty"`
-	LogPath       string    `json:"log_path"`
+	Name          string          `json:"name"`
+	Kind          string          `json:"kind"`
+	Package       string          `json:"package"`
+	Executable    string          `json:"executable"`
+	State         string          `json:"state"`
+	Version       string          `json:"version,omitempty"`
+	InstalledAt   time.Time       `json:"installed_at,omitempty"`
+	LastAttemptAt time.Time       `json:"last_attempt_at"`
+	LastError     string          `json:"last_error,omitempty"`
+	LogPath       string          `json:"log_path"`
+	Runtime       install.Runtime `json:"runtime"`
 }
 
 type AlertSummary struct {

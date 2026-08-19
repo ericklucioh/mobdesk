@@ -1,32 +1,32 @@
 # Roadmap do Mobdesk
 
-O Mobdesk evolui em quatro estágios. Termux continua sendo o host de controle, enquanto Ubuntu via PRoot permanece como o ambiente principal de desenvolvimento.
+O Mobdesk evolui em quatro estágios. Termux é a workstation principal; Ubuntu
+via PRoot é uma camada de compatibilidade opcional.
 
 ## Visão geral
 
 | Estágio | Categoria | Nome | Resultado |
 |---|---|---|---|
-| 1 | MVP | Bootstrap Ubuntu | Instalar e acessar Ubuntu persistente por shell e SSH |
+| 1 | MVP | Bootstrap Termux | Instalar e acessar a workstation Termux por shell e SSH |
 | 2 | MVP | Workstation TUI | Trabalhar com ferramentas textuais organizadas |
 | 3 | MVP | Ambiente persistente | Recuperar sessões, serviços e acesso remoto |
 | 4 | Aplicação | Mobdesk Manager | Administrar projetos, sessões e serviços |
 
-## Estágio 1 - Bootstrap Ubuntu
+## Estágio 1 - Bootstrap Termux
 
 **Status:** implementação inicial concluída; validação completa em Termux real ainda pendente.
 
 ### Objetivo
 
-Levar o usuário de um Termux com Go instalado a um Ubuntu persistente acessível pelo celular e por SSH.
+Levar o usuário de um Termux com Go instalado a uma workstation nativa acessível pelo celular e por SSH.
 
 ### Escopo
 
-- instalar `proot-distro`, OpenSSH e ferramentas de diagnóstico;
-- instalar ou verificar Ubuntu ARM64 persistente;
+- instalar OpenSSH e ferramentas de diagnóstico;
 - criar workspace e estado local;
 - configurar SSH dedicado do Mobdesk;
 - iniciar e parar o servidor com segurança;
-- abrir o shell Ubuntu local com `mobdesk shell`;
+- abrir o shell Termux local com `mobdesk shell`;
 - consultar o estado do ambiente com `mobdesk status`;
 - instalar os perfis iniciais de desenvolvimento com `mobdesk install`;
 - detectar endereços locais e manter o wake-lock quando disponível;
@@ -46,15 +46,15 @@ pendente.
 
 ### Objetivo
 
-Oferecer uma interface textual organizada para trabalhar no Ubuntu pelo celular ou por SSH.
+Oferecer uma interface textual organizada para trabalhar no Termux pelo celular ou por SSH.
 
 ### Escopo
 
 - TUI para status, setup, start, stop, shell e atualização;
 - catálogo e instalação dos perfis iniciais de ferramentas;
 - suporte a teclado, mouse e terminais móveis;
-- identificação da sessão SSH no Ubuntu e bloqueio das ações exclusivas do
-  host Termux.
+- identificação de runtimes de compatibilidade sem tratar sua ausência como
+  falha da workstation.
 
 ### Critério
 
@@ -85,7 +85,7 @@ O usuário consegue iniciar, parar, reconectar e continuar um projeto sem recons
 
 ### Objetivo
 
-Transformar os comandos do Termux, PRoot e Ubuntu em uma central local de gerenciamento.
+Transformar os comandos do Termux e os guests opcionais em uma central local de gerenciamento.
 
 ### Escopo
 

@@ -11,12 +11,12 @@ func (m Model) renderHome() string {
 	if !m.canManageHost() {
 		width := contentWidth(m.width)
 		remote := primaryCardStyle.Width(width).Render(
-			titleStyle.Render("Sessão Ubuntu remota") + "\n" +
+			titleStyle.Render("Sessão remota") + "\n" +
 				mutedStyle.Render(wrapText("O host Termux controla SSH, setup, instalações e atualizações. Volte ao Termux para gerenciar a workstation.", width-4)),
 		)
 		cards := []string{
 			cardStyle.Width(width).Render("◉  " + titleStyle.Render("Status") + "\n" + mutedStyle.Render("Workspace e ambiente atual")),
-			cardStyle.Width(width).Render("⌁  " + titleStyle.Render("Shell Ubuntu") + "\n" + mutedStyle.Render("Abrir terminal local")),
+			cardStyle.Width(width).Render("⌁  " + titleStyle.Render("Shell") + "\n" + mutedStyle.Render("Abrir terminal local")),
 		}
 		message := ""
 		if m.message != "" {
@@ -59,10 +59,10 @@ func (m Model) renderHome() string {
 		)
 	}
 	cards := []string{
-		card(1, "◆", "Configurar", "Termux + Ubuntu + SSH"),
+		card(1, "◆", "Configurar", "Termux + SSH"),
 		card(2, "◉", "Status", "Ambiente e dispositivo"),
 		card(3, "＋", "Apps e linguagens", "Go · Python · Node.js"),
-		card(4, "⌁", "Shell Ubuntu", "Abrir terminal"),
+		card(4, "⌁", "Shell Termux", "Abrir terminal"),
 		card(5, "◆", "Sistema", "Versão e atualização"),
 	}
 	return tagStyle.Render("INÍCIO") + "\n" + primary.Render(primaryText) + access + message + "\n\n" + joinCards(cards, m.width)

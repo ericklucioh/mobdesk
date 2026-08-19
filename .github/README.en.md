@@ -10,11 +10,11 @@ Mobdesk turns the phone into a small development server:
 
 ```text
 Android
-└── Termux — device control layer
-    └── Persistent Ubuntu — development environment
+└── Termux — development environment
+    └── Optional Ubuntu via PRoot — compatibility
 ```
 
-Ubuntu runs on the phone through PRoot-Distro. You can work directly in Termux or connect from another computer on the same network over SSH. Your files remain on your own device.
+You work directly in Termux or connect from another computer on the same network over SSH. Ubuntu via PRoot is optional compatibility for software that needs it. Your files remain on your own device.
 
 ## What is it for?
 
@@ -33,7 +33,7 @@ Mobdesk is not intended to replace a production machine, a full virtual machine,
 
 ### Your environment travels with you
 
-The Ubuntu environment persists on the phone. You do not have to rebuild your setup every time you change rooms, networks, or computers.
+The Termux environment persists on the phone. You do not have to rebuild your setup every time you change rooms, networks, or computers.
 
 ### Your data stays yours
 
@@ -51,14 +51,13 @@ Mobdesk uses Termux and PRoot-Distro. It does not require root access, a virtual
 
 The current MVP focuses on environment bootstrapping and its TUI:
 
-- persistent Ubuntu installation through PRoot-Distro;
 - OpenSSH installation and configuration in Termux;
 - SSH access on port `8022`;
-- sessions opened directly inside Ubuntu;
+- sessions opened directly inside Termux;
 - local IP address detection;
 - password setup for SSH access;
 - repeatable operations that do not reinstall existing components;
-- `setup`, `start`, `stop`, `shell`, `status`, `install`, `update`, and `tui`
+- `setup`, `start`, `stop`, `shell`, `status`, `install`, `migrate`, `update`, and `tui`
   commands.
 
 The current TUI provides status, setup, tools, shell, and update screens.
@@ -71,7 +70,7 @@ See the [roadmap](../docs/ROADMAP.md) for the planned evolution.
 
 - an Android phone with ARM64 architecture, as found on most current devices;
 - Termux installed from a trusted source, preferably [F-Droid](https://f-droid.org/packages/com.termux/) or the [official releases](https://github.com/termux/termux-app/releases);
-- approximately 1.5 GB of free storage for the base Ubuntu installation, plus additional space for your projects;
+- free storage for your tools and projects;
 - a regular Wi-Fi network if you want to connect from another computer.
 
 Mobdesk does not require root. Performance depends on the phone’s memory, temperature, battery, and Android/HyperOS background-process limits.
@@ -94,7 +93,7 @@ On the first run, use the binary installed by Go:
 ~/go/bin/mobdesk setup
 ```
 
-Setup installs the required Termux components, downloads Ubuntu, creates the persistent workspace, and asks for the password used for SSH access. At the end, the `mobdesk` command is available globally.
+Setup installs the required Termux components, creates the persistent workspace, and asks for the password used for SSH access. At the end, the `mobdesk` command is available globally.
 
 ### 3. Start your workstation
 
@@ -102,7 +101,7 @@ Setup installs the required Termux components, downloads Ubuntu, creates the per
 mobdesk start
 ```
 
-Mobdesk starts SSH on port `8022`, keeps the device awake while it is in use, and opens an Ubuntu session directly in Termux.
+Mobdesk starts SSH on port `8022` and keeps the device awake while it is in use.
 
 To connect from another computer on the same network, use the SSH command displayed by Mobdesk, for example:
 
@@ -110,11 +109,11 @@ To connect from another computer on the same network, use the SSH command displa
 ssh -p 8022 android@192.168.1.50
 ```
 
-Replace the address with the IP shown on your phone and enter the password configured during setup. The SSH connection is forwarded directly into Ubuntu.
+Replace the address with the IP shown on your phone and enter the password configured during setup. The SSH connection opens directly in Termux.
 
 ### 4. Stop when you are done
 
-To leave only the Ubuntu session, run:
+To leave only the Termux session, run:
 
 ```bash
 exit
@@ -131,16 +130,16 @@ mobdesk stop
 ```text
 mobdesk setup
     ↓
-Termux + PRoot-Distro + persistent Ubuntu
+Termux + workspace + native tools
     ↓
 mobdesk start
     ↓
-SSH :8022 → Ubuntu session
+SSH :8022 → Termux session
     ↓
 projects, editors, and local development servers
 ```
 
-Termux is the control host. Ubuntu is the development environment. PRoot improves Linux userland compatibility, but it does not create a separate kernel or provide the isolation of a virtual machine or real container.
+Termux is the development environment. PRoot is optional compatibility; it does not create a separate kernel or provide the isolation of a virtual machine or real container.
 
 ## Important limitations
 

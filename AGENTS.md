@@ -1,15 +1,15 @@
 # Mobdesk
 
 Mobdesk transforma um celular Android em uma workstation de desenvolvimento.
-Termux e o host de controle; Ubuntu ARM64 via PRoot-Distro e o ambiente de
-desenvolvimento persistente. PRoot nao e VM nem Docker: nao assumir `systemd`,
+Termux e a workstation de desenvolvimento; Ubuntu ARM64 via PRoot-Distro e uma
+camada de compatibilidade opcional. PRoot nao e VM nem Docker: nao assumir `systemd`,
 cgroups, namespaces completos, root, modulos de kernel ou aceleracao grafica.
 
 ## Arquitetura
 
 ```text
-Termux (host: Android, SSH, wake-lock, PRoot)
-└── Ubuntu via PRoot (workspace e ferramentas de desenvolvimento)
+Termux (workspace, ferramentas, SSH, wake-lock)
+└── Ubuntu via PRoot opcional (/workspace com bind do Termux)
 ```
 
 - Entrada: `cmd/mobdesk/main.go`; modulo: `github.com/ericklucioh/mobdesk`.
@@ -17,7 +17,7 @@ Termux (host: Android, SSH, wake-lock, PRoot)
 - Servicos nao dependem da renderizacao da TUI.
 - A TUI usa o contrato JSON da CLI para operacoes reais.
 - Acoes de host (`setup`, SSH, PRoot, instalacoes e atualizacao) so executam
-  no Termux. Em uma sessao SSH no Ubuntu, a TUI deve explicar a restricao.
+  no Termux. SSH tambem abre no Termux; um guest nao compartilha HOME com ele.
 
 ## Escopo atual
 
@@ -41,7 +41,7 @@ desktop grafico, Docker real, Nix e multiplos usuarios continuam fora do MVP.
 ## Regras de implementacao
 
 1. Prefira mudancas pequenas e a biblioteca padrao antes de dependencias novas.
-2. Separe explicitamente comandos do Termux e do Ubuntu; use `os/exec` para
+2. Separe explicitamente comandos do Termux e dos guests opcionais; use `os/exec` para
    processos simples e PTY para shells interativos.
 3. Valide entradas antes de formar comandos. Nao concatene entrada do usuario.
 4. Operacoes repetiveis devem preservar dados e estado; confirme acoes

@@ -16,7 +16,7 @@ import (
 
 var shellCmd = &cobra.Command{
 	Use:   "shell",
-	Short: "abrir um shell direto no Ubuntu",
+	Short: "abrir um shell direto no Termux",
 	RunE: func(cmd *cobra.Command, _ []string) error {
 		return runShell(cmd.Context(), paths.Current())
 	},
@@ -26,14 +26,7 @@ func runShell(ctx context.Context, p paths.Paths) error {
 	if err := ensureSetupCompleted(p); err != nil {
 		return err
 	}
-	command, err := executil.CommandContext(ctx, "proot-distro", "login", "ubuntu", "--", "true")
-	if err != nil {
-		return err
-	}
-	if err := command.Run(); err != nil {
-		return fmt.Errorf("ubuntu não está disponível; execute mobdesk setup: %w", err)
-	}
-	return runInteractive(ctx, "proot-distro", "login", "ubuntu", "--", "bash", "-l")
+	return runInteractive(ctx, p.TermuxShellLauncher())
 }
 
 func ensureSetupCompleted(p paths.Paths) error {

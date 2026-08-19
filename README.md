@@ -1,27 +1,26 @@
 # Mobdesk
 
-Transforme seu celular Android em uma workstation Ubuntu pessoal.
+Transforme seu celular Android em uma workstation Termux pessoal.
 
 O Mobdesk permite levar para a faculdade, viagens ou qualquer lugar um ambiente Linux próprio, sem depender de computadores compartilhados e sem deixar suas contas pessoais conectadas neles.
 
 No MVP atual, o fluxo é simples:
 
 ```text
-Termux → Mobdesk → SSH → Ubuntu via PRoot
+Termux → Mobdesk → SSH → ferramentas nativas
 ```
 
-O Termux controla o aparelho. O Ubuntu persistente é o ambiente de trabalho. Ao conectar por SSH, você entra diretamente no Ubuntu.
+O Termux é o ambiente de trabalho. Ao conectar por SSH, você entra diretamente na sua workstation Termux. Ubuntu via PRoot fica disponível somente como compatibilidade futura para casos que realmente precisem dele.
 
 ## O que já funciona
 
 - instalação automatizada a partir de um Termux praticamente virgem;
-- Ubuntu persistente via PRoot-Distro;
 - servidor SSH próprio do Mobdesk na porta `8022`;
-- acesso remoto direto ao Ubuntu;
+- acesso remoto direto ao Termux;
 - detecção do IP local via `ifconfig`;
 - autenticação por senha;
-- comandos `setup`, `start`, `stop`, `shell`, `status`, `install`, `update` e `tui`;
-- instalação idempotente de Go, Python, Node.js, C, C++ e Lua no Ubuntu;
+- comandos `setup`, `start`, `stop`, `shell`, `status`, `install`, `migrate`, `update` e `tui`;
+- instalação idempotente de Go, Python, Node.js, C, C++ e Lua no Termux;
 - status humano e JSON para automação e TUI;
 - TUI com status, setup, ferramentas, shell e atualização;
 - versão local e atualização verificável do binário, com rollback automático;
@@ -39,7 +38,7 @@ mobdesk status
 mobdesk status --json
 ```
 
-O status é somente leitura e verifica setup, Ubuntu, SSH, rede, espaço livre
+O status é somente leitura e verifica setup, compatibilidade opcional, SSH, rede, espaço livre
 do dispositivo, bateria e Wi-Fi quando o Termux:API estiver disponível.
 
 ## TUI
@@ -50,13 +49,13 @@ Abra a interface textual no Termux com:
 mobdesk tui
 ```
 
-A TUI oferece status, setup, instalação de ferramentas, shell Ubuntu e
-atualização do Mobdesk. Quando ela é aberta por SSH, já está dentro do Ubuntu:
+A TUI oferece status, setup, instalação de ferramentas, shell Termux e
+atualização do Mobdesk. Quando ela é aberta por SSH, já está no Termux:
 nesse modo, mostra o workspace e permite abrir o shell local, mas não oferece
 ações que exigem o host Termux, como controlar SSH, executar setup, instalar
 ferramentas ou atualizar o binário.
 
-Instale uma linguagem no Ubuntu com:
+Instale uma linguagem no Termux com:
 
 ```bash
 mobdesk install go
@@ -101,16 +100,25 @@ Na primeira execução, o binário é chamado diretamente pelo caminho criado pe
 O setup instala apenas as dependências necessárias. Para atualizar todo o ambiente Termux explicitamente, use `mobdesk setup --upgrade-system`.
 
 O setup pode ser executado novamente depois de uma falha. Ele mantém as etapas
-concluídas, recupera a etapa pendente e não apaga Ubuntu, workspace ou projetos.
+concluídas, recupera a etapa pendente e não apaga workspace ou projetos.
 Somente uma execução de setup pode modificar o ambiente por vez.
 
 Durante o setup, o Mobdesk irá:
 
-- instalar `proot-distro`, `openssh` e `net-tools`;
-- baixar o Ubuntu base;
+- instalar `openssh` e `net-tools`;
 - criar o workspace persistente;
 - configurar a senha SSH;
-- preparar o acesso SSH direto ao Ubuntu.
+- preparar o acesso SSH direto ao Termux.
+
+Se você já usa a versão Ubuntu-first, migre antes seus projetos e ferramentas:
+
+```bash
+mobdesk migrate termux
+```
+
+O comando copia o conteúdo de `/root/workspace` para `~/workspace`, reinstala
+as ferramentas registradas pelo Mobdesk no Termux e mantém Ubuntu intacto para
+validação e remoção posterior.
 
 ## Usando o Mobdesk
 
@@ -120,7 +128,7 @@ Inicie a workstation:
 mobdesk start
 ```
 
-Para abrir o Ubuntu localmente sem iniciar o servidor SSH:
+Para abrir o Termux localmente no workspace sem iniciar o servidor SSH:
 
 ```bash
 mobdesk shell
@@ -132,7 +140,7 @@ O Mobdesk exibirá um comando parecido com:
 ssh -p 8022 android@192.168.3.228
 ```
 
-Execute esse comando em outro computador conectado à mesma rede. A sessão SSH abrirá diretamente no Ubuntu.
+Execute esse comando em outro computador conectado à mesma rede. A sessão SSH abrirá diretamente no Termux.
 
 Para encerrar o servidor SSH:
 
@@ -140,7 +148,7 @@ Para encerrar o servidor SSH:
 mobdesk stop
 ```
 
-Para sair do Ubuntu sem parar o servidor:
+Para sair do shell sem parar o servidor:
 
 ```bash
 exit
@@ -173,7 +181,7 @@ make check
 make integration-test  # smoke test do Termux/SSH no Docker
 ```
 
-O teste de integração cria volumes descartáveis, instala o Ubuntu, testa `setup`, `start`, acesso SSH e `stop`, e os remove ao terminar. Ele não reproduz bateria, permissões, wake-lock ou o kernel do Android.
+O teste de integração cria volumes descartáveis, testa `setup`, `start`, acesso SSH e `stop`, e os remove ao terminar. Ele não reproduz bateria, permissões, wake-lock ou o kernel do Android.
 
 Para apagar o ambiente persistente e começar do zero:
 
@@ -181,7 +189,7 @@ Para apagar o ambiente persistente e começar do zero:
 make reset-env
 ```
 
-Esse comando remove os volumes do Termux/Ubuntu. O código local não é apagado. A instalação do Ubuntu ocupa aproximadamente `1,5 GB` nos volumes persistentes.
+Esse comando remove os volumes do Termux. O código local não é apagado.
 
 Consulte [CONTRIBUINDO.md](.github/CONTRIBUTING.md) antes de enviar alterações.
 
@@ -190,10 +198,12 @@ Consulte [CONTRIBUINDO.md](.github/CONTRIBUTING.md) antes de enviar alterações
 ```text
 Android/HyperOS
 └── Termux
-    ├── Mobdesk em Go
-    ├── OpenSSH :8022
-    └── PRoot-Distro
-        └── Ubuntu ARM64 persistente
+	├── Mobdesk em Go
+	├── OpenSSH :8022
+	├── ~/workspace
+	├── ferramentas nativas
+	└── PRoot-Distro opcional
+		└── Ubuntu ARM64 com /workspace compartilhado
 ```
 
 O projeto não depende de root, VM ou Docker no celular. PRoot melhora a compatibilidade do userland, mas não fornece um kernel Linux separado nem isolamento real de container.

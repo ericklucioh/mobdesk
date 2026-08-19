@@ -44,6 +44,10 @@ func (p Paths) SetupPhase(phase string) string { return filepath.Join(p.StateDir
 
 func (p Paths) SetupDone() string { return filepath.Join(p.DataDir(), "setup.done") }
 
+func (p Paths) TermuxMigrationDone() string {
+	return filepath.Join(p.DataDir(), "termux-migration.done")
+}
+
 func (p Paths) PasswordDone() string { return filepath.Join(p.DataDir(), "password.done") }
 
 func (p Paths) InstallationsDir() string { return filepath.Join(p.StateDir(), "installations") }
@@ -67,6 +71,18 @@ func (p Paths) SetupLock() string { return filepath.Join(p.StateDir(), "setup.lo
 func (p Paths) InstallLock() string { return filepath.Join(p.StateDir(), "install.lock") }
 
 func (p Paths) Launcher() string { return filepath.Join(p.Prefix, "bin", "mobdesk") }
+
+// Workspace is the canonical project directory shared by every runtime.
+func (p Paths) Workspace() string { return filepath.Join(p.Home, "workspace") }
+
+func (p Paths) TermuxConfigDir() string { return filepath.Join(p.Home, ".config", "mobdesk") }
+
+func (p Paths) TermuxShellConfig() string { return filepath.Join(p.TermuxConfigDir(), "shellrc") }
+
+func (p Paths) TermuxShellLauncher() string { return filepath.Join(p.TermuxConfigDir(), "shell") }
+
+// GuestWorkspace is the mount point used by a future PRoot compatibility guest.
+func (p Paths) GuestWorkspace() string { return "/workspace" }
 
 func (p Paths) UbuntuWorkspace() string { return "/root/workspace" }
 

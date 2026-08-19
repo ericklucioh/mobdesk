@@ -66,7 +66,7 @@ func TestCollectProducesStableJSONAndUsesOptionalTermuxAPI(t *testing.T) {
 	value := Collect(context.Background(), Options{
 		Paths:         paths,
 		CommandRunner: runner,
-		LookPath:      availableCommands("proot-distro", "sshd", "ifconfig", "termux-wake-lock", "termux-battery-status", "termux-wifi-connectioninfo"),
+		LookPath:      availableCommands("sshd", "ifconfig", "termux-wake-lock", "termux-battery-status", "termux-wifi-connectioninfo"),
 		Now:           func() time.Time { return time.Date(2026, 7, 22, 15, 0, 0, 0, time.FixedZone("BRT", -3*60*60)) },
 	})
 
@@ -126,8 +126,8 @@ func TestSetupDoesNotRequireOptionalSystemUpgrade(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, phase := range []string{
-		"directories", "packages-updated", "packages-installed", "ubuntu-installed",
-		"workspace-created", "password-configured", "ssh-configured", "launcher-installed",
+		"directories", "packages-updated", "packages-installed", "workspace-created",
+		"password-configured", "ssh-configured", "shell-configured", "launcher-installed",
 	} {
 		if err := os.WriteFile(paths.SetupPhase(phase), []byte("done"), 0o600); err != nil {
 			t.Fatal(err)
@@ -245,10 +245,10 @@ func TestCollectCatalogInstallationsRecognizesToolsWithoutRecords(t *testing.T) 
 	}
 	output := strings.Join(executables, "\n") + "\n"
 	args := catalogStatusArgs(tools)
-	command := "proot-distro " + strings.Join(args, " ")
+	command := "sh " + strings.Join(args, " ")
 	value := collectCatalogInstallations(Options{
 		termux:   true,
-		LookPath: availableCommands("proot-distro"),
+		LookPath: availableCommands(),
 		CommandRunner: &fakeRunner{outputs: map[string]CommandResult{
 			command: {Stdout: []byte(output)},
 		}},

@@ -16,8 +16,8 @@ func (m Model) renderSetup() string {
 	view += setupAction(m.setupActions.width, m.setupActions.Index() == 0, "[Enter]  Continuar configuração", true) + "\n"
 	view += setupAction(m.setupActions.width, m.setupActions.Index() == 1, "[E]      Executar upgrade completo", false) + "\n"
 	view += setupStep(width, "✓", "Diretórios do Mobdesk", "config e logs privados criados", stepDoneStyle)
-	view += setupStep(width, "✓", "Pacotes Termux", "proot-distro · openssh · net-tools", stepDoneStyle)
-	view += setupStep(width, "✓", "Ubuntu persistente", "PRoot ARM64 instalado", stepDoneStyle)
+	view += setupStep(width, "✓", "Pacotes Termux", "openssh · net-tools", stepDoneStyle)
+	view += setupStep(width, "✓", "Workspace", "~/workspace compartilhado", stepDoneStyle)
 	view += setupStep(width, "●", "Workspace e SSH", "próxima etapa", stepActiveStyle)
 	view += "\n"
 	view += setupAdvanced(width, m.focus == 1)

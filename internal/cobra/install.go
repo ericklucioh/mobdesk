@@ -17,7 +17,7 @@ var installProgress bool
 
 var installCmd = &cobra.Command{
 	Use:   "install <ferramenta>",
-	Short: "instalar uma ferramenta no Ubuntu",
+	Short: "instalar uma ferramenta nativa no Termux",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return runInstall(cmd.Context(), args[0])
@@ -51,7 +51,7 @@ func runInstall(ctx context.Context, name string) error {
 	if result.Changed {
 		state = "instalada"
 	}
-	fmt.Printf("%s %s no Ubuntu (%s): %s\n", strings.ToUpper(result.Language[:1])+result.Language[1:], state, result.Executable, result.Version)
+	fmt.Printf("%s %s no Termux (%s): %s\n", strings.ToUpper(result.Language[:1])+result.Language[1:], state, result.Executable, result.Version)
 	return nil
 }
 

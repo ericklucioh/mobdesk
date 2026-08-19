@@ -21,7 +21,10 @@ func (m Model) renderStatus() string {
 
 	hostTitle := "TERMUX"
 	hostDetail := fmt.Sprintf("%s · %s", valueOr(m.status.Host.OS, "host Android"), valueOr(m.status.Host.Architecture, "arquitetura desconhecida"))
-	ubuntuDetail := fmt.Sprintf("PRoot · workspace %s", yesNo(m.status.Ubuntu.Workspace))
+	ubuntuDetail := "opcional · não instalado"
+	if m.status.Ubuntu.Installed {
+		ubuntuDetail = fmt.Sprintf("instalado · workspace %s", yesNo(m.status.Ubuntu.Workspace))
+	}
 	sshTitle := "SSH"
 	if !m.status.Host.Termux {
 		hostTitle = "RUNTIME"
@@ -31,7 +34,7 @@ func (m Model) renderStatus() string {
 	}
 	cards := []string{
 		statusCard(m.width, hostTitle, m.status.Host.State, hostDetail),
-		statusCard(m.width, "UBUNTU", m.status.Ubuntu.State, ubuntuDetail),
+		statusCard(m.width, "COMPATIBILIDADE", m.status.Ubuntu.State, ubuntuDetail),
 		statusCard(m.width, sshTitle, sshState(m.status.SSH), sshDetail(m.status.SSH)),
 		statusCard(m.width, "RECURSOS", m.status.Storage.State, fmt.Sprintf("%s livres · bateria %s", formatBytes(m.status.Storage.DeviceFree), batterySummary(m.status.Battery))),
 	}
@@ -169,7 +172,7 @@ func statusRows(value status.SystemStatus, width int) []table.Row {
 	if !value.Host.Termux {
 		runtimeLabel = "Runtime"
 	}
-	return []table.Row{{runtimeLabel, right(checkStateLabel(value.Host.State))}, {"Arquitetura", right(valueOr(value.Host.Architecture, "desconhecida"))}, {"Ubuntu", right(checkStateLabel(value.Ubuntu.State))}, {"Workspace", right(yesNo(value.Ubuntu.Workspace))}, {"SSH", right(checkStateLabel(value.SSH.State))}, {"Porta SSH", right(fmt.Sprintf("%d", value.SSH.Port))}, {"Wake-lock", right(available(value.Host.WakeLockAvailable))}, {"Bateria", right(batterySummary(value.Battery))}, {"Wi-Fi", right(wifiSummary(value.WiFi))}}
+	return []table.Row{{runtimeLabel, right(checkStateLabel(value.Host.State))}, {"Arquitetura", right(valueOr(value.Host.Architecture, "desconhecida"))}, {"Workspace", right(yesNo(value.Setup.Completed))}, {"Compatibilidade", right(checkStateLabel(value.Ubuntu.State))}, {"SSH", right(checkStateLabel(value.SSH.State))}, {"Porta SSH", right(fmt.Sprintf("%d", value.SSH.Port))}, {"Wake-lock", right(available(value.Host.WakeLockAvailable))}, {"Bateria", right(batterySummary(value.Battery))}, {"Wi-Fi", right(wifiSummary(value.WiFi))}}
 }
 
 func statusTableColumns(width int) []table.Column {

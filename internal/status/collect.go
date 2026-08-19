@@ -95,8 +95,7 @@ func collectHost(o Options) HostStatus {
 	result.WakeLockAvailable = commandAvailable(o, "termux-wake-lock")
 	result.TermuxAPIAvailable = commandAvailable(o, "termux-battery-status") || commandAvailable(o, "termux-wifi-connectioninfo")
 	if !result.Termux {
-		// Through Mobdesk SSH, this process runs inside Ubuntu/PRoot. It cannot
-		// inspect the Termux control plane that launched it.
+		// A compatibility guest cannot inspect the Termux control plane.
 		result.State = CheckMissing
 		result.Error = "termux_runtime_unavailable"
 		return result
@@ -111,17 +110,17 @@ func collectHost(o Options) HostStatus {
 func collectSetup(o Options) SetupStatus {
 	phases := []string{
 		"directories", "packages-updated", "system-upgraded", "packages-installed",
-		"ubuntu-installed", "workspace-created", "password-configured",
-		"ssh-configured", "launcher-installed",
+		"workspace-created", "password-configured", "ssh-configured", "shell-configured",
+		"launcher-installed",
 	}
 	requiredPhases := map[string]bool{
 		"directories":         true,
 		"packages-updated":    true,
 		"packages-installed":  true,
-		"ubuntu-installed":    true,
 		"workspace-created":   true,
 		"password-configured": true,
 		"ssh-configured":      true,
+		"shell-configured":    true,
 		"launcher-installed":  true,
 	}
 	result := SetupStatus{State: CheckWarning, Phases: make(map[string]string, len(phases))}
@@ -164,10 +163,9 @@ func collectStorage(ctx context.Context, o Options) StorageStatus {
 }
 
 func collectUbuntu(ctx context.Context, o Options) UbuntuStatus {
-	result := UbuntuStatus{State: CheckUnknown, WorkspacePath: o.Paths.UbuntuWorkspace()}
+	result := UbuntuStatus{State: CheckMissing, WorkspacePath: o.Paths.GuestWorkspace(), Optional: true}
 	if !o.termux {
-		// The SSH session is already inside the Ubuntu workspace; proot-distro
-		// exists only on the Termux side.
+		// A guest sees only its own userland; proot-distro exists on the Termux side.
 		result.Installed = true
 		result.Accessible = true
 		result.Workspace = directoryExists(result.WorkspacePath)
@@ -180,14 +178,13 @@ func collectUbuntu(ctx context.Context, o Options) UbuntuStatus {
 		return result
 	}
 	if !commandAvailable(o, "proot-distro") {
-		result.State = CheckMissing
-		result.Error = "proot_distro_missing"
+		result.Error = "compatibility_runtime_not_installed"
 		return result
 	}
 	result.Installed = commandSucceeds(ctx, o, "proot-distro", "login", "ubuntu", "--", "true")
 	if !result.Installed {
-		result.State = CheckError
-		result.Error = "ubuntu_unavailable"
+		result.State = CheckMissing
+		result.Error = "compatibility_runtime_not_installed"
 		return result
 	}
 	result.Accessible = true
@@ -383,14 +380,14 @@ func collectInstallations(o Options) []InstallationStatus {
 }
 
 func collectCatalogInstallations(o Options, persisted []InstallationStatus) []InstallationStatus {
-	if !o.termux || !commandAvailable(o, "proot-distro") {
+	if !o.termux {
 		return persisted
 	}
 	tools := install.Tools()
 	args := catalogStatusArgs(tools)
 	ctx, cancel := context.WithTimeout(context.Background(), commandTimeout)
 	defer cancel()
-	result := o.CommandRunner.Run(ctx, "proot-distro", args...)
+	result := o.CommandRunner.Run(ctx, "sh", args...)
 	if result.Err != nil {
 		return persisted
 	}
@@ -412,6 +409,7 @@ func collectCatalogInstallations(o Options, persisted []InstallationStatus) []In
 			Package:    tool.Package,
 			Executable: tool.Executable,
 			State:      "installed",
+			Runtime:    install.RuntimeTermux,
 		})
 	}
 	sort.Slice(persisted, func(i, j int) bool {
@@ -422,7 +420,7 @@ func collectCatalogInstallations(o Options, persisted []InstallationStatus) []In
 
 func catalogStatusArgs(tools []install.Language) []string {
 	args := make([]string, 0, len(tools)+6)
-	args = append(args, "login", "ubuntu", "--", "sh", "-c", `PATH="$HOME/.local/bin:$PATH"; for tool do if command -v "$tool" >/dev/null 2>&1; then printf '%s\n' "$tool"; fi; done`, "mobdesk-status")
+	args = append(args, "-c", `PATH="$HOME/.local/bin:$PATH"; for tool do if command -v "$tool" >/dev/null 2>&1; then printf '%s\n' "$tool"; fi; done`, "mobdesk-status")
 	for _, tool := range tools {
 		args = append(args, tool.Executable)
 	}
@@ -525,7 +523,7 @@ func contains(values []string, value string) bool {
 
 func summarize(status SystemStatus) AlertSummary {
 	states := []CheckState{
-		status.Host.State, status.Setup.State, status.Storage.State, status.Ubuntu.State,
+		status.Host.State, status.Setup.State, status.Storage.State,
 		status.SSH.State, status.Network.State, status.Battery.State, status.WiFi.State,
 	}
 	var result AlertSummary

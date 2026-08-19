@@ -6,14 +6,13 @@ SSH do Mobdesk:
 1. aprovação da conexão pelo celular;
 2. código temporário de uso único.
 
-As duas alternativas devem proteger o acesso ao ambiente Ubuntu sem afastar o
+As duas alternativas devem proteger o acesso ao ambiente Termux sem afastar o
 Mobdesk da sua proposta de uso simples por TUI.
 
 ## Contexto
 
-No MVP, o Mobdesk executa um servidor SSH dedicado na porta `8022` e encaminha
-o usuário para o Ubuntu persistente via PRoot. A autenticação atual é feita
-por senha do Termux.
+No MVP, o Mobdesk executa um servidor SSH dedicado na porta `8022` e abre uma
+sessão Termux nativa. A autenticação atual é feita por senha do Termux.
 
 O objetivo desta evolução é reduzir a dependência de senha fixa e permitir que
 o usuário controle, pelo próprio celular, quais computadores podem iniciar uma
@@ -112,8 +111,7 @@ também poderá capturá-lo.
 
 - fallback útil quando a aprovação visual não estiver disponível;
 - pode ser usado para o primeiro pareamento;
-- não exige que o usuário configure manualmente uma chave SSH;
-- é familiar para usuários que já conhecem códigos de autenticação.
+- não exige que o usuário configure manualmente ur para usuários que já conhecem códigos de autenticação.
 
 ### Limitações
 
@@ -192,4 +190,3 @@ O OpenSSH possui métodos como `publickey`, `password` e
 `keyboard-interactive`, além de permitir exigir mais de um método com
 `AuthenticationMethods`. A documentação oficial está disponível em
 [`sshd_config(5)`](https://man.openbsd.org/sshd_config).
-

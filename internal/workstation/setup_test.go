@@ -42,7 +42,7 @@ func TestSetupOrchestratesAllPhasesWithExplicitPaths(t *testing.T) {
 	if _, err := os.Stat(p.SetupDone()); err != nil {
 		t.Fatalf("setup.done ausente: %v", err)
 	}
-	want := []string{"pkg update", "pkg upgrade -y -o Dpkg::Options::=--force-confold", "pkg install -y -o Dpkg::Options::=--force-confold proot-distro openssh net-tools", "proot-distro login ubuntu -- true", "proot-distro install ubuntu", "proot-distro login ubuntu -- mkdir -p /root/workspace /root/.config/mobdesk /root/.local/share/mobdesk", "passwd "}
+	want := []string{"pkg update", "pkg upgrade -y -o Dpkg::Options::=--force-confold", "pkg install -y -o Dpkg::Options::=--force-confold openssh net-tools", "passwd "}
 	if strings.Join(commands, "\n") != strings.Join(want, "\n") {
 		t.Fatalf("ordem de comandos inesperada:\n%v", commands)
 	}

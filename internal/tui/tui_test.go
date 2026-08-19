@@ -267,7 +267,7 @@ func TestRemoteRuntimeHidesHostActions(t *testing.T) {
 	model.height = 30
 
 	home := ansi.Strip(model.renderHome())
-	for _, expected := range []string{"Sessão Ubuntu remota", "Status", "Shell Ubuntu"} {
+	for _, expected := range []string{"Sessão remota", "Status", "Shell"} {
 		if !strings.Contains(home, expected) {
 			t.Fatalf("remote home does not contain %q: %s", expected, home)
 		}
@@ -444,7 +444,7 @@ func TestMouseClickOnHomeRightColumnOpensShell(t *testing.T) {
 	targetLine, targetX := -1, -1
 	for index, line := range lines {
 		plain := ansi.Strip(line)
-		if position := strings.Index(plain, "Shell Ubuntu"); position >= 0 {
+		if position := strings.Index(plain, "Shell Termux"); position >= 0 {
 			targetLine, targetX = index, utf8.RuneCountInString(plain[:position])+2
 			break
 		}

@@ -40,7 +40,7 @@ func testOptions(t *testing.T, runner CommandRunner) Options {
 }
 
 func TestResolveLanguagesAndAliases(t *testing.T) {
-	for _, name := range []string{"go", "golang", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4"} {
+	for _, name := range []string{"go", "golang", "python", "python3", "node", "nodejs", "c", "c-lang", "cpp", "c++", "cplusplus", "lua", "lua5.4", "java", "openjdk-21", "kotlin", "gradle", "maven", "mvn", "neovim", "nvim"} {
 		if _, ok := Resolve(name); !ok {
 			t.Fatalf("Resolve(%q) returned false", name)
 		}
@@ -66,8 +66,7 @@ func TestResolveToolsAndPrerequisites(t *testing.T) {
 
 func TestInstallToolUsesPrivateNPMPrefix(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y npm":             {{}},
-		"proot-distro login ubuntu -- env NPM_CONFIG_PREFIX=/root/.local npm install -g opencode-ai": {{}},
+		"sh -ec NPM_CONFIG_PREFIX=\"$HOME/.local\" npm install -g \"$1\" -- opencode-ai": {{}},
 	}}
 	tool, ok := Resolve("opencode-cli")
 	if !ok {
@@ -76,15 +75,13 @@ func TestInstallToolUsesPrivateNPMPrefix(t *testing.T) {
 	if result := installTool(context.Background(), runner, time.Minute, t.TempDir()+"/install.log", tool); result.Err != nil {
 		t.Fatal(result.Err)
 	}
-	if len(runner.commands) != 2 {
+	if len(runner.commands) != 1 {
 		t.Fatalf("commands = %v", runner.commands)
 	}
 }
 
 func TestInstallNodeInstallsNPM(t *testing.T) {
-	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y nodejs npm": {{}},
-	}}
+	runner := &fakeRunner{results: map[string][]CommandResult{"pkg install -y nodejs": {{}}}}
 	tool, ok := Resolve("node")
 	if !ok {
 		t.Fatal("node missing from catalog")
@@ -96,8 +93,8 @@ func TestInstallNodeInstallsNPM(t *testing.T) {
 
 func TestInstallTTTInstallsRequiredTools(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y git ripgrep":                     {{}},
-		"proot-distro login ubuntu -- env GOBIN=/usr/local/bin go install github.com/eugenioenko/ttt/cmd/ttt@v1.1.0": {{}},
+		"pkg install -y git ripgrep": {{}},
+		"sh -ec mkdir -p \"$HOME/.local/bin\"; GOBIN=\"$HOME/.local/bin\" go install \"$1\" -- github.com/eugenioenko/ttt/cmd/ttt@v1.1.0": {{}},
 	}}
 	tool, ok := Resolve("ttt")
 	if !ok {
@@ -112,9 +109,7 @@ func TestInstallTTTInstallsRequiredTools(t *testing.T) {
 }
 
 func TestRunToolVersionAddsUserBinToPath(t *testing.T) {
-	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- sh -ec PATH=\"$HOME/.local/bin:$PATH\"; exec \"$@\" -- zellij --version": {{Stdout: []byte("zellij 0.44.3")}},
-	}}
+	runner := &fakeRunner{results: map[string][]CommandResult{"zellij --version": {{Stdout: []byte("zellij 0.44.3")}}}}
 	tool, ok := Resolve("zellij")
 	if !ok {
 		t.Fatal("zellij missing from catalog")
@@ -134,7 +129,7 @@ func TestResolveNativeLanguageProfiles(t *testing.T) {
 	}{
 		{name: "c", packageName: "clang", executable: "clang", versionArg: "--version"},
 		{name: "cpp", packageName: "clang", executable: "clang++", versionArg: "--version"},
-		{name: "lua", packageName: "lua5.4", executable: "lua5.4", versionArg: "-v"},
+		{name: "lua", packageName: "lua", executable: "lua", versionArg: "-v"},
 	}
 	for _, test := range tests {
 		language, ok := Resolve(test.name)
@@ -149,7 +144,7 @@ func TestResolveNativeLanguageProfiles(t *testing.T) {
 
 func TestInstallSkipsAlreadyInstalledLanguage(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- python3 --version": {{Stdout: []byte("Python 3.12.1\n")}},
+		"python --version": {{Stdout: []byte("Python 3.12.1\n")}},
 	}}
 	result, err := Install(context.Background(), "python", testOptions(t, runner))
 	if err != nil {
@@ -165,9 +160,9 @@ func TestInstallSkipsAlreadyInstalledLanguage(t *testing.T) {
 
 func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- go version":                                           {{Err: errors.New("not found")}, {Stdout: []byte("go version go1.26.5 linux/arm64\n")}},
-		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 update":            {{}},
-		"proot-distro login ubuntu -- apt-get -o DPkg::Lock::Timeout=300 install -y golang": {{}},
+		"go version":            {{Err: errors.New("not found")}, {Stdout: []byte("go version go1.26.5 android/arm64\n")}},
+		"pkg update":            {{}},
+		"pkg install -y golang": {{}},
 	}}
 	options := testOptions(t, runner)
 	var updates []string
@@ -182,7 +177,7 @@ func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 	if len(runner.commands) != 4 {
 		t.Fatalf("commands = %v, want version, update, install, version", runner.commands)
 	}
-	wantUpdates := []string{"Verificando go", "Atualizando índices do Ubuntu", "Aguardando gerenciador de pacotes", "Instalando go", "Verificando go após a instalação"}
+	wantUpdates := []string{"Verificando go", "Atualizando repositórios do Termux", "Aguardando gerenciador de pacotes", "Instalando go", "Verificando go após a instalação"}
 	if !slices.Equal(updates, wantUpdates) {
 		t.Fatalf("progress = %v, want %v", updates, wantUpdates)
 	}
@@ -190,7 +185,7 @@ func TestInstallUpdatesAndInstallsMissingLanguage(t *testing.T) {
 
 func TestInstallPersistsRecordAndCommandLog(t *testing.T) {
 	runner := &fakeRunner{results: map[string][]CommandResult{
-		"proot-distro login ubuntu -- node --version": {{Stdout: []byte("v22.1.0\n")}},
+		"node --version": {{Stdout: []byte("v22.1.0\n")}},
 	}}
 	options := testOptions(t, runner)
 	result, err := Install(context.Background(), "node", options)
@@ -269,5 +264,30 @@ func TestInstallRejectsUnsupportedLanguage(t *testing.T) {
 	_, err := Install(context.Background(), "rust", Options{Runner: &fakeRunner{}})
 	if err == nil || !strings.Contains(err.Error(), "não suportada") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestMigrateLegacyInstallationReinstallsNativeTarget(t *testing.T) {
+	runner := &fakeRunner{results: map[string][]CommandResult{
+		"python --version": {{Stdout: []byte("Python 3.13.0\n")}},
+	}}
+	options := testOptions(t, runner)
+	if err := os.MkdirAll(options.Paths.InstallationsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	legacy := []byte(`{"name":"python","kind":"language","package":"python3","executable":"python3","state":"installed"}`)
+	if err := os.WriteFile(filepath.Join(options.Paths.InstallationsDir(), "python.json"), legacy, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	results, err := MigrateLegacyInstallations(context.Background(), options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results) != 1 || results[0].Runtime != RuntimeTermux {
+		t.Fatalf("migration results = %+v", results)
+	}
+	payload, err := os.ReadFile(filepath.Join(options.Paths.InstallationsDir(), "python.json"))
+	if err != nil || !strings.Contains(string(payload), `"runtime": "termux"`) {
+		t.Fatalf("native record = %s, err = %v", payload, err)
 	}
 }

@@ -31,7 +31,7 @@ func (m Model) renderSystem() string {
 	advanced := cardStyle.Width(max(1, width-4)).Render(
 		tagStyle.Render("ÁREA AVANÇADA") + "\n" +
 			titleStyle.Render("Operações protegidas") + "\n" +
-			mutedStyle.Render(wrapText("Ações destrutivas não fazem parte do MVP. O reset do Ubuntu exigirá confirmação explícita.", width-6)),
+			mutedStyle.Render(wrapText("Ações destrutivas não fazem parte do MVP. A remoção de um ambiente de compatibilidade exigirá confirmação explícita.", width-6)),
 	)
 	feedback := ""
 	if m.systemMessage != "" {

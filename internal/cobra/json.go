@@ -16,6 +16,7 @@ type operationResult struct {
 	Version        string   `json:"version,omitempty"`
 	Port           int      `json:"port,omitempty"`
 	Addresses      []string `json:"addresses,omitempty"`
+	Migrated       int      `json:"migrated,omitempty"`
 }
 
 func withQuietOutput(run func() error) error {

@@ -4,13 +4,18 @@ Este documento registra decisões atuais, alternativas futuras e hipóteses aind
 
 ## Decisões atuais
 
-### Ubuntu via PRoot é o ambiente principal
+### Termux é o ambiente principal
 
-O projeto prioriza compatibilidade com ferramentas Linux tradicionais. O Ubuntu persistente fornece `apt`, `glibc`, caminhos convencionais e maior compatibilidade de dependências.
+O Termux é a workstation de desenvolvimento do usuário. Projetos vivem em
+`$HOME/workspace` e ferramentas usam pacotes nativos, com o menor número de
+camadas entre Mobdesk e o executável.
 
-### Termux é o host
+### PRoot é uma camada de compatibilidade opcional
 
-O Termux controla a integração com Android, rede, inicialização, wake-lock, SSH, PRoot e Termux:API. Ele não é o ambiente principal de desenvolvimento do usuário.
+Ubuntu via PRoot não participa do setup básico. Ele é reservado para software
+que precise de glibc, APT ou de um userland Linux convencional. Quando usado,
+recebe somente um bind de `$HOME/workspace` em `/workspace`; HOME, caches,
+configurações e binários continuam isolados em cada runtime.
 
 ### Go é a linguagem da central
 
@@ -22,18 +27,17 @@ O primeiro produto deve funcionar por terminal. Uma interface web ou APK só dev
 
 ### A instalação deve ser guiada
 
-O usuário não deve precisar dominar `pkg`, `proot-distro`, `apt`, mounts ou scripts. O fluxo desejado é instalar o Mobdesk, executar `mobdesk start` e selecionar ferramentas numa TUI.
+O usuário não deve precisar dominar `pkg`, `proot-distro`, `apt`, mounts ou scripts. O fluxo desejado é instalar o Mobdesk, executar `mobdesk setup`, iniciar SSH se quiser acesso remoto e selecionar ferramentas nativas numa TUI.
 
 ### A TUI permanece aberta após iniciar
 
 `mobdesk start` inicia a workstation e retorna sem abrir automaticamente um shell. A TUI mantém o controle da interface e suspende o terminal somente quando o usuário escolhe abrir o shell explicitamente.
 
-### A TUI respeita a fronteira entre Termux e Ubuntu
+### A TUI respeita a fronteira de runtime
 
-O status identifica se a TUI roda no host Termux ou em uma sessão SSH dentro do
-Ubuntu. No Ubuntu remoto, a interface não tenta controlar SSH, PRoot, setup,
-instalações ou atualização do binário, pois essas operações pertencem ao host.
-Ela mantém apenas informações do ambiente e o acesso ao shell Ubuntu.
+O status identifica Termux e ambientes de compatibilidade separadamente. SSH
+abre uma sessão Termux normal. Ações que dependem do host continuam bloqueadas
+quando a TUI é executada fora do Termux.
 
 ### Operações possuem resultado JSON único
 
@@ -41,7 +45,7 @@ Ela mantém apenas informações do ambiente e o acesso ao shell Ubuntu.
 
 ### O ambiente deve ser persistente
 
-Ubuntu, ferramentas, projetos e configurações não devem ser recriados em cada execução. O instalador deve ser idempotente, ter estado e preservar dados.
+Termux, ferramentas, projetos e configurações não devem ser recriados em cada execução. O instalador deve ser idempotente, ter estado e preservar dados.
 
 ### Atualização do binário preserva uma versão executável
 
@@ -57,13 +61,15 @@ comprometida sem uma assinatura independente.
 
 O setup serializa execuções concorrentes, mantém estado e arquivos privados, e
 marca uma etapa somente após sua conclusão. O usuário pode repetir `mobdesk
-setup` depois de uma falha sem apagar Ubuntu, workspace ou projetos.
+setup` depois de uma falha sem apagar workspace ou projetos.
 
 ## Alternativas adiadas
 
-### Termux nativo como runtime principal
+### Múltiplas distribuições de compatibilidade
 
-É mais rápido e integrado ao Android, mas pode exigir adaptações para binários glibc, wheels manylinux, ferramentas com caminhos Linux tradicionais e dependências nativas. Pode continuar disponível para ferramentas específicas.
+O primeiro corte mantém a abstração de runtime interna e não expõe comandos de
+guest. Ubuntu será o primeiro guest opcional; Debian e Arch só serão avaliados
+depois que o contrato de workspace e os targets forem validados no aparelho.
 
 ### Nix-on-Droid
 
@@ -92,12 +98,11 @@ PRoot não é Docker. Docker real e recursos de kernel exigem outro suporte de k
 
 ## Hipóteses a validar
 
-- Ubuntu ARM64 via PRoot terá desempenho aceitável para aulas e projetos pequenos;
-- a instalação completa caberá confortavelmente no armazenamento do POCO;
-- HyperOS permitirá manter Termux e Ubuntu ativos durante o uso;
+- o catálogo inicial estará disponível no repositório Termux ARM64;
+- HyperOS permitirá manter Termux ativo durante o uso;
 - a TUI será confortável no teclado virtual e no SSH;
-- as ferramentas escolhidas estarão disponíveis ou poderão ser instaladas no Ubuntu;
-- a montagem entre Termux e Ubuntu preservará o fluxo de projetos;
+- as ferramentas escolhidas estarão disponíveis ou poderão ser instaladas no Termux;
+- o bind entre Termux e um guest preservará o fluxo de projetos;
 - o Mobdesk conseguirá acompanhar processos e sessões sem perder saída;
 - atalhos Termux:Widget serão suficientes antes de existir um APK próprio.
 

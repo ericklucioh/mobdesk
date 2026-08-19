@@ -68,7 +68,7 @@ func runStart(ctx context.Context) error {
 			}
 		}
 	}
-	if _, err := fmt.Fprintln(os.Stdout, "\nWorkstation pronta. Use mobdesk shell para abrir o Ubuntu."); err != nil {
+	if _, err := fmt.Fprintln(os.Stdout, "\nWorkstation pronta. Use mobdesk shell para abrir o Termux."); err != nil {
 		return err
 	}
 	return nil

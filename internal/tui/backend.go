@@ -120,9 +120,6 @@ func (m *mockBackend) OperationCmd(args ...string) tea.Cmd {
 		case "setup":
 			m.status.Setup.Completed = true
 			m.status.Setup.State = status.CheckOK
-			m.status.Ubuntu.Installed = true
-			m.status.Ubuntu.Accessible = true
-			m.status.Ubuntu.Workspace = true
 			if upgradeOnly {
 				result.Message = "Upgrade mock concluído"
 			}
@@ -220,9 +217,9 @@ func mockStatus(scenario string) status.SystemStatus {
 		GeneratedAt:   time.Now(),
 		Overall:       status.StateHealthy,
 		Host:          status.HostStatus{State: status.CheckOK, Termux: true, OS: "Android", Architecture: "arm64", ProotDistro: true, OpenSSH: true, Ifconfig: true, WakeLockAvailable: true},
-		Setup:         status.SetupStatus{State: status.CheckOK, Completed: true, Phases: map[string]string{"directories": "completed", "ubuntu-installed": "completed", "workspace-created": "completed", "ssh-configured": "completed"}},
+		Setup:         status.SetupStatus{State: status.CheckOK, Completed: true, Phases: map[string]string{"directories": "completed", "workspace-created": "completed", "shell-configured": "completed", "ssh-configured": "completed"}},
 		Storage:       status.StorageStatus{State: status.CheckOK, DeviceTotal: 128 * 1024 * 1024 * 1024, DeviceFree: 42 * 1024 * 1024 * 1024},
-		Ubuntu:        status.UbuntuStatus{State: status.CheckOK, Installed: true, Accessible: true, Workspace: true, WorkspacePath: "/root/workspace"},
+		Ubuntu:        status.UbuntuStatus{State: status.CheckMissing, WorkspacePath: "/workspace", Optional: true},
 		SSH:           status.SSHStatus{State: status.CheckOK, Enabled: true, Running: true, Port: 8022},
 		Network:       status.NetworkStatus{State: status.CheckOK, Addresses: []string{"172.19.0.1", "172.18.0.1", "10.42.0.1"}, Preferred: "172.19.0.1"},
 		Battery:       status.BatteryStatus{State: status.CheckOK, Available: true, Percentage: intPointer(72), Status: "normal", Plugged: "unplugged"},

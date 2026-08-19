@@ -12,7 +12,7 @@ import (
 )
 
 var setupCmd = &cobra.Command{
-	Use: "setup", Short: "configurar o Termux e o Ubuntu",
+	Use: "setup", Short: "configurar a workstation Termux",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		p := paths.Current()
 		if setupJSON {
@@ -38,7 +38,7 @@ func runSetup(ctx context.Context, p paths.Paths) error {
 	if _, err := fmt.Fprintln(os.Stdout, "\nSetup concluído."); err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintln(os.Stdout, "Ubuntu base instalado e pronto para o MVP."); err != nil {
+	if _, err := fmt.Fprintln(os.Stdout, "Termux configurado como ambiente principal."); err != nil {
 		return err
 	}
 	if _, err := fmt.Fprintln(os.Stdout, "SSH preparado. Execute: mobdesk start"); err != nil {

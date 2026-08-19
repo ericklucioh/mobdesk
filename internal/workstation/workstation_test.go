@@ -24,10 +24,7 @@ func TestStartOrchestratesWorkstationWithoutSystemCommands(t *testing.T) {
 	}
 	service := New(p)
 	var ran, configured, locked, started bool
-	service.Deps.Run = func(_ context.Context, name string, args ...string) error {
-		ran = name == "proot-distro" && strings.Join(args, " ") == "login ubuntu -- true"
-		return nil
-	}
+	service.Deps.Run = func(_ context.Context, _ string, _ ...string) error { ran = true; return nil }
 	service.Deps.EnsureSSHConfigured = func(got paths.Paths) error { configured = got == p; return nil }
 	service.Deps.EnsureIfconfig = func(context.Context, io.Writer, func(context.Context, string, ...string) error) error { return nil }
 	service.Deps.WakeLock = func() error { locked = true; return nil }
@@ -44,7 +41,7 @@ func TestStartOrchestratesWorkstationWithoutSystemCommands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !ran || !configured || !locked || !started {
+	if ran || !configured || !locked || !started {
 		t.Fatalf("orquestração incompleta: run=%t config=%t lock=%t start=%t", ran, configured, locked, started)
 	}
 	if len(info.Addresses) != 1 || info.Addresses[0] != "192.168.1.2" || info.Username != "termux" {
@@ -70,10 +67,13 @@ func TestStopRejectsPIDThatIsNotMobdeskSSH(t *testing.T) {
 func TestRenderSSHConfigIsDedicatedToMobdesk(t *testing.T) {
 	p := paths.New("/home/user", "/termux/usr")
 	config := renderSSHConfig(p)
-	for _, expected := range []string{"Port 8022", "PidFile /home/user/.local/share/mobdesk/ssh/sshd.pid", "ForceCommand /home/user/.local/share/mobdesk/ssh/mobdesk-ssh-shell", "PasswordAuthentication yes"} {
+	for _, expected := range []string{"Port 8022", "PidFile /home/user/.local/share/mobdesk/ssh/sshd.pid", "PasswordAuthentication yes"} {
 		if !strings.Contains(config, expected) {
 			t.Fatalf("configuração não contém %q:\n%s", expected, config)
 		}
+	}
+	if strings.Contains(config, "ForceCommand") {
+		t.Fatalf("native SSH config must not force a PRoot shell:\n%s", config)
 	}
 }
 

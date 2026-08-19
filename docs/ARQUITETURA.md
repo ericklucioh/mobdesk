@@ -12,11 +12,11 @@ produto devem ser documentados separadamente.
 ```text
 Android / HyperOS
 └── Termux
-    ├── binário Mobdesk (Go)
-    ├── ferramentas e processos do host
-    └── PRoot-Distro
-        └── Ubuntu ARM64 persistente
-            └── processos do ambiente Linux do usuário
+	├── binário Mobdesk (Go)
+	├── SSH, workspace e ferramentas nativas
+	└── PRoot-Distro opcional
+		└── Ubuntu ARM64 de compatibilidade
+			└── /workspace (bind do Termux)
 ```
 
 ### Android e HyperOS
@@ -27,18 +27,18 @@ processo ainda estiver em execução.
 
 ### Termux
 
-O Termux é o host do Mobdesk. Ele fornece:
+O Termux é a workstation do Mobdesk. Ele fornece:
 
 - o ambiente de execução do binário Go;
 - o `PATH` e os pacotes nativos do host;
 - acesso aos comandos e recursos disponíveis no Android;
 - o processo SSH gerenciado pelo Mobdesk;
-- a execução e a entrada no Ubuntu via PRoot-Distro;
+- a execução opcional de um guest via PRoot-Distro;
 - o armazenamento privado usado pelo estado do aplicativo.
 
-### Ubuntu via PRoot
+### Ubuntu via PRoot (opcional)
 
-O Ubuntu é um userland Linux persistente executado a partir do Termux. Ele
+O Ubuntu é um userland Linux persistente executado sob demanda a partir do Termux. Ele
 fornece filesystem, bibliotecas e ferramentas de distribuição Linux, mas não
 possui um kernel separado.
 
@@ -80,13 +80,8 @@ A TUI não deve duplicar instalação, coleta, atualização ou regras de segura
 No backend real, ela se comunica com o contrato JSON da própria CLI. O backend
 mock implementa a mesma interface apenas para cenários de teste visual.
 
-Quando aberta dentro da sessão SSH do Mobdesk, a TUI roda no Ubuntu/PRoot, não
-no Termux. Nesse modo ela pode mostrar o workspace atual, mas não consegue
-inspecionar ou controlar diretamente o host Termux, o `sshd` e o
-`proot-distro`. O status deve identificar esse modo remoto em vez de tratar a
-ausência desses comandos como falha do workspace. A interface deve bloquear
-ações de host nesse contexto, incluindo setup, start, stop, instalação de
-ferramentas e atualização do binário.
+SSH abre uma sessão Termux nativa. Um guest futuro não compartilha HOME com o
+host: somente `$HOME/workspace` será montado em `/workspace`.
 
 ### Serviços internos
 
@@ -107,10 +102,10 @@ Existem dois ambientes de processo:
 
 ```text
 Mobdesk no Termux
-    ├── comandos do host
-    │   └── pkg, sshd e ferramentas Termux
-    └── comandos do Ubuntu
-        └── proot-distro login ubuntu -- ...
+	├── comandos nativos
+	│   └── pkg, sshd e ferramentas Termux
+	└── comandos de compatibilidade opcionais
+		└── proot-distro login ubuntu -- --bind $HOME/workspace:/workspace
 ```
 
 Cada comando deve deixar claro em qual ambiente será executado. A aplicação
@@ -133,7 +128,7 @@ Regras estruturais:
 
 - permissões devem restringir arquivos privados;
 - segredos não entram no código, no Git ou em logs;
-- estado do host e estado do Ubuntu devem permanecer distinguíveis;
+- estado do Termux e estado de compatibilidade devem permanecer distinguíveis;
 - dependências compiladas para Termux e Ubuntu não devem ser misturadas;
 - projetos e dados do usuário devem sobreviver à repetição das operações;
 - armazenamento externo do Android não deve ser tratado como filesystem Unix

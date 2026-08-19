@@ -32,7 +32,7 @@ func RenderText(w io.Writer, value SystemStatus) error {
 	appendStatusf(&text, "  Arquitetura: %s\n  Wake-lock:   %s\n  Termux:API:  %s\n", value.Host.Architecture, availability(value.Host.WakeLockAvailable), availability(value.Host.TermuxAPIAvailable))
 	appendStatusf(&text, "\nArmazenamento\n  Dispositivo: %s livres de %s\n", formatBytes(value.Storage.DeviceFree), formatBytes(value.Storage.DeviceTotal))
 	appendStatusf(&text, "\nSetup\n  Estado:      %s\n  Completo:    %s\n", value.Setup.State, yesNo(value.Setup.Completed))
-	appendStatusf(&text, "\nUbuntu\n  Estado:      %s\n  Acessível:   %s\n  Workspace:   %s\n", value.Ubuntu.State, yesNo(value.Ubuntu.Accessible), yesNo(value.Ubuntu.Workspace))
+	appendStatusf(&text, "\nCompatibilidade Ubuntu\n  Estado:      %s\n  Instalada:   %s\n", value.Ubuntu.State, yesNo(value.Ubuntu.Installed))
 	appendStatusf(&text, "\nSSH\n  Estado:      %s\n  Porta:       %d\n  Rodando:     %s\n", value.SSH.State, value.SSH.Port, yesNo(value.SSH.Running))
 	appendStatusf(&text, "\nRede\n  Estado:      %s\n  Endereços:   %s\n", value.Network.State, joinOrUnknown(value.Network.Addresses))
 	appendStatusf(&text, "\nDispositivo\n  Bateria:     %s\n  Wi-Fi:       %s\n", batteryText(value.Battery), wifiText(value.WiFi))
@@ -44,7 +44,7 @@ func RenderText(w io.Writer, value SystemStatus) error {
 			if version == "" {
 				version = installation.State
 			}
-			appendStatusf(&text, "  %s: %s (%s)\n", installation.Name, installation.State, version)
+			appendStatusf(&text, "  %s: %s [%s] (%s)\n", installation.Name, installation.State, installation.Runtime, version)
 			if installation.LastError != "" {
 				appendStatusf(&text, "    Erro: %s\n", installation.LastError)
 			}
