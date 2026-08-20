@@ -28,10 +28,10 @@ The following screenshot is a historical visual note, not a product contract:
             Source: not installed
            Version: not detected
      Mobdesk configuration: not_applied
-        Paths: /root/.config/nvim,
-               /root/.config/nvim/lua,
-               /root/.config/nvim/lua/config,
-               /root/.config/nvim/lua/plugins
+        Paths: $HOME/.config/nvim,
+               $HOME/.config/nvim/lua,
+               $HOME/.config/nvim/lua/config,
+               $HOME/.config/nvim/lua/plugins
           Managed plugins: 3
  Storage: app 15-30 MB; dependencies 0-20 MB;
                     config 0-2 MB

@@ -22,7 +22,7 @@ Brazilian Portuguese version.
 - Rename Portuguese identifiers, comments, test names and documentation paths
   to English where they exist.
 - Preserve existing persisted state and JSON schema compatibility.
-- Make locale selection work in Termux, Ubuntu via PRoot and SSH sessions.
+- Make locale selection work in local Termux and SSH sessions.
 - Keep the TUI mouse and keyboard hit-tests correct in both languages.
 
 ## 2. Non-Goals
@@ -62,8 +62,8 @@ Use the first valid value in this order:
 6. `en-US`.
 
 The TUI must pass the selected locale explicitly to child Mobdesk CLI commands.
-This is required because a TUI running through SSH must not assume that the
-Termux environment is available inside Ubuntu.
+This keeps rendering and command output consistent across local and SSH
+sessions in the same Termux workstation.
 
 ### 3.3 Stable machine contract
 
@@ -442,7 +442,7 @@ Tasks:
 - Validate catalog completeness and documentation links.
 - Run `make check`.
 - Run focused CLI and TUI tests in both locales.
-- Run `make catalog-test` only if installation, catalog, PRoot or related
+- Run `make catalog-test` only if installation, catalog or related
   runtime code changed during the migration.
 - Validate the TUI visually with the mock backend in both locales.
 - Validate the already tested real Termux flow and expand coverage to additional
@@ -468,7 +468,7 @@ Acceptance criteria:
 - `make check` passed with formatting, i18n validation, `go vet`, all tests and
   the Termux fixture build.
 - `make catalog-test` was intentionally not repeated because the migration did
-  not change the installation catalog, installation strategies or PRoot runtime.
+  not change the installation catalog, installation strategies or Termux runtime.
 - Visual and operational validation has been completed on a real
   Android/Termux device; validation across a broader device matrix remains
   ongoing before claiming broad device-level release readiness.
@@ -528,7 +528,7 @@ Acceptance criteria:
 | Popup actions | yes | yes | Correct keyboard and mouse hit-tests |
 | Persisted records | yes | yes | Old and new records load |
 | TUI child commands | yes | yes | Locale is forwarded explicitly |
-| Termux/Ubuntu boundary | yes | yes | Same safety restrictions |
+| Local Termux/SSH session | yes | yes | Same safety restrictions |
 | Documentation links | yes | yes | No broken references |
 
 ## 9. Research Basis

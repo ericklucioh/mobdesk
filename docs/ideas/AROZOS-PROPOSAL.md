@@ -35,11 +35,11 @@ Android applications; each needs a WebApp, URL, adaptation or VNC/xpra.
 
 ## Non-authoritative composition idea
 
-Keep Termux, Ubuntu, Git, Go, Node, Neovim, Zellij and projects as the
+Keep Termux, Git, Go, Node, Neovim, Zellij and projects as the
 development core. A separate future browser layer could provide files, media,
 sharing, code-server, Zellij Web and HTTP panels. It would complement rather
 than replace the TUI, and would require explicit scope, authentication,
-multi-user and Android/PRoot validation.
+multi-user and Android/Termux validation.
 
 Reference: [ArozOS](https://os.aroz.org/),
 [ArozOS releases](https://github.com/tobychui/arozos/releases).

@@ -2,7 +2,8 @@
 
 **Status:** personal historical setup note; non-authoritative. It predates the
 Mobdesk MVP and must not be treated as an application profile or supported
-runtime path.
+runtime path. The PRoot steps below are archived and must not be used for
+Mobdesk.
 
 ## Intended topology
 

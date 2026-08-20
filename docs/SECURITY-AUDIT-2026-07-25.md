@@ -1,8 +1,9 @@
 # Security Audit - 2026-07-25
 
 **Status:** historical audit with follow-up results; non-authoritative for new
-architecture decisions. [`SECURITY.md`](../SECURITY.md) and the current code
-and tests are authoritative.
+architecture decisions. Its PRoot/Ubuntu findings apply only to the retired
+runtime. [`SECURITY.md`](../SECURITY.md) and the current code and tests are
+authoritative.
 
 ## Executive summary
 

@@ -1,8 +1,9 @@
 # App and Configuration Implementation Plan
 
-**Status:** Phase 11 completed in the automated fixture and manually validated
-on a real Android/Termux device; broader profile and device validation remains
-ongoing.
+**Status:** superseded historical plan. Application configuration and LazyVim
+are outside the current MVP, and its PRoot/Ubuntu design must not guide native
+Termux implementation. Use [`MISSION.md`](MISSION.md) and
+[`POST-TERMUX-SPRINTS.md`](POST-TERMUX-SPRINTS.md) for current scope.
 
 **Decision document:** [`APP-CONFIGURATION-REFACTOR-PLAN.md`](APP-CONFIGURATION-REFACTOR-PLAN.md)
 

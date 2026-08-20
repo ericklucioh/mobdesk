@@ -2,11 +2,12 @@
 
 **Research date:** 2026-07-17
 
-**Status:** active research; no alternative is approved for the MVP.
+**Status:** historical research; no alternative is approved for the MVP. Any
+future reassessment must use a native Termux strategy, not PRoot or Ubuntu.
 
 ## Problem
 
-Future Mobdesk work may run a graphical Firefox inside Ubuntu/PRoot and stream
+Future Mobdesk work may run a graphical Firefox in Termux and stream
 its desktop to another browser. The target is the complete browser surface,
 including tabs, address bar, menus, keyboard, mouse and possibly audio, not the
 HTML contents alone.
@@ -15,7 +16,7 @@ HTML contents alone.
 HTTP       loads the web UI
 WebSocket  or WebRTC carries screen, audio and events
 X server   provides Firefox's virtual display
-Firefox    runs inside Ubuntu/PRoot
+Firefox    runs in Termux
 ```
 
 An apparent single HTTP port may still require WebSocket or WebRTC transport.

@@ -1,7 +1,8 @@
 # Priority Refactoring Plan
 
-**Status:** the three original workstreams are complete in the current code;
-future runtime centralization may still reduce duplication.
+**Status:** superseded historical plan. It describes the retired PRoot/Ubuntu
+runtime and must not guide current implementation. Use
+[`MISSION.md`](MISSION.md) and [`ARCHITECTURE.md`](ARCHITECTURE.md) instead.
 
 This historical implementation plan records incremental refactors that preserve
 existing commands and tests. Packages are extracted only for real reusable

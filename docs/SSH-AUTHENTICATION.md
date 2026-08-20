@@ -9,8 +9,8 @@ key, credential and logging protections.
 
 ## Current context
 
-Mobdesk runs a dedicated SSH server on port `8022` and forwards users to
-persistent Ubuntu through PRoot. Current authentication is the Termux password.
+Mobdesk runs a dedicated SSH server on port `8022` in the same native Termux
+workstation used by local commands. Current authentication is the Termux password.
 The future goal is to reduce dependence on a fixed password and let the phone
 owner decide which computers may connect.
 

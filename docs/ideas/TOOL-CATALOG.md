@@ -5,7 +5,7 @@ contract. Only profiles present in the application catalogue are supported by
 Mobdesk installation commands.
 
 Each entry follows `name - type - description` and is grouped by likely value
-inside Ubuntu through PRoot.
+in the native Termux workstation.
 
 ## Essential tools
 
@@ -85,7 +85,7 @@ twitch-tui, ncspot, spotify-player, spotatui, ncmpcpp, kew, termusic, rmpc,
 pyradio, soundcloud2000, newsboat, Jellyfin TUI, managarr, epy, tdf,
 manga-tui, Elinks, FFmpeg, VLC and related clients.
 
-Tools that normally require host capabilities or are poorly suited to PRoot
+Tools that normally require host capabilities or are poorly suited to Termux
 include WibWob-DOS, Wi-Fi/Bluetooth managers, NetworkManager tools, partition
 editors, Distrobox, container monitors and image writers. They remain catalogue
 ideas, not Mobdesk promises.

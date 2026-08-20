@@ -1,7 +1,9 @@
 # App and Configuration Refactor Plan
 
-**Status:** product decisions recorded; implementation completed through the
-documented app lifecycle work
+**Status:** superseded historical plan. Application configuration and LazyVim
+are outside the current MVP, and its PRoot/Ubuntu design must not guide native
+Termux implementation. Use [`MISSION.md`](MISSION.md) and
+[`POST-TERMUX-SPRINTS.md`](POST-TERMUX-SPRINTS.md) for current scope.
 
 **Objective:** turn the current tools screen into an app center with details,
 installation, safe removal and optional Mobdesk-owned configuration profiles.

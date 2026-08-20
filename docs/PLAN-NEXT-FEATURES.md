@@ -1,6 +1,9 @@
 # Next Features and User Experience Plan
 
-**Status:** Planned
+**Status:** superseded historical plan. It assumes the retired PRoot/Ubuntu
+runtime and application-configuration scope. Use
+[`POST-TERMUX-SPRINTS.md`](POST-TERMUX-SPRINTS.md) for planned native Termux
+work.
 
 **Primary language:** English
 
