@@ -98,14 +98,14 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if blockContainsAt(lines, bodyIndex, mouse.X, m.text(i18n.TUIStatusBack, nil)) {
-			m.navigate(homeScreen)
+			m.goHome()
 		}
 	case shellScreen:
 		if touchBlockContainsAt(lines, bodyIndex, mouse.X, m.text(i18n.TUIShellOpen, nil)) {
 			return m, m.backend.ShellCmd()
 		}
 		if touchBlockContainsAt(lines, bodyIndex, mouse.X, m.text(i18n.TUIShellBack, nil)) {
-			m.navigate(homeScreen)
+			m.goHome()
 		}
 	case systemScreen:
 		if blockContainsAt(lines, bodyIndex, mouse.X, m.text(i18n.TUISystemCheck, nil)) {
@@ -115,7 +115,7 @@ func (m Model) handleMouse(mouse tea.Mouse) (tea.Model, tea.Cmd) {
 			return m.runHostOperation("update", "update", "--json")
 		}
 		if blockContainsAt(lines, bodyIndex, mouse.X, m.text(i18n.TUIStatusBack, nil)) {
-			m.navigate(homeScreen)
+			m.goHome()
 		}
 	}
 	return m, nil

@@ -44,14 +44,20 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 	if record.State != "installed" && record.State != "failed" && record.State != "partial" {
 		return result, i18n.NewError(i18n.ServiceUninstallState, "uninstall_invalid_state", map[string]any{"Name": profile.Name, "State": record.State}, nil)
 	}
-	if packageSharedByAnotherInstallation(options.Paths, record) {
-		return result, i18n.NewError(i18n.ServiceUninstallShared, "uninstall_shared_package", map[string]any{"Name": profile.Name}, nil)
-	}
+	sharedPackages := sharedPackagesByAnotherInstallation(options.Paths, record)
 	record.State, record.LastAttemptAt = "uninstalling", options.Now().UTC()
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
 		return result, i18n.NewError(i18n.ServiceUninstallError, "uninstall_record", nil, err)
 	}
 	progress(options, i18n.ServiceUninstallProgress, map[string]any{"Name": profile.Name})
+	if len(sharedPackages) > 0 {
+		record.State, record.LastError = "uninstalled", ""
+		if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
+			return result, i18n.NewError(i18n.ServiceUninstallError, "uninstall_record", nil, err)
+		}
+		result.State, result.Changed, result.PreservedPackages = "uninstalled", true, sharedPackages
+		return result, nil
+	}
 	if record.Strategy != "pkg" {
 		return result, fmt.Errorf("unsupported native uninstall strategy %q", record.Strategy)
 	}
@@ -69,11 +75,12 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 	return result, nil
 }
 
-func packageSharedByAnotherInstallation(p paths.Paths, target InstallationRecord) bool {
+func sharedPackagesByAnotherInstallation(p paths.Paths, target InstallationRecord) []string {
 	entries, err := os.ReadDir(p.InstallationsDir())
 	if err != nil {
-		return false
+		return nil
 	}
+	shared := make(map[string]bool)
 	for _, entry := range entries {
 		if entry.IsDir() || entry.Name() == target.Name+".json" {
 			continue
@@ -85,10 +92,16 @@ func packageSharedByAnotherInstallation(p paths.Paths, target InstallationRecord
 		for _, current := range record.Packages {
 			for _, targetPackage := range target.Packages {
 				if current == targetPackage {
-					return true
+					shared[targetPackage] = true
 				}
 			}
 		}
 	}
-	return false
+	result := make([]string, 0, len(shared))
+	for _, targetPackage := range target.Packages {
+		if shared[targetPackage] {
+			result = append(result, targetPackage)
+		}
+	}
+	return result
 }

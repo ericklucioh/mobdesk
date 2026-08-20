@@ -150,15 +150,22 @@ func (s *operationStream) send(ctx context.Context, message tea.Msg) bool {
 
 func operationFromOutput(command string, output []byte, commandErr error) operationMessage {
 	result, parseErr := decodeOperation(output)
-	if parseErr == nil {
+	if parseErr == nil && validOperationResult(command, result) && hasJSONFields(output, "schema_version", "command", "success", "state", "message") {
 		// Structured JSON is the CLI's final response even when it returns a
 		// non-zero status to signal failure to automation.
 		return operationMessage{command: command, result: result}
+	}
+	if parseErr == nil {
+		parseErr = fmt.Errorf("unexpected operation JSON contract for %q", command)
 	}
 	if commandErr != nil {
 		return operationMessage{command: command, err: commandErr}
 	}
 	return operationMessage{command: command, err: fmt.Errorf("invalid JSON response: %w", parseErr)}
+}
+
+func validOperationResult(command string, result operationResult) bool {
+	return result.SchemaVersion == 1 && result.Command == command && result.State != ""
 }
 
 func runStatusCommand(parent context.Context, locale i18n.Locale) tea.Cmd {
@@ -180,6 +187,9 @@ func runStatusCommand(parent context.Context, locale i18n.Locale) tea.Cmd {
 			}
 			return statusMessage{err: fmt.Errorf("invalid status JSON response: %w", parseErr)}
 		}
+		if !validStatusResponse(value) || !hasJSONFields(output, "schema_version", "command", "success", "state", "message") {
+			return statusMessage{err: fmt.Errorf("unexpected status JSON contract")}
+		}
 		versionOutput, err := exec.CommandContext(ctx, binary, appendLocale([]string{"version", "--json"}, locale)...).Output()
 		if ctx.Err() != nil {
 			return statusMessage{err: fmt.Errorf("version collection exceeded 15 seconds: %w", ctx.Err())}
@@ -191,8 +201,32 @@ func runStatusCommand(parent context.Context, locale i18n.Locale) tea.Cmd {
 		if parseErr := json.Unmarshal(versionOutput, &info); parseErr != nil {
 			return statusMessage{err: fmt.Errorf("invalid version JSON response: %w", parseErr)}
 		}
+		if !validVersionResponse(info) || !hasJSONFields(versionOutput, "schema_version", "command", "success", "state", "message") {
+			return statusMessage{err: fmt.Errorf("unexpected version JSON contract")}
+		}
 		return statusMessage{value: value, info: info}
 	}
+}
+
+func validStatusResponse(value status.SystemStatus) bool {
+	return value.SchemaVersion == status.SchemaVersion && value.Command == "status" && value.State != ""
+}
+
+func validVersionResponse(info version.Info) bool {
+	return info.SchemaVersion == version.SchemaVersion && info.Command == "version" && info.State != ""
+}
+
+func hasJSONFields(payload []byte, fields ...string) bool {
+	var value map[string]json.RawMessage
+	if err := json.Unmarshal(payload, &value); err != nil {
+		return false
+	}
+	for _, field := range fields {
+		if _, ok := value[field]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func appendLocale(args []string, locale i18n.Locale) []string {

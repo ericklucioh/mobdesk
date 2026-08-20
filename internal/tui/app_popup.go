@@ -107,30 +107,26 @@ func (m Model) popupActions() []popupAction {
 	if installed && installation.State == "installed" {
 		installLabel = m.text(i18n.TUIPopupReinstall, nil)
 	}
-	if !installed || installation.State != "installed" {
-		canInstall := m.canManageHost() && !m.status.Storage.Blocked
-		reason := m.hostActionReason(m.canManageHost())
-		if m.status.Storage.Blocked {
-			reason = m.text(i18n.TUIPopupStorageBlocked, nil)
-		}
-		actions = append(actions, popupAction{ID: "install", Label: installLabel, Enabled: canInstall, Reason: reason})
-		actions = append(actions, popupAction{ID: "close", Label: m.text(i18n.TUIPopupClose, nil), Enabled: true})
-		return actions
-	}
-	canInstall := m.canManageHost() && !m.status.Storage.Blocked
+	canInstall := m.canManageHost() && !m.status.Storage.Blocked && !m.busy
 	installReason := m.hostActionReason(m.canManageHost())
 	if m.status.Storage.Blocked {
 		installReason = m.text(i18n.TUIPopupStorageBlocked, nil)
+	} else if m.busy {
+		installReason = m.text(i18n.TUIOperationWait, nil)
 	}
 	actions = append(actions, popupAction{ID: "install", Label: installLabel, Enabled: canInstall, Reason: installReason})
-	managed := installed && installation.State == "installed" && installation.Managed && installation.Source == "mobdesk"
+	managed := installed && installation.Managed && installation.Source == "mobdesk" && (installation.State == "installed" || installation.State == "partial" || installation.State == "failed")
 	uninstallReason := m.text(i18n.TUIPopupDetectedReason, nil)
-	if !installed || installation.State != "installed" {
+	if !installed || (installation.State != "installed" && installation.State != "partial" && installation.State != "failed") {
 		uninstallReason = m.text(i18n.TUIPopupInstallFirst, nil)
-	} else if managed && m.canManageHost() {
+	} else if managed && m.canManageHost() && !m.busy {
 		uninstallReason = ""
+	} else if m.busy {
+		uninstallReason = m.text(i18n.TUIOperationWait, nil)
 	}
-	actions = append(actions, popupAction{ID: "uninstall", Label: m.text(i18n.TUIPopupUninstall, nil), Enabled: managed && m.canManageHost(), Destructive: true, Reason: uninstallReason})
+	if installed && (installation.State == "installed" || installation.State == "partial" || installation.State == "failed") {
+		actions = append(actions, popupAction{ID: "uninstall", Label: m.text(i18n.TUIPopupUninstall, nil), Enabled: managed && m.canManageHost() && !m.busy, Destructive: true, Reason: uninstallReason})
+	}
 	actions = append(actions, popupAction{ID: "close", Label: m.text(i18n.TUIPopupClose, nil), Enabled: true})
 	return actions
 }
@@ -349,7 +345,7 @@ func (m Model) popupActionAt(lines []string, bodyIndex, x int) (int, bool) {
 			}
 			first := utf8.RuneCountInString(plain[:start])
 			last := first + utf8.RuneCountInString(label)
-			if x >= first && x <= last {
+			if x >= first-2 && x <= last+2 {
 				return index, true
 			}
 		}

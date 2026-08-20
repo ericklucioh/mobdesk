@@ -72,6 +72,12 @@ micro --version >/dev/null
 for profile in "${profiles[@]}"; do
     grep -q "\"name\": \"${profile}\"" "$TEST_DIR/status.json"
 done
+"$MOBDESK_TEST_BIN" logs --json > "$TEST_DIR/logs.json"
+grep -q '"schema_version": 1' "$TEST_DIR/logs.json"
+grep -q '"command": "logs"' "$TEST_DIR/logs.json"
+grep -q '"success": true' "$TEST_DIR/logs.json"
+grep -q '"state":' "$TEST_DIR/logs.json"
+grep -q '"message":' "$TEST_DIR/logs.json"
 
 # A standalone pkg profile may be removed after Mobdesk records ownership.
 "$MOBDESK_TEST_BIN" uninstall tree --json > "$TEST_DIR/tree-uninstall.json"
@@ -80,14 +86,17 @@ grep -q '"state":"uninstalled"' "$TEST_DIR/tree-uninstall.json"
 grep -q '"state": "uninstalled"' "$HOME/.local/share/mobdesk/state/installations/tree.json"
 ! command -v tree >/dev/null 2>&1
 
-# C and C++ share clang; removing one profile must leave the package intact.
-if "$MOBDESK_TEST_BIN" uninstall c --json > "$TEST_DIR/c-uninstall.json"; then
-    printf '%s\n' 'uninstalling c unexpectedly removed a shared package' >&2
-    exit 1
-fi
-grep -q '"success":false' "$TEST_DIR/c-uninstall.json"
+# C and C++ share clang. Removing one releases its record, and removing the
+# final owner removes the package.
+"$MOBDESK_TEST_BIN" uninstall c --json > "$TEST_DIR/c-uninstall.json"
+grep -q '"success":true' "$TEST_DIR/c-uninstall.json"
+grep -q '"preserved_packages":\["clang"\]' "$TEST_DIR/c-uninstall.json"
 command -v clang
 command -v clang++
+"$MOBDESK_TEST_BIN" uninstall cpp --json > "$TEST_DIR/cpp-uninstall.json"
+grep -q '"success":true' "$TEST_DIR/cpp-uninstall.json"
+! command -v clang >/dev/null 2>&1
+! command -v clang++ >/dev/null 2>&1
 ! command -v proot-distro >/dev/null 2>&1
 printf '%s\n' 'Termux native pkg catalog test: PASS'
 CONTAINER_SCRIPT

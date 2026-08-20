@@ -15,7 +15,7 @@ import (
 func TestUninstallOperationResultKeepsStructuredFailure(t *testing.T) {
 	result := uninstallOperationResult(install.Result{
 		Language: "neovim", State: "failed", Source: "detected",
-		Conflicts: []string{"/home/user/.local/bin/nvim"},
+		Conflicts: []string{"/home/user/.local/bin/nvim"}, PreservedPackages: []string{"shared-package"},
 	}, "nvim", errors.New("installation was only detected"))
 	if result.Success || result.Target != "nvim" || result.Action != "uninstall" || result.State != "failed" || result.Source != "detected" {
 		t.Fatalf("unexpected uninstall result: %+v", result)
@@ -28,7 +28,7 @@ func TestUninstallOperationResultKeepsStructuredFailure(t *testing.T) {
 	if err := json.Unmarshal(payload, &decoded); err != nil {
 		t.Fatal(err)
 	}
-	if decoded.SchemaVersion != 1 || decoded.Message == "" || len(decoded.Conflicts) != 1 {
+	if decoded.SchemaVersion != 1 || decoded.Message == "" || len(decoded.Conflicts) != 1 || len(decoded.PreservedPackages) != 1 {
 		t.Fatalf("structured uninstall failure lost fields: %+v", decoded)
 	}
 }

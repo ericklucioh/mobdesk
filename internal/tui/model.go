@@ -39,6 +39,7 @@ type Model struct {
 	confirmExit       bool
 	closing           bool
 	busy              bool
+	refreshing        bool
 	operationID       int
 	statusID          int
 	message           string

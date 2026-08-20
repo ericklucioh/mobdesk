@@ -34,6 +34,9 @@ func TestReadReturnsRecentInstallationLogLines(t *testing.T) {
 	if len(snapshot.Logs) != 1 || snapshot.Logs[0].Name != "go" {
 		t.Fatalf("unexpected logs: %+v", snapshot.Logs)
 	}
+	if snapshot.Command != "logs" || !snapshot.Success || snapshot.State != "completed" {
+		t.Fatalf("missing log envelope: %+v", snapshot)
+	}
 	if snapshot.Logs[0].Missing || snapshot.Logs[0].Content != "linha 2\nlinha 3" {
 		t.Fatalf("unexpected tail: %+v", snapshot.Logs[0])
 	}
@@ -60,6 +63,33 @@ func TestReadFiltersByNameAndMarksMissingFile(t *testing.T) {
 	}
 	if !strings.EqualFold(snapshot.Logs[0].Name, "python") {
 		t.Fatalf("unexpected filtered log: %+v", snapshot.Logs[0])
+	}
+}
+
+func TestReadReturnsLogsForEveryCatalogKind(t *testing.T) {
+	home := t.TempDir()
+	p := paths.New(home, "")
+	if err := os.MkdirAll(p.InstallationsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(p.InstallLogsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, value := range []struct{ name, kind string }{{"git", "terminal"}, {"neovim", "editor"}, {"gh", "development"}, {"htop", "monitoring"}} {
+		if err := os.WriteFile(filepath.Join(p.InstallationsDir(), value.name+".json"), []byte(`{"name":"`+value.name+`","kind":"`+value.kind+`","state":"installed"}`), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(p.InstallLogsDir(), value.name+".log"), []byte(value.name+" log\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	snapshot, err := Read(Options{Paths: p})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(snapshot.Logs) != 4 {
+		t.Fatalf("unexpected logs: %+v", snapshot.Logs)
 	}
 }
 

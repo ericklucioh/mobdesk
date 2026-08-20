@@ -23,6 +23,8 @@ type operationProgressMessage struct {
 }
 
 type operationResult struct {
+	SchemaVersion   int                      `json:"schema_version"`
+	Command         string                   `json:"command"`
 	Success         bool                     `json:"success"`
 	State           string                   `json:"state"`
 	Message         string                   `json:"message"`

@@ -50,6 +50,10 @@ active profile, verifies its executable, repeats installation and checks the
 persisted status. ARM64 device validation remains required before treating this
 catalog as validated for the target phone.
 
+When profiles share a native package, uninstalling one profile releases only
+that profile's ownership record and reports `preserved_packages` in JSON. The
+package is removed only when the final managed profile is uninstalled.
+
 ## Sprint 3 Implementation Scope
 
 Sprint 3 validates the native developer workflows already promised by the

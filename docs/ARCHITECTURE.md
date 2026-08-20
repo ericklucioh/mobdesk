@@ -122,6 +122,13 @@ CLI commands are the public execution boundary. The real TUI backend expects a
 final result, normally JSON on stdout, on both success and failure. Auxiliary
 messages must not corrupt JSON.
 
+`status --json`, `logs --json` and `version --json` include the common
+`schema_version`, `command`, `success`, `state` and `message` envelope as
+additive fields alongside their command-specific data. The TUI validates the
+known schema and command before applying a response. Setup and package
+installation are PTY handoffs so users can interact with native package prompts;
+their post-operation state is reconciled by a validated status response.
+
 ```text
 TUI event
   -> backend

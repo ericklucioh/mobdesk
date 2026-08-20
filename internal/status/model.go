@@ -27,6 +27,10 @@ const (
 
 type SystemStatus struct {
 	SchemaVersion int                  `json:"schema_version"`
+	Command       string               `json:"command"`
+	Success       bool                 `json:"success"`
+	State         string               `json:"state"`
+	Message       string               `json:"message"`
 	GeneratedAt   time.Time            `json:"generated_at"`
 	Overall       OverallState         `json:"overall"`
 	Host          HostStatus           `json:"host"`

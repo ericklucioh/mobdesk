@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/ericklucioh/mobdesk/internal/i18n"
+	"github.com/ericklucioh/mobdesk/internal/status"
 )
 
 func TestRootHelpUsesSelectedLocale(t *testing.T) {
@@ -111,5 +112,15 @@ func TestRootCommandsDoNotShareLocaleState(t *testing.T) {
 	}
 	if !strings.Contains(englishOutput.String(), "Usage:") || !strings.Contains(portugueseOutput.String(), "Uso:") {
 		t.Fatalf("locale state leaked: %q / %q", englishOutput.String(), portugueseOutput.String())
+	}
+}
+
+func TestStatusEnvelopeRepresentsStrictFailure(t *testing.T) {
+	value := status.SystemStatus{SchemaVersion: status.SchemaVersion, Overall: status.StateDegraded, Alerts: status.AlertSummary{Warnings: 1}}
+	if !decorateStatusResponse(&value, true, i18n.New(i18n.LocaleENUS)) {
+		t.Fatal("strict failure was not reported")
+	}
+	if value.Command != "status" || value.Success || value.State != "failed" || value.Message == "" {
+		t.Fatalf("invalid strict status envelope: %+v", value)
 	}
 }

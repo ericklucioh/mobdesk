@@ -39,19 +39,27 @@ func runLogs() error {
 
 func runLogsOptions(jsonOutput bool, name string, lines int, localizers ...i18n.Localizer) error {
 	if err := requireTermuxRuntime("mobdesk logs", localizers...); err != nil {
+		if jsonOutput {
+			return encodeLogsJSON(logstore.Snapshot{SchemaVersion: logstore.SchemaVersion, Command: "logs", State: "failed", Message: localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()})}, err)
+		}
 		return err
 	}
 	snapshot, err := logstore.Read(logstore.Options{Paths: paths.Current(), Name: name, Lines: lines})
 	if err != nil {
+		if jsonOutput {
+			return encodeLogsJSON(logstore.Snapshot{SchemaVersion: logstore.SchemaVersion, Command: "logs", State: "failed", Message: localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()})}, err)
+		}
 		if len(localizers) > 0 {
 			return fmt.Errorf("%s", localizers[0].Error(err))
 		}
 		return err
 	}
 	if jsonOutput {
-		encoder := json.NewEncoder(os.Stdout)
-		encoder.SetIndent("", "  ")
-		return encoder.Encode(snapshot)
+		if len(snapshot.Logs) == 0 {
+			snapshot.State = "empty"
+			snapshot.Message = localized(localizers, i18n.OutputLogsEmpty, nil)
+		}
+		return encodeLogsJSON(snapshot, nil)
 	}
 	if len(snapshot.Logs) == 0 {
 		if name != "" {
@@ -84,4 +92,14 @@ func runLogsOptions(jsonOutput bool, name string, lines int, localizers ...i18n.
 		fmt.Println(record.Content)
 	}
 	return nil
+}
+
+func encodeLogsJSON(snapshot logstore.Snapshot, resultErr error) error {
+	snapshot.Success = resultErr == nil
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(snapshot); err != nil {
+		return err
+	}
+	return resultErr
 }

@@ -73,24 +73,25 @@ func (s StorageEstimate) TotalMaxMB() int64 {
 }
 
 type Result struct {
-	SchemaVersion    int              `json:"schema_version"`
-	Language         string           `json:"language"`
-	Package          string           `json:"package"`
-	Packages         []string         `json:"packages,omitempty"`
-	Executable       string           `json:"executable"`
-	Executables      []ExecutableSpec `json:"executables,omitempty"`
-	Version          string           `json:"version"`
-	Installed        bool             `json:"installed"`
-	Changed          bool             `json:"changed"`
-	State            string           `json:"state"`
-	LogPath          string           `json:"log_path"`
-	Source           string           `json:"source,omitempty"`
-	Paths            []string         `json:"paths,omitempty"`
-	Conflicts        []string         `json:"conflicts,omitempty"`
-	StorageEstimate  *StorageEstimate `json:"storage_estimate,omitempty"`
-	StorageFreeBytes int64            `json:"storage_free_bytes,omitempty"`
-	StorageWarning   bool             `json:"storage_warning,omitempty"`
-	StorageBlocked   bool             `json:"storage_blocked,omitempty"`
+	SchemaVersion     int              `json:"schema_version"`
+	Language          string           `json:"language"`
+	Package           string           `json:"package"`
+	Packages          []string         `json:"packages,omitempty"`
+	Executable        string           `json:"executable"`
+	Executables       []ExecutableSpec `json:"executables,omitempty"`
+	Version           string           `json:"version"`
+	Installed         bool             `json:"installed"`
+	Changed           bool             `json:"changed"`
+	State             string           `json:"state"`
+	LogPath           string           `json:"log_path"`
+	Source            string           `json:"source,omitempty"`
+	Paths             []string         `json:"paths,omitempty"`
+	Conflicts         []string         `json:"conflicts,omitempty"`
+	PreservedPackages []string         `json:"preserved_packages,omitempty"`
+	StorageEstimate   *StorageEstimate `json:"storage_estimate,omitempty"`
+	StorageFreeBytes  int64            `json:"storage_free_bytes,omitempty"`
+	StorageWarning    bool             `json:"storage_warning,omitempty"`
+	StorageBlocked    bool             `json:"storage_blocked,omitempty"`
 }
 
 type InstallationRecord struct {

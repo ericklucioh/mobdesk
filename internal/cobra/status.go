@@ -37,6 +37,7 @@ func runStatus(ctx context.Context) error {
 
 func runStatusOptions(ctx context.Context, jsonOutput, strict bool, localizers ...i18n.Localizer) error {
 	value := status.Collect(ctx, status.Options{Paths: paths.Current()})
+	strictFailure := decorateStatusResponse(&value, strict, localizers...)
 	if jsonOutput {
 		if err := status.EncodeJSON(os.Stdout, value); err != nil {
 			return fmt.Errorf("%s", localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}))
@@ -46,8 +47,35 @@ func runStatusOptions(ctx context.Context, jsonOutput, strict bool, localizers .
 			return fmt.Errorf("%s", localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": err.Error()}))
 		}
 	}
-	if strict && (value.Alerts.Warnings > 0 || value.Alerts.Errors > 0 || value.Alerts.Missing > 0 || value.Alerts.Unknown > 0) {
+	if strictFailure {
 		return ErrStatusStrict
 	}
 	return nil
+}
+
+func decorateStatusResponse(value *status.SystemStatus, strict bool, localizers ...i18n.Localizer) bool {
+	value.Command = "status"
+	value.Success = true
+	value.State = string(value.Overall)
+	value.Message = localizedStatusMessage(localizers, value.Overall)
+	strictFailure := strict && (value.Alerts.Warnings > 0 || value.Alerts.Errors > 0 || value.Alerts.Missing > 0 || value.Alerts.Unknown > 0)
+	if strictFailure {
+		value.Success = false
+		value.State = "failed"
+		value.Message = localized(localizers, i18n.ErrorOperationFailed, map[string]any{"Detail": ErrStatusStrict.Error()})
+	}
+	return strictFailure
+}
+
+func localizedStatusMessage(localizers []i18n.Localizer, overall status.OverallState) string {
+	id := i18n.StatusOverallUnknown
+	switch overall {
+	case status.StateHealthy:
+		id = i18n.StatusOverallHealthy
+	case status.StateDegraded:
+		id = i18n.StatusOverallDegraded
+	case status.StateError:
+		id = i18n.StatusOverallError
+	}
+	return localized(localizers, id, nil)
 }

@@ -71,6 +71,11 @@ suspends temporarily through `tea.ExecProcess` for these operations and resumes
 after the command exits. JSON and progress modes remain non-interactive and
 receive deterministic package configuration defaults instead of reading stdin.
 
+The TUI uses the versioned JSON contract for status and non-interactive
+operations. Setup and package installation are intentional PTY exceptions: the
+user sees package-manager prompts and diagnostics in the terminal, then the TUI
+reconciles the resulting state through `status --json` after the child exits.
+
 ### Application configuration is deferred
 
 Application configuration profiles are not part of the Termux-only first

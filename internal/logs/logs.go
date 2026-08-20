@@ -41,6 +41,10 @@ type Record struct {
 
 type Snapshot struct {
 	SchemaVersion int       `json:"schema_version"`
+	Command       string    `json:"command"`
+	Success       bool      `json:"success"`
+	State         string    `json:"state"`
+	Message       string    `json:"message"`
 	GeneratedAt   time.Time `json:"generated_at"`
 	Logs          []Record  `json:"logs"`
 }
@@ -56,7 +60,7 @@ func Read(options Options) (Snapshot, error) {
 		return Snapshot{}, i18n.NewError(i18n.ServiceLogsError, "logs_read_records", nil, err)
 	}
 
-	result := Snapshot{SchemaVersion: SchemaVersion, GeneratedAt: time.Now().UTC(), Logs: []Record{}}
+	result := Snapshot{SchemaVersion: SchemaVersion, Command: "logs", Success: true, State: "completed", GeneratedAt: time.Now().UTC(), Logs: []Record{}}
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
 			continue
@@ -98,7 +102,7 @@ func Read(options Options) (Snapshot, error) {
 
 func installationLogPath(p paths.Paths, stateFile string, installation status.InstallationStatus) (string, bool) {
 	language, ok := install.Resolve(installation.Name)
-	if !ok || installation.Name != language.Name || installation.Kind != "language" || stateFile != language.Name+".json" {
+	if !ok || installation.Name != language.Name || stateFile != language.Name+".json" {
 		return "", false
 	}
 	return filepath.Join(p.InstallLogsDir(), language.Name+".log"), true

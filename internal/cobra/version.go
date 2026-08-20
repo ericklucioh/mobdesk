@@ -18,6 +18,7 @@ func newVersionCmd(state *commandState) *cobra.Command {
 	var jsonOutput bool
 	cmd := &cobra.Command{Use: "version", Args: localizedNoArgs(state), RunE: func(cmd *cobra.Command, _ []string) error {
 		info := version.Current()
+		info.Message = localized([]i18n.Localizer{commandLocalizer(state, cmd)}, i18n.OutputVersion, map[string]any{"Version": info.Version, "Channel": info.Channel, "OS": info.OS, "Architecture": info.Architecture})
 		if jsonOutput {
 			return json.NewEncoder(os.Stdout).Encode(info)
 		}

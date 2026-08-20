@@ -79,19 +79,36 @@ func TestNodeProfileRequiresNPM(t *testing.T) {
 	}
 }
 
-func TestSharedNativePackageBlocksRemoval(t *testing.T) {
+func TestSharedNativePackageReleasesProfileBeforeRemovingLastOwner(t *testing.T) {
 	p := paths.New(t.TempDir(), "")
 	if err := os.MkdirAll(p.InstallationsDir(), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := saveRecord(p.InstallationsDir(), InstallationRecord{Name: "c", Packages: []string{"clang"}, State: "installed"}); err != nil {
+	if err := saveRecord(p.InstallationsDir(), InstallationRecord{Name: "c", Packages: []string{"clang"}, Strategy: "pkg", State: "installed"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := saveRecord(p.InstallationsDir(), InstallationRecord{Name: "cpp", Packages: []string{"clang"}, State: "installed"}); err != nil {
+	if err := saveRecord(p.InstallationsDir(), InstallationRecord{Name: "cpp", Packages: []string{"clang"}, Strategy: "pkg", State: "installed"}); err != nil {
 		t.Fatal(err)
 	}
-	if !packageSharedByAnotherInstallation(p, InstallationRecord{Name: "c", Packages: []string{"clang"}}) {
-		t.Fatal("shared clang package was not detected")
+	runner := &nativeRunner{}
+	first, err := Uninstall(context.Background(), "c", Options{Paths: p, Runner: runner, Now: time.Now})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !first.Changed || first.State != "uninstalled" || !sameStrings(first.PreservedPackages, []string{"clang"}) || containsCommand(runner.commands, "pkg uninstall -y clang") {
+		t.Fatalf("unexpected shared-package removal: %+v, commands=%v", first, runner.commands)
+	}
+	c, err := loadInstallationRecord(p, "c")
+	if err != nil || c.State != "uninstalled" {
+		t.Fatalf("c ownership was not released: %+v, %v", c, err)
+	}
+
+	second, err := Uninstall(context.Background(), "cpp", Options{Paths: p, Runner: runner, Now: time.Now})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !second.Changed || len(second.PreservedPackages) != 0 || !containsCommand(runner.commands, "pkg uninstall -y clang") {
+		t.Fatalf("last owner did not remove clang: %+v, commands=%v", second, runner.commands)
 	}
 }
 

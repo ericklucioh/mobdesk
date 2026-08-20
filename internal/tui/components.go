@@ -147,7 +147,7 @@ func toolRowContainsAt(lines []string, index, x int, label string, width int) bo
 		if !toolAppLineContains(plain, label) {
 			continue
 		}
-		if index >= position && index <= position+1 && x >= 0 && x < width {
+		if index >= position-2 && index <= position+3 && x >= 0 && x < width {
 			return true
 		}
 	}

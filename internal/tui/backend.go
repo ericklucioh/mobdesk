@@ -216,14 +216,16 @@ func (m *mockBackend) install(name string) {
 			return
 		}
 	}
-	for _, language := range install.Languages() {
-		if language.Name == name {
+	for _, profile := range install.Tools() {
+		if profile.Name == name {
 			m.status.Installations = append(m.status.Installations, status.InstallationStatus{
-				Name:       language.Name,
-				Kind:       "language",
-				Package:    language.Package,
-				Executable: language.Executable,
+				Name:       profile.Name,
+				Kind:       profile.Kind,
+				Package:    profile.Package,
+				Executable: profile.Executable,
 				State:      "installed",
+				Source:     "mobdesk",
+				Managed:    true,
 				Version:    "mock-1.0",
 			})
 			return
@@ -243,6 +245,9 @@ func (m *mockBackend) uninstall(name string) {
 func mockStatus(scenario string) status.SystemStatus {
 	value := status.SystemStatus{
 		SchemaVersion: 2,
+		Command:       "status",
+		Success:       true,
+		State:         string(status.StateHealthy),
 		GeneratedAt:   time.Now(),
 		Overall:       status.StateHealthy,
 		Host:          status.HostStatus{State: status.CheckOK, Termux: true, OS: "Android", Architecture: "arm64", OpenSSH: true, Ifconfig: true, WakeLockAvailable: true},
@@ -255,13 +260,14 @@ func mockStatus(scenario string) status.SystemStatus {
 		WiFi:          status.WiFiStatus{State: status.CheckOK, Available: true, Connected: true, SSID: "mobdesk-lab", IP: "172.19.0.1"},
 		Alerts:        status.AlertSummary{OK: 12},
 	}
-	for _, language := range install.Languages() {
+	for _, profile := range install.Tools() {
 		value.Installations = append(value.Installations, status.InstallationStatus{
-			Name: language.Name, Kind: "language", Package: language.Package, Executable: language.Executable, State: "installed", Version: "mock-1.0",
+			Name: profile.Name, Kind: profile.Kind, Package: profile.Package, Executable: profile.Executable, State: "installed", Source: "mobdesk", Managed: true, Version: "mock-1.0",
 		})
 	}
 	if scenario == "degraded" || scenario == "error" {
 		value.Overall = status.StateDegraded
+		value.State = string(status.StateDegraded)
 		value.SSH.Running = false
 		value.SSH.State = status.CheckWarning
 		value.Battery.State = status.CheckWarning
@@ -274,6 +280,7 @@ func mockStatus(scenario string) status.SystemStatus {
 	}
 	if scenario == "error" {
 		value.Overall = status.StateError
+		value.State = string(status.StateError)
 		value.Setup.State = status.CheckError
 		value.Workspace.State = status.CheckError
 		value.SSH.State = status.CheckError

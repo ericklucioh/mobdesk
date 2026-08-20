@@ -16,6 +16,10 @@ var (
 
 type Info struct {
 	SchemaVersion int    `json:"schema_version"`
+	Command       string `json:"command"`
+	Success       bool   `json:"success"`
+	State         string `json:"state"`
+	Message       string `json:"message"`
 	Version       string `json:"version"`
 	Channel       string `json:"channel"`
 	Commit        string `json:"commit,omitempty"`
@@ -28,6 +32,9 @@ type Info struct {
 func Current() Info {
 	return Info{
 		SchemaVersion: SchemaVersion,
+		Command:       "version",
+		Success:       true,
+		State:         "current",
 		Version:       Value,
 		Channel:       Channel,
 		Commit:        Commit,

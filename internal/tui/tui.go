@@ -67,7 +67,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		if msg.err != nil {
-			if !m.busy {
+			if m.refreshing {
+				m.busy = false
+				m.refreshing = false
+				m.installingTool = ""
+				m.message = m.localizedError(msg.err)
+			} else if !m.busy {
 				m.installingTool = ""
 				m.message = m.localizedError(msg.err)
 			}
@@ -77,12 +82,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.version = msg.info
 		m.statusLoaded = true
 		m.installingTool = ""
+		if m.refreshing {
+			m.busy = false
+			m.refreshing = false
+		}
 		m.statusTable.SetRows(statusRows(msg.value, m.width, m.localizer))
 	case operationMessage:
 		if msg.id != 0 && msg.id != m.operationID {
 			return m, nil
 		}
-		m.busy = false
 		m.operation = ""
 		m.operationProgress = ""
 		if msg.command == "update" || msg.command == "update-check" {
@@ -96,6 +104,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.appPopupOpen {
 			m.popupMessage = m.operationMessageText(msg)
 		}
+		m.refreshing = true
 		return m.requestStatus()
 	case operationProgressMessage:
 		if msg.id != 0 && msg.id != m.operationID {
@@ -315,7 +324,9 @@ func (m Model) updateKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case "esc":
-		if len(m.history) > 0 {
+		if m.screen == statusScreen || m.screen == systemScreen || m.screen == shellScreen {
+			m.goHome()
+		} else if len(m.history) > 0 {
 			m.screen = m.history[len(m.history)-1]
 			m.history = m.history[:len(m.history)-1]
 			m.focus = 0
@@ -444,6 +455,11 @@ func (m *Model) navigate(next screen) {
 		m.history = append(m.history, m.screen)
 	}
 	m.screen, m.focus = next, 0
+	m.viewport.SetYOffset(0)
+}
+
+func (m *Model) goHome() {
+	m.screen, m.focus, m.history = homeScreen, 0, nil
 	m.viewport.SetYOffset(0)
 }
 
