@@ -25,6 +25,11 @@ through SSH. Scope includes Termux packages, OpenSSH, workspace and local state,
 safe start/stop, `mobdesk shell`, `mobdesk status`, initial tool profiles, local
 addresses, wake-lock when available and repeatable setup.
 
+The current validation sprint executes small native Git, Go, Python, Node/npm,
+C, C++, Lua, Neovim and tmux workflows in `~/workspace` before the required
+real-device acceptance. It remains part of Stage 1; it does not start the
+persistent-environment Stage 3.
+
 Out of scope: PRoot-Distro, Ubuntu, application configuration, LazyVim, projects,
 services, persistent sessions, `doctor`, Tailscale and port forwarding.
 

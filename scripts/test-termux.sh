@@ -74,7 +74,7 @@ for _ in $(seq 1 60); do
     sleep 1
 done
 wait "$start_pid"
-ssh -i "$TEST_DIR/mobdesk-integration-key" -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile="$TEST_DIR/mobdesk-known-hosts" -p 8022 "$(id -un)@127.0.0.1" 'command -v pkg >/dev/null && test -d "$HOME/workspace"'
+ssh -i "$TEST_DIR/mobdesk-integration-key" -o BatchMode=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile="$TEST_DIR/mobdesk-known-hosts" -p 8022 "$(id -un)@127.0.0.1" 'test -n "$HOME" && test -n "$PREFIX" && command -v pkg >/dev/null && test -d "$HOME/workspace" && cd "$HOME/workspace" && go version >/dev/null'
 "$MOBDESK_TEST_BIN" stop
 printf '%s\n' 'Termux integration smoke test: PASS'
 CONTAINER_SCRIPT

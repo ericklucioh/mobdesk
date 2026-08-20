@@ -50,6 +50,19 @@ active profile, verifies its executable, repeats installation and checks the
 persisted status. ARM64 device validation remains required before treating this
 catalog as validated for the target phone.
 
+## Sprint 3 Implementation Scope
+
+Sprint 3 validates the native developer workflows already promised by the
+catalog. `make workflow-test` provisions a clean fixture, copies the tracked
+hello programs into `~/workspace`, and executes local Git, Go, Python, Node/npm,
+C, C++, Lua, Neovim and tmux workflows. The test does not download project
+dependencies or configure applications.
+
+The Node profile requires both `node` and `npm`, which the audited `nodejs`
+Termux package supplies. SSH smoke validation also proves that remote commands
+run in the same Termux home, prefix and workspace. This is a Stage 1 validation
+sprint, not the roadmap's persistent-environment Stage 3.
+
 ## 1. Product Boundary
 
 ### 1.1 Target topology

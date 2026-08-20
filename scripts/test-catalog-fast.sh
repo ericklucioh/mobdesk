@@ -58,6 +58,7 @@ tmux -V >/dev/null
 go version >/dev/null
 python --version >/dev/null
 node --version >/dev/null
+npm --version >/dev/null
 clang --version >/dev/null
 clang++ --version >/dev/null
 lua -v >/dev/null 2>&1

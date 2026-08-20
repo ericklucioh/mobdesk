@@ -170,6 +170,11 @@ make check
 Local tests validate logic and contracts. Final Android, Termux and HyperOS
 integration requires a real device.
 
+`make catalog-test-fast` validates native package installation, catalog records
+and safe removal. `make workflow-test` runs the tracked offline fixtures from
+`~/workspace` to validate the installed development tools. Both use Docker only
+as a repeatable Termux fixture and do not replace ARM64 device validation.
+
 ## Superseded architecture
 
 The former Termux-host plus Ubuntu-through-PRoot topology, its `proot-distro`

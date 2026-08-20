@@ -256,8 +256,12 @@ func (m Model) operationMessageText(msg operationMessage) string {
 		return m.text(i18n.TUIOperationVerified, nil)
 	case "install":
 		message := m.text(i18n.TUIOperationInstalled, map[string]any{"Name": msg.result.Language})
-		if msg.result.Version != "" {
-			message += " (" + msg.result.Version + ")"
+		version := strings.TrimSpace(msg.result.Version)
+		if newline := strings.IndexByte(version, '\n'); newline >= 0 {
+			version = strings.TrimSpace(version[:newline])
+		}
+		if version != "" {
+			message += " (" + version + ")"
 		}
 		return message
 	default:

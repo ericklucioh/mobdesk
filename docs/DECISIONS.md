@@ -39,6 +39,14 @@ metadata field; commands such as `--help` are not displayed as versions. New
 profiles follow the same metadata contract so the tools screen remains
 consistent across apps.
 
+### Core profiles require workflow validation
+
+Catalog installation and version checks are not sufficient evidence that a
+developer tool works. Core profiles receive a small offline workflow test in a
+clean Termux fixture, executed from the Mobdesk workspace. The Node profile
+requires both `node` and `npm` from its native package; dependency installation,
+application configuration and framework setup remain deferred.
+
 ### The TUI remains in control after start
 
 `mobdesk start` starts the workstation without automatically opening a shell.

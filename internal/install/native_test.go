@@ -68,6 +68,17 @@ func TestCatalogUsesOnlyNativePkgProfiles(t *testing.T) {
 	}
 }
 
+func TestNodeProfileRequiresNPM(t *testing.T) {
+	profile, ok := Resolve("node")
+	if !ok {
+		t.Fatal("node profile is missing")
+	}
+	want := []ExecutableSpec{{Name: "node", VersionArg: []string{"--version"}}, {Name: "npm", VersionArg: []string{"--version"}}}
+	if strings.TrimSpace(profile.Package) != "nodejs" || !sameExecutableSpecs(profileExecutables(profile), want) {
+		t.Fatalf("unexpected node profile: %+v", profile)
+	}
+}
+
 func TestSharedNativePackageBlocksRemoval(t *testing.T) {
 	p := paths.New(t.TempDir(), "")
 	if err := os.MkdirAll(p.InstallationsDir(), 0o700); err != nil {
@@ -91,4 +102,28 @@ func containsCommand(commands []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func sameExecutableSpecs(got, want []ExecutableSpec) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for index := range got {
+		if got[index].Name != want[index].Name || !sameStrings(got[index].VersionArg, want[index].VersionArg) {
+			return false
+		}
+	}
+	return true
+}
+
+func sameStrings(got, want []string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for index := range got {
+		if got[index] != want[index] {
+			return false
+		}
+	}
+	return true
 }

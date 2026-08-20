@@ -1,0 +1,7 @@
+{
+  "name": "mobdesk-node-smoke",
+  "private": true,
+  "scripts": {
+    "smoke": "node main.js"
+  }
+}

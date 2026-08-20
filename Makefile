@@ -5,7 +5,7 @@ SERVICE ?= termux
 TERMUX_ARCH ?= latest
 CATALOG_TIMEOUT ?= 30m
 
-.PHONY: help termux build-image shell test integration-test catalog-test-fast vet build run dev clean-env reset-env clean-image arm64-image fmt i18n-check check
+.PHONY: help termux build-image shell test integration-test catalog-test-fast workflow-test vet build run dev clean-env reset-env clean-image arm64-image fmt i18n-check check
 
 help:
 	@printf '%s\n' \
@@ -17,6 +17,7 @@ help:
 		'make check           - format, validate and build the project' \
 		'make integration-test - test the Termux/SSH flow in Docker' \
 		'make catalog-test-fast - install and verify every native pkg profile' \
+		'make workflow-test    - run native development workflows in Termux' \
 		'make vet             - run go vet ./...' \
 		'make build           - build Mobdesk inside the container' \
 		'make run             - run the Mobdesk binary' \
@@ -43,6 +44,9 @@ integration-test:
 
 catalog-test-fast:
 	timeout $(CATALOG_TIMEOUT) env TERMUX_ARCH=$(TERMUX_ARCH) COMPOSE="$(COMPOSE)" ./scripts/test-catalog-fast.sh
+
+workflow-test:
+	timeout $(CATALOG_TIMEOUT) env TERMUX_ARCH=$(TERMUX_ARCH) COMPOSE="$(COMPOSE)" ./scripts/test-native-workflows.sh
 
 vet:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm $(SERVICE) bash -lc 'go vet ./...'

@@ -2,6 +2,7 @@ package tui
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -19,5 +20,15 @@ func TestOperationFromOutputReturnsProcessErrorWithoutJSON(t *testing.T) {
 
 	if !errors.Is(message.err, commandErr) {
 		t.Fatalf("process error was not preserved: %+v", message)
+	}
+}
+
+func TestOperationMessageTextUsesPrimaryVersion(t *testing.T) {
+	text := operationMessageText(operationMessage{
+		command: "install",
+		result:  operationResult{Language: "node", Version: "node: v24.0.0\nnpm: 11.0.0"},
+	})
+	if strings.Contains(text, "\n") || !strings.Contains(text, "node: v24.0.0") || strings.Contains(text, "npm:") {
+		t.Fatalf("unexpected install message: %q", text)
 	}
 }

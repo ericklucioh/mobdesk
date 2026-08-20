@@ -28,6 +28,8 @@ systemd, a graphical desktop or kernel modules.
 - human-readable and JSON output for automation and the TUI;
 - idempotent `pkg` installation of Git, Neovim, tmux, Go, Python, Node.js,
   Clang/C++, Lua, GitHub CLI, tree, htop, ncdu and Micro;
+- Docker-validated offline Git, Go, Python, Node/npm, C, C++, Lua, Neovim and
+  tmux workflows in the Termux workspace;
 - status, setup, tools, shell and update screens in the TUI;
 - verified binary updates with rollback and recovery handling;
 - English (`en-US`) and Brazilian Portuguese (`pt-BR`) presentation.

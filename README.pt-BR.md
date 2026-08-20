@@ -28,6 +28,8 @@ gráfico ou módulos do kernel.
 - saída humana e JSON para automação e para a TUI;
 - instalação idempotente por `pkg` de Git, Neovim, tmux, Go, Python, Node.js,
   Clang/C++, Lua, GitHub CLI, tree, htop, ncdu e Micro;
+- fluxos offline de Git, Go, Python, Node/npm, C, C++, Lua, Neovim e tmux
+  validados em Docker no workspace do Termux;
 - telas de status, setup, ferramentas, shell e atualização na TUI;
 - atualização verificável do binário com rollback e recuperação;
 - apresentação em inglês (`en-US`) e português do Brasil (`pt-BR`).
