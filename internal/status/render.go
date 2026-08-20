@@ -35,7 +35,7 @@ func RenderText(w io.Writer, value SystemStatus, localizers ...i18n.Localizer) e
 	fmt.Fprintf(&text, "  %s: %s\n  %s:   %s\n  %s:  %s\n", localizer.Text(i18n.StatusArchitecture, nil), value.Host.Architecture, localizer.Text(i18n.StatusWakeLock, nil), availability(localizer, value.Host.WakeLockAvailable), localizer.Text(i18n.StatusTermuxAPI, nil), availability(localizer, value.Host.TermuxAPIAvailable))
 	fmt.Fprintf(&text, "\n%s\n  %s\n", localizer.Text(i18n.StatusStorage, nil), localizer.Text(i18n.StatusDeviceStorage, map[string]any{"Free": formatBytes(value.Storage.DeviceFree), "Total": formatBytes(value.Storage.DeviceTotal)}))
 	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:    %s\n", localizer.Text(i18n.StatusSetup, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.Setup.State), localizer.Text(i18n.StatusComplete, nil), yesNo(localizer, value.Setup.Completed))
-	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:   %s\n  %s:   %s\n", localizer.Text(i18n.StatusUbuntu, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.Ubuntu.State), localizer.Text(i18n.StatusAccessible, nil), yesNo(localizer, value.Ubuntu.Accessible), localizer.Text(i18n.StatusWorkspace, nil), yesNo(localizer, value.Ubuntu.Workspace))
+	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:       %s\n", localizer.Text(i18n.StatusWorkspace, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.Workspace.State), localizer.Text(i18n.StatusPath, nil), value.Workspace.Path)
 	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:       %d\n  %s:    %s\n", localizer.Text(i18n.StatusSSH, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.SSH.State), localizer.Text(i18n.StatusPort, nil), value.SSH.Port, localizer.Text(i18n.StatusRunning, nil), yesNo(localizer, value.SSH.Running))
 	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:   %s\n", localizer.Text(i18n.StatusNetwork, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.Network.State), localizer.Text(i18n.StatusAddresses, nil), joinOrUnknown(localizer, value.Network.Addresses))
 	fmt.Fprintf(&text, "\n%s\n  %s:     %s\n  %s:       %s\n", localizer.Text(i18n.StatusDevice, nil), localizer.Text(i18n.StatusBattery, nil), batteryText(localizer, value.Battery), localizer.Text(i18n.StatusWiFi, nil), wifiText(localizer, value.WiFi))
@@ -54,12 +54,6 @@ func RenderText(w io.Writer, value SystemStatus, localizers ...i18n.Localizer) e
 			if installation.LogPath != "" {
 				fmt.Fprintf(&text, "    %s:  %s\n", localizer.Text(i18n.StatusLog, nil), installation.LogPath)
 			}
-		}
-	}
-	if len(value.Configurations) > 0 {
-		text.WriteString("\n" + localizer.Text(i18n.StatusConfiguration, nil) + "\n")
-		for _, configuration := range value.Configurations {
-			fmt.Fprintf(&text, "  %s: %s (%s)\n", configuration.App, localizeState(localizer, string(configuration.State)), configuration.Profile)
 		}
 	}
 	fmt.Fprintf(&text, "\n%s\n  %s\n", localizer.Text(i18n.StatusAlerts, nil), localizer.Text(i18n.StatusAlertCounts, map[string]any{"OK": value.Alerts.OK, "Warnings": value.Alerts.Warnings, "Errors": value.Alerts.Errors, "Missing": value.Alerts.Missing, "Unknown": value.Alerts.Unknown}))

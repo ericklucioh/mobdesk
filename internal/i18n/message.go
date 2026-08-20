@@ -10,17 +10,16 @@ import (
 type MessageID string
 
 const (
-	ErrorInvalidLocale     MessageID = "error.invalid_locale"
-	ErrorInvalidArgs       MessageID = "error.invalid_args"
-	ErrorUnknownCommand    MessageID = "error.unknown_command"
-	ErrorInvalidFlag       MessageID = "error.invalid_flag"
-	ErrorOperationFailed   MessageID = "error.operation_failed"
-	ErrorTermuxRequired    MessageID = "error.termux_required"
-	ErrorSetupIncomplete   MessageID = "error.setup_incomplete"
-	ErrorUbuntuUnavailable MessageID = "error.ubuntu_unavailable"
-	ErrorPTYStart          MessageID = "error.pty_start"
-	ErrorCommandFailed     MessageID = "error.command_failed"
-	ErrorReadOutput        MessageID = "error.read_output"
+	ErrorInvalidLocale   MessageID = "error.invalid_locale"
+	ErrorInvalidArgs     MessageID = "error.invalid_args"
+	ErrorUnknownCommand  MessageID = "error.unknown_command"
+	ErrorInvalidFlag     MessageID = "error.invalid_flag"
+	ErrorOperationFailed MessageID = "error.operation_failed"
+	ErrorTermuxRequired  MessageID = "error.termux_required"
+	ErrorSetupIncomplete MessageID = "error.setup_incomplete"
+	ErrorPTYStart        MessageID = "error.pty_start"
+	ErrorCommandFailed   MessageID = "error.command_failed"
+	ErrorReadOutput      MessageID = "error.read_output"
 
 	RootShort       MessageID = "root.short"
 	RootLong        MessageID = "root.long"
@@ -183,9 +182,8 @@ const (
 	StatusDeviceStorage     MessageID = "status.device_storage"
 	StatusSetup             MessageID = "status.setup"
 	StatusComplete          MessageID = "status.complete"
-	StatusUbuntu            MessageID = "status.ubuntu"
-	StatusAccessible        MessageID = "status.accessible"
 	StatusWorkspace         MessageID = "status.workspace"
+	StatusPath              MessageID = "status.path"
 	StatusSSH               MessageID = "status.ssh"
 	StatusPort              MessageID = "status.port"
 	StatusRunning           MessageID = "status.running"
@@ -262,8 +260,6 @@ const (
 	TUIStatusAndroidHost           MessageID = "tui.status.android_host"
 	TUIStatusUnknownArchitecture   MessageID = "tui.status.unknown_architecture"
 	TUIStatusRemoteHost            MessageID = "tui.status.remote_host"
-	TUIStatusUbuntuDetail          MessageID = "tui.status.ubuntu_detail"
-	TUIStatusRemoteUbuntuDetail    MessageID = "tui.status.remote_ubuntu_detail"
 	TUIStatusSSHHost               MessageID = "tui.status.ssh_host"
 	TUIStatusResources             MessageID = "tui.status.resources"
 	TUIStatusFreeBattery           MessageID = "tui.status.free_battery"
@@ -307,8 +303,6 @@ const (
 	TUISetupDirectoriesDetail      MessageID = "tui.setup.directories_detail"
 	TUISetupPackages               MessageID = "tui.setup.packages"
 	TUISetupPackagesDetail         MessageID = "tui.setup.packages_detail"
-	TUISetupUbuntu                 MessageID = "tui.setup.ubuntu"
-	TUISetupUbuntuDetail           MessageID = "tui.setup.ubuntu_detail"
 	TUISetupWorkspace              MessageID = "tui.setup.workspace"
 	TUISetupWorkspaceDetail        MessageID = "tui.setup.workspace_detail"
 	TUISetupAdvanced               MessageID = "tui.setup.advanced"
@@ -444,7 +438,6 @@ var requiredMessageIDs = []MessageID{
 	ErrorOperationFailed,
 	ErrorTermuxRequired,
 	ErrorSetupIncomplete,
-	ErrorUbuntuUnavailable,
 	ErrorPTYStart,
 	ErrorCommandFailed,
 	ErrorReadOutput,
@@ -547,7 +540,7 @@ var requiredMessageIDs = []MessageID{
 	ServiceUninstallDetected, ServiceUninstallState, ServiceUninstallShared, ServiceExecError,
 	StatusTitle, StatusSummary, StatusUpdated, StatusHost, StatusRuntime, StatusArchitecture,
 	StatusWakeLock, StatusTermuxAPI, StatusStorage, StatusDeviceStorage, StatusSetup,
-	StatusComplete, StatusUbuntu, StatusAccessible, StatusWorkspace, StatusSSH, StatusPort,
+	StatusComplete, StatusWorkspace, StatusPath, StatusSSH, StatusPort,
 	StatusRunning, StatusNetwork, StatusAddresses, StatusDevice, StatusBattery, StatusWiFi,
 	StatusInstallations, StatusConfiguration, StatusAlerts, StatusState, StatusError, StatusLog,
 	StatusAvailable, StatusMissing, StatusYes, StatusNo, StatusNone, StatusBatteryAPIMissing,
@@ -564,8 +557,8 @@ var tuiMessageIDs = []MessageID{
 	TUIHomeStop, TUIHomeSSHAccess, TUIHomeSetupTitle, TUIHomeSetupDetail, TUIHomeAppsTitle,
 	TUIHomeAppsDetail, TUIHomeShellCardTitle, TUIHomeShellCardDetail, TUIHomeSystemTitle, TUIHomeSystemDetail,
 	TUIStatusTag, TUIStatusTitle, TUIStatusLoading, TUIStatusLoadingDetail, TUIStatusHost, TUIStatusRuntime,
-	TUIStatusAndroidHost, TUIStatusUnknownArchitecture, TUIStatusRemoteHost, TUIStatusUbuntuDetail,
-	TUIStatusRemoteUbuntuDetail, TUIStatusSSHHost, TUIStatusResources, TUIStatusFreeBattery,
+	TUIStatusAndroidHost, TUIStatusUnknownArchitecture, TUIStatusRemoteHost, TUIStatusSSHHost,
+	TUIStatusResources, TUIStatusFreeBattery,
 	TUIStatusInstallations, TUIStatusAlerts, TUIStatusAlertsShort, TUIStatusRefresh, TUIStatusBack,
 	TUIStatusEnvironment, TUIStatusOverall, TUIStatusVerified, TUIStatusDetails, TUIStatusItem, TUIStatusRefreshShort,
 	TUIStatusTableState, TUIStatusArchitecture, TUIStatusWorkspace, TUIStatusSSHPort, TUIStatusWakeLock,
@@ -574,7 +567,7 @@ var tuiMessageIDs = []MessageID{
 	TUIStatusNetworkUnavailable, TUIStatusInstallationsCount, TUIStatusAlertsCount,
 	TUIStatusBatteryNormal, TUIStatusBatteryLow,
 	TUISetupTag, TUISetupTitle, TUISetupBody, TUISetupContinue, TUISetupUpgrade, TUISetupDirectories,
-	TUISetupDirectoriesDetail, TUISetupPackages, TUISetupPackagesDetail, TUISetupUbuntu, TUISetupUbuntuDetail,
+	TUISetupDirectoriesDetail, TUISetupPackages, TUISetupPackagesDetail,
 	TUISetupWorkspace, TUISetupWorkspaceDetail, TUISetupAdvanced, TUISetupAdvancedTitle, TUISetupAdvancedBody,
 	TUISetupAdvancedHint, TUIToolsTag, TUIToolsTitle, TUIToolsBody, TUIToolsRemoteTitle, TUIToolsRemoteBody,
 	TUIToolStateInstalled, TUIToolStateInstalling, TUIToolStateInstall, TUIToolStatePartial, TUIShellTag, TUIShellTitle, TUIShellBody,

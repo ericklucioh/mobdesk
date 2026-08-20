@@ -35,10 +35,6 @@ func operationTitleLocalized(operation string, localizer i18n.Localizer) string 
 		return localizer.Text(i18n.TUIOperationUpdate, nil)
 	case "uninstall":
 		return localizer.Text(i18n.TUIOperationUninstall, nil)
-	case "config-apply":
-		return localizer.Text(i18n.TUIOperationConfigApply, nil)
-	case "config-remove":
-		return localizer.Text(i18n.TUIOperationConfigRemove, nil)
 	default:
 		return localizer.Text(i18n.TUIOperationInstall, nil)
 	}

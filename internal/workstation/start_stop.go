@@ -35,9 +35,6 @@ func (s Service) Start(ctx context.Context) (info StartInfo, err error) {
 		}
 		return info, workstationError("check SSH password configuration", err)
 	}
-	if err := s.run(ctx, "proot-distro", "login", "ubuntu", "--", "true"); err != nil {
-		return info, workstationError("Ubuntu is unavailable; run mobdesk setup", err)
-	}
 	if err := s.Deps.EnsureSSHConfigured(s.Paths); err != nil {
 		return info, err
 	}

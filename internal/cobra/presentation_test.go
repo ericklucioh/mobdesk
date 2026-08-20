@@ -34,10 +34,13 @@ func TestRootHelpUsesSelectedLocale(t *testing.T) {
 			if !strings.Contains(value, test.want) || strings.Contains(value, test.avoid) {
 				t.Fatalf("help = %q", value)
 			}
-			for _, command := range []string{"start", "stop", "setup", "status", "install", "uninstall", "config", "update", "version", "tui", "shell"} {
+			for _, command := range []string{"start", "stop", "setup", "status", "install", "uninstall", "update", "version", "tui", "shell"} {
 				if !strings.Contains(value, "mobdesk "+command) {
 					t.Fatalf("help omitted command %q: %s", command, value)
 				}
+			}
+			if strings.Contains(value, "mobdesk config") {
+				t.Fatalf("help still lists removed config command: %s", value)
 			}
 			if !strings.Contains(value, "--locale") || !strings.Contains(value, "--json") {
 				t.Fatalf("help omitted stable locale/json flags: %s", value)

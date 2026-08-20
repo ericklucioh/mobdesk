@@ -1,4 +1,20 @@
-# Goal: Otimizar o catalog-test
+# Goal: Termux-only first sprint
+
+## Active scope
+
+Termux is the sole workstation and development environment. PRoot-Distro and
+Ubuntu are removed. Application configuration, including LazyVim, is deferred.
+Existing PRoot-based installations have no migration path: users must back up
+their data, perform a full Termux reset and install the Termux-only version
+fresh.
+
+## Superseded goal
+
+The catalog-test optimization goal below describes the retired PRoot/Ubuntu
+product line. It is retained as historical planning material and is not active
+work for the Termux-only first sprint.
+
+# Historical Goal: Otimizar o catalog-test
 
 ## Status
 

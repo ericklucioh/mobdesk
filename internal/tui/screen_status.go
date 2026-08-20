@@ -23,18 +23,11 @@ func (m Model) renderStatus() string {
 
 	hostTitle := m.text(i18n.TUIStatusHost, nil)
 	hostDetail := fmt.Sprintf("%s · %s", valueOr(m.status.Host.OS, m.text(i18n.TUIStatusAndroidHost, nil)), valueOr(m.status.Host.Architecture, m.text(i18n.TUIStatusUnknownArchitecture, nil)))
-	ubuntuDetail := m.text(i18n.TUIStatusUbuntuDetail, map[string]any{"Value": yesNoLocalized(m.status.Ubuntu.Workspace, m.localizer)})
-	sshTitle := "SSH"
-	if !m.status.Host.Termux {
-		hostTitle = m.text(i18n.TUIStatusRuntime, nil)
-		hostDetail = fmt.Sprintf("%s · %s", valueOr(m.status.Host.OS, "Linux"), m.text(i18n.TUIStatusRemoteHost, nil))
-		ubuntuDetail = m.text(i18n.TUIStatusRemoteUbuntuDetail, map[string]any{"Value": yesNoLocalized(m.status.Ubuntu.Workspace, m.localizer)})
-		sshTitle = m.text(i18n.TUIStatusSSHHost, nil)
-	}
+	workspaceDetail := valueOr(m.status.Workspace.Path, m.text(i18n.TUIStatusNetworkUnavailable, nil))
 	cards := []string{
 		statusCard(m.width, hostTitle, m.status.Host.State, hostDetail),
-		statusCard(m.width, m.text(i18n.StatusUbuntu, nil), m.status.Ubuntu.State, ubuntuDetail),
-		statusCard(m.width, sshTitle, sshState(m.status.SSH), m.sshDetail(m.status.SSH)),
+		statusCard(m.width, m.text(i18n.TUIStatusWorkspace, nil), m.status.Workspace.State, workspaceDetail),
+		statusCard(m.width, "SSH", sshState(m.status.SSH), m.sshDetail(m.status.SSH)),
 		statusCard(m.width, m.text(i18n.TUIStatusResources, nil), m.status.Storage.State, m.text(i18n.TUIStatusFreeBattery, map[string]any{"Free": formatBytes(m.status.Storage.DeviceFree), "Battery": batterySummaryLocalized(m.status.Battery, m.localizer)})),
 	}
 
@@ -183,11 +176,7 @@ func statusRows(value status.SystemStatus, width int, localizers ...i18n.Localiz
 	right := func(text string) string {
 		return lipgloss.NewStyle().Width(stateWidth).Align(lipgloss.Right).Render(text)
 	}
-	runtimeLabel := localizer.Text(i18n.TUIStatusHost, nil)
-	if !value.Host.Termux {
-		runtimeLabel = localizer.Text(i18n.TUIStatusRuntime, nil)
-	}
-	return []table.Row{{runtimeLabel, right(checkStateLabel(value.Host.State, localizer))}, {localizer.Text(i18n.TUIStatusArchitecture, nil), right(valueOr(value.Host.Architecture, localizer.Text(i18n.TUIStatusUnknownArchitecture, nil)))}, {localizer.Text(i18n.StatusUbuntu, nil), right(checkStateLabel(value.Ubuntu.State, localizer))}, {localizer.Text(i18n.TUIStatusWorkspace, nil), right(yesNoLocalized(value.Ubuntu.Workspace, localizer))}, {localizer.Text(i18n.StatusSSH, nil), right(checkStateLabel(value.SSH.State, localizer))}, {localizer.Text(i18n.TUIStatusSSHPort, nil), right(fmt.Sprintf("%d", value.SSH.Port))}, {localizer.Text(i18n.TUIStatusWakeLock, nil), right(availableLocalized(value.Host.WakeLockAvailable, localizer))}, {localizer.Text(i18n.TUIStatusBattery, nil), right(batterySummaryLocalized(value.Battery, localizer))}, {localizer.Text(i18n.TUIStatusWiFi, nil), right(wifiSummaryLocalized(value.WiFi, localizer))}}
+	return []table.Row{{localizer.Text(i18n.TUIStatusHost, nil), right(checkStateLabel(value.Host.State, localizer))}, {localizer.Text(i18n.TUIStatusArchitecture, nil), right(valueOr(value.Host.Architecture, localizer.Text(i18n.TUIStatusUnknownArchitecture, nil)))}, {localizer.Text(i18n.TUIStatusWorkspace, nil), right(checkStateLabel(value.Workspace.State, localizer))}, {localizer.Text(i18n.StatusSSH, nil), right(checkStateLabel(value.SSH.State, localizer))}, {localizer.Text(i18n.TUIStatusSSHPort, nil), right(fmt.Sprintf("%d", value.SSH.Port))}, {localizer.Text(i18n.TUIStatusWakeLock, nil), right(availableLocalized(value.Host.WakeLockAvailable, localizer))}, {localizer.Text(i18n.TUIStatusBattery, nil), right(batterySummaryLocalized(value.Battery, localizer))}, {localizer.Text(i18n.TUIStatusWiFi, nil), right(wifiSummaryLocalized(value.WiFi, localizer))}}
 }
 
 func statusTableColumns(width int, localizers ...i18n.Localizer) []table.Column {

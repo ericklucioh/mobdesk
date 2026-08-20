@@ -12,12 +12,12 @@ func TestTermuxPathResolvesExecutableWithoutLookPath(t *testing.T) {
 	if err := os.MkdirAll(bin, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	want := filepath.Join(bin, "proot-distro")
+	want := filepath.Join(bin, "pkg")
 	if err := os.WriteFile(want, []byte("#!/bin/sh\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := termuxPath("proot-distro", prefix)
+	got, err := termuxPath("pkg", prefix)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,7 +27,7 @@ func TestTermuxPathResolvesExecutableWithoutLookPath(t *testing.T) {
 }
 
 func TestTermuxPathReportsMissingCommand(t *testing.T) {
-	_, err := termuxPath("proot-distro", t.TempDir())
+	_, err := termuxPath("pkg", t.TempDir())
 	if err == nil {
 		t.Fatal("missing command unexpectedly resolved")
 	}

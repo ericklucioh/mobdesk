@@ -2,12 +2,9 @@ package install
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
@@ -19,39 +16,17 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 			err = i18n.NewError(i18n.ServiceUninstallError, "uninstall_operation_failed", map[string]any{"Detail": err.Error()}, err)
 		}
 	}()
-	if options.Localizer.Locale == "" {
-		options.Localizer = i18n.New(i18n.LocaleENUS)
-	}
-	if options.Now == nil {
-		options.Now = time.Now
-	}
-	if options.CommandTimeout <= 0 {
-		options.CommandTimeout = defaultCommandTimeout
-	}
-	if options.LockTimeout <= 0 {
-		options.LockTimeout = defaultLockTimeout
-	}
+	options = installDefaults(options)
 	release, err := acquireInstallLock(ctx, options)
 	if err != nil {
 		return Result{}, err
 	}
 	defer release()
-
 	profile, ok := Resolve(name)
 	if !ok {
 		return Result{}, i18n.NewError(i18n.ServiceUninstallError, "uninstall_unsupported", map[string]any{"Detail": name}, nil)
 	}
-	result = Result{
-		SchemaVersion:   1,
-		Language:        profile.Name,
-		Package:         profile.Package,
-		Packages:        profilePackages(profile),
-		Executable:      profile.Executable,
-		Executables:     profileExecutables(profile),
-		State:           "failed",
-		Source:          "mobdesk",
-		StorageEstimate: profile.StorageEstimate,
-	}
+	result = Result{SchemaVersion: 1, Language: profile.Name, Package: profile.Package, Packages: profilePackages(profile), Executable: profile.Executable, Executables: profileExecutables(profile), State: "failed", Source: "mobdesk", StorageEstimate: profile.StorageEstimate}
 	record, err := loadInstallationRecord(options.Paths, profile.Name)
 	if err != nil {
 		return result, i18n.NewError(i18n.ServiceUninstallError, "uninstall_load", map[string]any{"Detail": profile.Name}, err)
@@ -59,208 +34,61 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 	if record.Source == "" {
 		record.Source = "mobdesk"
 	}
-	result.Source = record.Source
 	if record.Source != "mobdesk" {
 		return result, i18n.NewError(i18n.ServiceUninstallDetected, "uninstall_detected", map[string]any{"Name": profile.Name}, nil)
 	}
 	if record.State == "uninstalled" {
 		result.State = "uninstalled"
-		result.Installed = false
 		return result, nil
 	}
-	if record.State != "installed" && record.State != "partial" && record.State != "failed" {
+	if record.State != "installed" && record.State != "failed" && record.State != "partial" {
 		return result, i18n.NewError(i18n.ServiceUninstallState, "uninstall_invalid_state", map[string]any{"Name": profile.Name, "State": record.State}, nil)
 	}
 	if packageSharedByAnotherInstallation(options.Paths, record) {
 		return result, i18n.NewError(i18n.ServiceUninstallShared, "uninstall_shared_package", map[string]any{"Name": profile.Name}, nil)
 	}
-
-	record.State = "uninstalling"
-	record.LastAttemptAt = options.Now().UTC()
+	record.State, record.LastAttemptAt = "uninstalling", options.Now().UTC()
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
 		return result, i18n.NewError(i18n.ServiceUninstallError, "uninstall_record", nil, err)
 	}
-
-	strategy := record.Strategy
-	if strategy == "" {
-		strategy = profile.InstallKind
+	progress(options, i18n.ServiceUninstallProgress, map[string]any{"Name": profile.Name})
+	if record.Strategy != "pkg" {
+		return result, fmt.Errorf("unsupported native uninstall strategy %q", record.Strategy)
 	}
-	progress(options, i18n.ServiceUninstallProgress, map[string]any{"Name": profile.Name, "Detail": ""})
-	runner := runnerFor(options)
-	removedFiles, preservedFiles, removeErr := uninstallStrategy(ctx, runner, options, strategy, record)
-	result.Paths = append(removedFiles, preservedFiles...)
-	result.Conflicts = append([]string(nil), preservedFiles...)
-	if removeErr != nil {
-		record.State = "failed"
-		record.LastError = removeErr.Error()
-		record.LastErrorCode = i18n.ErrorCode(removeErr)
-		record.RemovedFiles = append(record.RemovedFiles, removedFiles...)
-		record.PreservedFiles = append(record.PreservedFiles, preservedFiles...)
+	removed := runTermuxLogged(ctx, runnerFor(options), options.CommandTimeout, record.LogPath, "pkg", append([]string{"uninstall", "-y"}, record.Packages...)...)
+	if removed.Err != nil {
+		record.State, record.LastError, record.LastErrorCode = "failed", removed.Err.Error(), i18n.ErrorCode(removed.Err)
 		_ = saveRecord(options.Paths.InstallationsDir(), record)
-		return result, removeErr
+		return result, removed.Err
 	}
-
-	record.State = "uninstalled"
-	record.LastError = ""
-	record.RemovedFiles = append(record.RemovedFiles, removedFiles...)
-	record.PreservedFiles = append(record.PreservedFiles, preservedFiles...)
-	if strategy != "script" && strategy != "go" && strategy != "ttt" && strategy != "cargo" && strategy != "gh-extension" {
-		record.RemovedPackages = append(record.RemovedPackages, installationPackages(record)...)
-	}
-	if len(record.PreservedFiles) > 0 {
-		record.State = "modified"
-	}
-	progress(options, i18n.ServiceUninstallProgress, map[string]any{"Name": profile.Name, "Detail": ""})
+	record.State, record.LastError, record.RemovedPackages = "uninstalled", "", append(record.RemovedPackages, record.Packages...)
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
 		return result, i18n.NewError(i18n.ServiceUninstallError, "uninstall_record", nil, err)
 	}
-	result.State = record.State
-	result.Installed = false
-	result.Changed = true
+	result.State, result.Changed = "uninstalled", true
 	return result, nil
 }
 
-func uninstallStrategy(ctx context.Context, runner CommandRunner, options Options, strategy string, record InstallationRecord) ([]string, []string, error) {
-	switch strategy {
-	case "apt", "node":
-		packages := installationPackages(record)
-		if len(packages) == 0 {
-			return nil, nil, fmt.Errorf("package missing from %s record", record.Name)
-		}
-		if repair := repairDpkg(ctx, runner, options.CommandTimeout, record.LogPath); repair.Err != nil {
-			return nil, nil, repair.Err
-		}
-		result := runAptLogged(ctx, runner, options.CommandTimeout, record.LogPath, append([]string{"remove", "-y"}, packages...)...)
-		return nil, nil, result.Err
-	case "npm":
-		if record.Package == "" {
-			return nil, nil, fmt.Errorf("package missing from %s record", record.Name)
-		}
-		result := runUbuntuLogged(ctx, runner, options.CommandTimeout, record.LogPath, "env", "NPM_CONFIG_PREFIX=/root/.local", "npm", "uninstall", "-g", record.Package)
-		return nil, nil, result.Err
-	case "pipx":
-		if record.Package == "" {
-			return nil, nil, fmt.Errorf("package missing from %s record", record.Name)
-		}
-		result := runUbuntuLogged(ctx, runner, options.CommandTimeout, record.LogPath, "pipx", "uninstall", record.Package)
-		return nil, nil, result.Err
-	case "script", "go", "ttt", "cargo", "gh-extension":
-		if len(record.InstalledFiles) == 0 {
-			return nil, nil, fmt.Errorf("no verified files to remove for %s", record.Name)
-		}
-		return removeTrackedFiles(ctx, runner, options, record)
-	default:
-		return nil, nil, fmt.Errorf("unsupported uninstall strategy %q", strategy)
-	}
-}
-
-func removeTrackedFiles(ctx context.Context, runner CommandRunner, options Options, record InstallationRecord) ([]string, []string, error) {
-	removed := []string{}
-	preserved := []string{}
-	for _, path := range record.InstalledFiles {
-		if err := validateManagedPath(path); err != nil {
-			return removed, preserved, err
-		}
-		exists := runUbuntuLogged(ctx, runner, options.CommandTimeout, record.LogPath, "test", "-e", path)
-		if exists.Err != nil {
-			continue
-		}
-		expected, ok := record.InstalledFileHashes[path]
-		if !ok || expected == "" {
-			preserved = append(preserved, path)
-			continue
-		}
-		current, err := currentFileHash(ctx, runner, options, record.LogPath, path)
-		if err != nil || current != expected {
-			preserved = append(preserved, path)
-			continue
-		}
-		removedResult := runUbuntuLogged(ctx, runner, options.CommandTimeout, record.LogPath, "rm", "--", path)
-		if removedResult.Err != nil {
-			return removed, preserved, removedResult.Err
-		}
-		removed = append(removed, path)
-	}
-	return removed, preserved, nil
-}
-
-func currentFileHash(ctx context.Context, runner CommandRunner, options Options, logPath, path string) (string, error) {
-	result := runUbuntuLogged(ctx, runner, options.CommandTimeout, logPath, "sha256sum", "--", path)
-	if result.Err != nil {
-		return "", result.Err
-	}
-	fields := strings.Fields(string(result.Stdout))
-	if len(fields) == 0 {
-		return "", fmt.Errorf("empty hash for %s", path)
-	}
-	return fields[0], nil
-}
-
-func validateManagedPath(path string) error {
-	clean := filepath.Clean(path)
-	if clean != path || (!strings.HasPrefix(path, "/root/.local/bin/") && !strings.HasPrefix(path, "/usr/local/bin/")) {
-		return fmt.Errorf("invalid managed file %q", path)
-	}
-	return nil
-}
-
 func packageSharedByAnotherInstallation(p paths.Paths, target InstallationRecord) bool {
-	targetPackages := installationPackages(target)
-	if len(targetPackages) == 0 {
-		return false
-	}
 	entries, err := os.ReadDir(p.InstallationsDir())
 	if err != nil {
 		return false
 	}
 	for _, entry := range entries {
-		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" || entry.Name() == target.Name+".json" {
+		if entry.IsDir() || entry.Name() == target.Name+".json" {
 			continue
 		}
-		payload, err := os.ReadFile(filepath.Join(p.InstallationsDir(), entry.Name()))
-		if err != nil {
+		record, err := loadInstallationRecord(p, strings.TrimSuffix(entry.Name(), ".json"))
+		if err != nil || record.State != "installed" {
 			continue
 		}
-		var record InstallationRecord
-		if json.Unmarshal(payload, &record) != nil || !installationSharesDependency(record, target, targetPackages) {
-			continue
-		}
-		if record.Source == "" {
-			record.Source = "mobdesk"
-		}
-		if record.Source == "mobdesk" && installationActive(record.State) {
-			return true
-		}
-	}
-	return false
-}
-
-func installationPackages(record InstallationRecord) []string {
-	if len(record.Packages) > 0 {
-		return append([]string(nil), record.Packages...)
-	}
-	if record.Package == "" {
-		return nil
-	}
-	return []string{record.Package}
-}
-
-func installationSharesDependency(record, target InstallationRecord, targetPackages []string) bool {
-	for _, dependency := range record.Dependencies {
-		if dependency == target.Name {
-			return true
-		}
-	}
-	for _, packageName := range installationPackages(record) {
-		for _, targetPackage := range targetPackages {
-			if packageName == targetPackage {
-				return true
+		for _, current := range record.Packages {
+			for _, targetPackage := range target.Packages {
+				if current == targetPackage {
+					return true
+				}
 			}
 		}
 	}
 	return false
-}
-
-func installationActive(state string) bool {
-	return state == "installed" || state == "partial" || state == "installing" || state == "uninstalling"
 }

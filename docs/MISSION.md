@@ -28,8 +28,8 @@ rebuilding accounts and configuration.
 
 ### Professionals
 
-The simple flow must not remove access to the underlying Ubuntu host. Advanced
-users should still be able to use the Linux environment through the phone and
+The simple flow must not remove access to the underlying Termux environment.
+Advanced users should still be able to use the workstation through the phone and
 SSH.
 
 ## Main challenge
@@ -45,9 +45,14 @@ The first MVP is intentionally a 100% TUI experience exposed through one SSH
 entry point:
 
 ```text
-Termux -> Mobdesk -> SSH -> Ubuntu via PRoot
+Termux -> Mobdesk -> local shell or SSH
 ```
 
-It does not add a code-server port or a complete graphical desktop. User
-applications may expose their own development ports, but the Mobdesk control
-surface remains the dedicated SSH flow.
+Termux is the sole workstation and development environment. PRoot-Distro and
+Ubuntu are removed from the active product scope. Application configuration,
+including LazyVim, is deferred. It does not add a code-server port or a complete
+graphical desktop. User applications may expose their own development ports, but
+the Mobdesk control surface remains the dedicated SSH flow.
+
+Existing PRoot-based installations cannot be migrated. They require a full
+Termux reset followed by a fresh Termux-only installation.

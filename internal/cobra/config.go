@@ -72,7 +72,6 @@ func newRootCmd(environ func(string) string) *cobra.Command {
 		newStatusCmd(state),
 		newInstallCmd(state),
 		newUninstallCmd(state),
-		newAppConfigCmd(state),
 		newShellCmd(state),
 		newVersionCmd(state),
 		newUpdateCmd(state),
@@ -182,21 +181,18 @@ type helpSpec struct {
 }
 
 var helpSpecs = map[string]helpSpec{
-	"mobdesk":               {short: i18n.RootShort, example: i18n.RootExample},
-	"mobdesk start":         {short: i18n.CommandStartShort, example: i18n.CommandStartExample},
-	"mobdesk stop":          {short: i18n.CommandStopShort, example: i18n.CommandStopExample},
-	"mobdesk setup":         {short: i18n.CommandSetupShort, example: i18n.CommandSetupExample},
-	"mobdesk install":       {short: i18n.CommandInstallShort, use: i18n.CommandInstallUse, example: i18n.CommandInstallExample},
-	"mobdesk uninstall":     {short: i18n.CommandUninstallShort, use: i18n.CommandUninstallUse, example: i18n.CommandUninstallExample},
-	"mobdesk status":        {short: i18n.CommandStatusShort, example: i18n.CommandStatusExample},
-	"mobdesk config":        {short: i18n.CommandConfigShort},
-	"mobdesk config apply":  {short: i18n.CommandConfigApplyShort, use: i18n.CommandConfigApplyUse, example: i18n.CommandConfigApplyExample},
-	"mobdesk config remove": {short: i18n.CommandConfigRemoveShort, use: i18n.CommandConfigRemoveUse, example: i18n.CommandConfigRemoveExample},
-	"mobdesk shell":         {short: i18n.CommandShellShort, example: i18n.CommandShellExample},
-	"mobdesk version":       {short: i18n.CommandVersionShort, example: i18n.CommandVersionExample},
-	"mobdesk update":        {short: i18n.CommandUpdateShort, example: i18n.CommandUpdateExample},
-	"mobdesk tui":           {short: i18n.CommandTUIShort, example: i18n.CommandTUIExample},
-	"mobdesk logs":          {short: i18n.CommandLogsShort, example: i18n.CommandLogsExample},
+	"mobdesk":           {short: i18n.RootShort, example: i18n.RootExample},
+	"mobdesk start":     {short: i18n.CommandStartShort, example: i18n.CommandStartExample},
+	"mobdesk stop":      {short: i18n.CommandStopShort, example: i18n.CommandStopExample},
+	"mobdesk setup":     {short: i18n.CommandSetupShort, example: i18n.CommandSetupExample},
+	"mobdesk install":   {short: i18n.CommandInstallShort, use: i18n.CommandInstallUse, example: i18n.CommandInstallExample},
+	"mobdesk uninstall": {short: i18n.CommandUninstallShort, use: i18n.CommandUninstallUse, example: i18n.CommandUninstallExample},
+	"mobdesk status":    {short: i18n.CommandStatusShort, example: i18n.CommandStatusExample},
+	"mobdesk shell":     {short: i18n.CommandShellShort, example: i18n.CommandShellExample},
+	"mobdesk version":   {short: i18n.CommandVersionShort, example: i18n.CommandVersionExample},
+	"mobdesk update":    {short: i18n.CommandUpdateShort, example: i18n.CommandUpdateExample},
+	"mobdesk tui":       {short: i18n.CommandTUIShort, example: i18n.CommandTUIExample},
+	"mobdesk logs":      {short: i18n.CommandLogsShort, example: i18n.CommandLogsExample},
 }
 
 var flagMessageIDs = map[string]i18n.MessageID{

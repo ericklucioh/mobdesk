@@ -19,9 +19,6 @@ type operationResult struct {
 	Target           string                   `json:"target,omitempty"`
 	Action           string                   `json:"action,omitempty"`
 	Changed          bool                     `json:"changed"`
-	ConfigState      string                   `json:"config_state,omitempty"`
-	Conflicts        []string                 `json:"conflicts,omitempty"`
-	Paths            []string                 `json:"paths,omitempty"`
 	Source           string                   `json:"source,omitempty"`
 	CurrentVersion   string                   `json:"current_version,omitempty"`
 	LatestVersion    string                   `json:"latest_version,omitempty"`
@@ -35,6 +32,8 @@ type operationResult struct {
 	StorageFreeBytes int64                    `json:"storage_free_bytes,omitempty"`
 	StorageWarning   bool                     `json:"storage_warning,omitempty"`
 	StorageBlocked   bool                     `json:"storage_blocked,omitempty"`
+	Paths            []string                 `json:"paths,omitempty"`
+	Conflicts        []string                 `json:"conflicts,omitempty"`
 }
 
 func decorateResult(result operationResult, localizers []i18n.Localizer, messageID i18n.MessageID, operationErr error) operationResult {

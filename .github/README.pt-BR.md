@@ -7,41 +7,47 @@
 > andamento. Use-o para estudo, desenvolvimento e serviços locais leves, não
 > para cargas de produção.
 
-## Sua workstation Linux no bolso
+## Sua workstation Termux no bolso
 
-O Mobdesk transforma um celular Android em uma workstation Ubuntu pessoal:
+O Mobdesk transforma um celular Android em uma workstation Termux pessoal:
 
 ```text
 Android
-  Termux -> Mobdesk -> Ubuntu via PRoot
-                      -> shell local ou SSH na porta 8022
+  Termux -> Mobdesk -> shell local ou SSH na porta 8022
 ```
 
-O Ubuntu permanece no celular. Você pode trabalhar localmente ou conectar
-outro computador por uma rede confiável. O Mobdesk não exige root, máquina
-virtual, Docker no celular, systemd ou desktop gráfico.
+O Termux é tanto a camada de integração com o Android quanto o único ambiente
+de desenvolvimento. O workspace nativo permanece no celular. Você pode
+trabalhar localmente ou conectar outro computador por uma rede confiável. O
+Mobdesk não exige root, máquina virtual, Docker no celular, systemd ou desktop
+gráfico.
 
 ## O que está disponível
 
-- Ubuntu persistente por meio do PRoot-Distro;
-- servidor SSH dedicado na porta `8022`;
-- acesso local ao shell com `mobdesk shell`;
+- setup repetível do Termux, SSH, rede e workspace;
+- servidor SSH dedicado do Mobdesk na porta `8022`;
+- acesso nativo ao shell local do Termux com `mobdesk shell`;
 - TUI com suporte a toque, mouse e teclado;
 - status e saída JSON para automação;
-- perfis de instalação de Go, Python, Node.js, C, C++ e Lua;
-- perfis de configuração de Neovim/LazyVim;
+- perfis de instalação idempotente pelo `pkg` do Termux para Git, Neovim,
+  tmux, Go, Python, Node.js, C e C++;
 - atualizações do binário com rollback;
 - apresentação em inglês (`en-US`) e português do Brasil (`pt-BR`).
 
 Projetos, sessões persistentes, serviços e uma interface web permanecem nos
 próximos estágios do roadmap.
 
+A configuração de aplicativos, incluindo Neovim/LazyVim, está adiada para o
+primeiro sprint. Ferramentas JVM gerenciadas e Spring Boot também não fazem
+parte do escopo atual do sprint.
+
 ## Requisitos
 
 - celular Android ARM64;
 - Termux pelo [F-Droid](https://f-droid.org/packages/com.termux/) ou pelos
   [releases oficiais](https://github.com/termux/termux-app/releases);
-- aproximadamente 1,5 GB de espaço livre para a instalação base do Ubuntu;
+- espaço para Termux, projetos e ferramentas instaladas; o Mobdesk avisa abaixo
+  de 20 GB livres e bloqueia novas instalações abaixo de 10 GB;
 - rede local confiável para acesso SSH remoto.
 
 ## Instalação
@@ -70,6 +76,12 @@ chmod 0755 mobdesk
 O checksum verifica a integridade. Os releases ainda não possuem assinatura
 independente, portanto o checksum não autentica sua origem.
 
+### Instalações PRoot existentes
+
+O primeiro sprint somente com Termux não migra instalações do PRoot-Distro ou
+Ubuntu. Faça backup do que precisar, execute um reset completo do Termux e
+instale o Mobdesk novamente. Não tente atualização ou migração no local.
+
 ### Compilar com Go
 
 O projeto exige Go `1.26.5` ou mais recente:
@@ -88,9 +100,9 @@ tag explícita, quando a instalação precisar ser reproduzível.
 
 ## Primeira execução
 
-O setup instala os pacotes necessários no Termux, baixa o Ubuntu, cria o
-workspace persistente, configura o SSH e instala o launcher `mobdesk`. Depois
-da primeira execução:
+O setup instala os pacotes necessários no Termux, cria o workspace nativo
+persistente, configura o SSH e instala o launcher `mobdesk`. Depois da primeira
+execução:
 
 ```bash
 mobdesk status
@@ -99,16 +111,17 @@ mobdesk shell
 mobdesk stop
 ```
 
-`mobdesk start` inicia o SSH e exibe os dados de conexão. Ele não abre
-automaticamente um shell Ubuntu local. Use `mobdesk shell` para acesso local ou
-o comando SSH exibido a partir de outro computador.
+`mobdesk start` inicia o SSH e exibe os dados de conexão. Use `mobdesk shell`
+para acesso local nativo ao Termux ou o comando SSH exibido a partir de outro
+computador. As sessões SSH usam a mesma workstation e o mesmo workspace do
+Termux.
 
 ## TUI e idioma
 
 Execute `mobdesk tui` no Termux. `Tab` muda o foco, `Enter` ativa uma ação,
 `Esc` volta e `q` inicia a confirmação de saída. A mesma TUI pode ser executada
-dentro do Ubuntu por SSH; nesse modo, as ações exclusivas do host são
-bloqueadas e explicadas.
+por SSH e usa a mesma workstation Termux, não um ambiente separado de Ubuntu
+ou PRoot.
 
 Inglês é o idioma padrão. Selecione português do Brasil com:
 
@@ -126,10 +139,9 @@ Use SSH apenas em redes confiáveis ou por um túnel privado. Nunca exponha a
 porta `8022` diretamente à internet. O MVP atual usa autenticação por senha e
 escuta na rede local.
 
-PRoot não é uma máquina virtual e não fornece um kernel separado. O Android
-pode suspender o Termux, e o projeto não foi criado para cargas pesadas de
-produção, Docker real, systemd, módulos do kernel ou acesso privilegiado a
-dispositivos.
+O Android pode suspender o Termux, e o projeto não foi criado para cargas
+pesadas de produção, Docker real, systemd, módulos do kernel ou acesso
+privilegiado a dispositivos.
 
 ## Mais informações
 

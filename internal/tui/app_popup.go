@@ -36,42 +36,8 @@ func (m Model) popupInstallation(entry toolEntry) (status.InstallationStatus, bo
 	return status.InstallationStatus{}, false
 }
 
-func (m Model) popupConfiguration(entry toolEntry) (status.ConfigurationStatus, bool) {
-	for _, configuration := range m.status.Configurations {
-		if configuration.App == entry.profile.Name {
-			return configuration, true
-		}
-	}
-	return status.ConfigurationStatus{}, false
-}
-
-func (m Model) configStateLabel(value status.ConfigState) string {
-	id := i18n.TUIPopupConfigState
-	switch value {
-	case status.ConfigStateUnavailable:
-		id = i18n.TUIPopupConfigUnavailableState
-	case status.ConfigStateNotApplied:
-		id = i18n.TUIPopupConfigNotApplied
-	case status.ConfigStateApplying:
-		id = i18n.TUIPopupConfigApplying
-	case status.ConfigStateApplied:
-		id = i18n.TUIPopupConfigApplied
-	case status.ConfigStateRemoving:
-		id = i18n.TUIPopupConfigRemoving
-	case status.ConfigStateRemoved:
-		id = i18n.TUIPopupConfigRemoved
-	case status.ConfigStateModified:
-		id = i18n.TUIPopupConfigModified
-	case status.ConfigStateConflict:
-		id = i18n.TUIPopupConfigConflict
-	case status.ConfigStateFailed:
-		id = i18n.TUIPopupConfigFailed
-	}
-	return m.text(id, nil)
-}
-
 func (m Model) appStateLabel(value string) string {
-	id := i18n.TUIPopupConfigState
+	id := i18n.TUIPopupAppAvailable
 	switch value {
 	case "available":
 		id = i18n.TUIPopupAppStateAvailable
@@ -130,24 +96,12 @@ func popupDependencyLabel(name string) string {
 	}
 }
 
-func popupConfigLabel(profile string) string {
-	if profile == "lazyvim" {
-		return "LazyVim"
-	}
-	return profile
-}
-
 func (m Model) popupActions() []popupAction {
 	entry, ok := m.popupEntry()
 	if !ok {
 		return []popupAction{{ID: "close", Label: m.text(i18n.TUIPopupClose, nil), Enabled: true}}
 	}
 	installation, installed := m.popupInstallation(entry)
-	configuration, hasConfig := m.popupConfiguration(entry)
-	if !hasConfig && entry.profile.ConfigProfile != "" {
-		configuration = status.ConfigurationStatus{App: entry.profile.Name, Profile: entry.profile.ConfigProfile, State: status.ConfigStateNotApplied}
-		hasConfig = true
-	}
 	actions := make([]popupAction, 0, 5)
 	installLabel := m.text(i18n.TUIPopupInstall, nil)
 	if installed && installation.State == "installed" {
@@ -177,24 +131,6 @@ func (m Model) popupActions() []popupAction {
 		uninstallReason = ""
 	}
 	actions = append(actions, popupAction{ID: "uninstall", Label: m.text(i18n.TUIPopupUninstall, nil), Enabled: managed && m.canManageHost(), Destructive: true, Reason: uninstallReason})
-	if entry.profile.ConfigProfile != "" {
-		if configuration.State == status.ConfigStateApplied || configuration.State == status.ConfigStateModified {
-			removeReason := ""
-			if !m.canManageHost() {
-				removeReason = m.text(i18n.TUIHostRestriction, nil)
-			}
-			actions = append(actions, popupAction{ID: "config_remove", Label: m.text(i18n.TUIPopupRemoveConfig, nil), Enabled: m.canManageHost(), Destructive: true, Reason: removeReason})
-		} else {
-			reason := ""
-			enabled := hasConfig && configuration.State != status.ConfigStateConflict && m.canManageHost()
-			if configuration.State == status.ConfigStateConflict {
-				reason = m.text(i18n.TUIPopupConflict, nil)
-			} else if !m.canManageHost() {
-				reason = m.text(i18n.TUIHostRestriction, nil)
-			}
-			actions = append(actions, popupAction{ID: "config_apply", Label: m.text(i18n.TUIPopupApplyConfig, nil), Enabled: enabled, Reason: reason})
-		}
-	}
 	actions = append(actions, popupAction{ID: "close", Label: m.text(i18n.TUIPopupClose, nil), Enabled: true})
 	return actions
 }
@@ -219,10 +155,6 @@ func popupActionLabelLocalized(action popupAction, width int, localizer i18n.Loc
 		switch action.ID {
 		case "uninstall":
 			return localizer.Text(i18n.TUIPopupUninstallShort, nil)
-		case "config_apply":
-			return localizer.Text(i18n.TUIPopupApplyConfigShort, nil)
-		case "config_remove":
-			return localizer.Text(i18n.TUIPopupRemoveConfigShort, nil)
 		}
 	}
 	return "[ " + action.Label + " ]"
@@ -235,11 +167,6 @@ func (m Model) renderAppPopup() string {
 	}
 	width := contentWidth(m.width)
 	installation, installed := m.popupInstallation(entry)
-	configuration, hasConfig := m.popupConfiguration(entry)
-	if !hasConfig && entry.profile.ConfigProfile != "" {
-		configuration = status.ConfigurationStatus{State: status.ConfigStateNotApplied, Profile: entry.profile.ConfigProfile}
-		hasConfig = true
-	}
 	state := m.text(i18n.TUIPopupAppAvailable, nil)
 	if installed {
 		state = m.appStateLabel(installation.State)
@@ -267,10 +194,6 @@ func (m Model) renderAppPopup() string {
 	}
 	if installed && len(installation.MissingDependencies) > 0 {
 		metadata = append(metadata, m.text(i18n.TUIPopupDependencies, map[string]any{"Value": strings.Join(installation.MissingDependencies, ", ")}))
-	}
-	if hasConfig {
-		config := popupConfigLabel(entry.profile.ConfigProfile) + " " + m.configStateLabel(configuration.State)
-		metadata = append(metadata, m.text(i18n.TUIPopupConfig, map[string]any{"Value": config}))
 	}
 	if !installed {
 		if estimate := entry.profile.StorageEstimate; estimate != nil {
@@ -409,10 +332,6 @@ func (m Model) dispatchPopupAction(action string) (tea.Model, tea.Cmd) {
 		return m.runHostOperation("install", "install", name)
 	case "uninstall":
 		return m.runHostOperation("uninstall", "uninstall", name, "--json", "--progress")
-	case "config_apply":
-		return m.runHostOperation("config-apply", "config", "apply", name, "--json", "--progress")
-	case "config_remove":
-		return m.runHostOperation("config-remove", "config", "remove", name, "--json", "--progress")
 	default:
 		return m, nil
 	}

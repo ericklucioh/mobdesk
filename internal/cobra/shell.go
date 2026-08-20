@@ -27,14 +27,15 @@ func runShell(ctx context.Context, p paths.Paths, localizers ...i18n.Localizer) 
 	if err := ensureSetupCompleted(p, localizers...); err != nil {
 		return err
 	}
-	command, err := executil.CommandContext(ctx, "proot-distro", "login", "ubuntu", "--", "true")
-	if err != nil {
-		return err
+	if info, err := os.Stat(p.Workspace()); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("workspace is missing; run mobdesk setup")
+		}
+		return fmt.Errorf("check workspace: %w", err)
+	} else if !info.IsDir() {
+		return fmt.Errorf("workspace is not a directory: %s", p.Workspace())
 	}
-	if err := command.Run(); err != nil {
-		return fmt.Errorf("%s", localized(localizers, i18n.ErrorUbuntuUnavailable, map[string]any{"Detail": err.Error()}))
-	}
-	return runInteractive(ctx, "proot-distro", "login", "ubuntu", "--", "bash", "--rcfile", p.UbuntuShellConfig(), "-i")
+	return runInteractiveInDir(ctx, p.Workspace(), "bash", "-i")
 }
 
 func ensureSetupCompleted(p paths.Paths, localizers ...i18n.Localizer) error {
@@ -49,11 +50,16 @@ func ensureSetupCompleted(p paths.Paths, localizers ...i18n.Localizer) error {
 }
 
 func runInteractive(ctx context.Context, name string, args ...string) error {
+	return runInteractiveInDir(ctx, "", name, args...)
+}
+
+func runInteractiveInDir(ctx context.Context, dir, name string, args ...string) error {
 	fmt.Printf("\n$ %s %s\n", name, strings.Join(args, " "))
 	command, err := executil.CommandContext(ctx, name, args...)
 	if err != nil {
 		return err
 	}
+	command.Dir = dir
 	ptmx, err := pty.Start(command)
 	if err != nil {
 		return fmt.Errorf("start PTY for %q: %w", name, err)

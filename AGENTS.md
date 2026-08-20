@@ -1,15 +1,14 @@
 # Mobdesk
 
 Mobdesk turns an Android phone into a development workstation. Termux is the
-control host; persistent Ubuntu ARM64 through PRoot-Distro is the development
-environment. PRoot is not a VM or Docker: do not assume systemd, cgroups,
-complete namespaces, real root, kernel modules or graphics acceleration.
+sole host and development environment. PRoot-Distro and Ubuntu are removed from
+the active scope. Existing PRoot-based installs require a full Termux reset and
+fresh installation; no migration is supported.
 
 ## Architecture
 
 ```text
-Termux (Android host, SSH, wake-lock, PRoot)
-└── Ubuntu via PRoot (workspace and development tools)
+Termux (Android host, SSH, wake-lock, workspace and development tools)
 ```
 
 - Entry point: `cmd/mobdesk/main.go`; module:
@@ -17,13 +16,12 @@ Termux (Android host, SSH, wake-lock, PRoot)
 - Cobra implements the CLI; Bubble Tea implements the TUI.
 - Services do not depend on TUI rendering.
 - The TUI uses the CLI JSON contract for real operations.
-- Host actions (`setup`, SSH, PRoot, installation and updates) run only in
-  Termux. From an SSH session inside Ubuntu, the TUI must explain the boundary.
+- All actions run in Termux. SSH sessions use the same Termux workstation.
 
 ## Current scope
 
-Current commands are `start`, `stop`, `setup`, `shell`, `install`, `status`,
-`update`, `version` and `tui`. `doctor`, projects, services, a web interface,
+Current commands are `start`, `stop`, `setup`, `shell`, `install`, `uninstall`,
+`status`, `update`, `version`, `tui` and `logs`. `doctor`, projects, services, a web interface,
 an APK, a graphical desktop, real Docker, Nix and multiple users remain outside
 the MVP.
 
@@ -42,8 +40,8 @@ the MVP.
 ## Implementation rules
 
 1. Prefer small changes and the standard library before new dependencies.
-2. Keep Termux and Ubuntu commands explicitly separate; use `os/exec` for
-   simple processes and PTY for interactive shells.
+2. Run commands in Termux; use `os/exec` for simple processes and PTY for
+   interactive shells.
 3. Validate inputs before forming commands. Never concatenate user input into
    shell syntax.
 4. Repeated operations preserve data and state; destructive actions require
@@ -64,17 +62,15 @@ the MVP.
 3. JSON preserves `schema_version`, `command`, `success`, `state` and `message`.
    New fields are additive and compatible with the existing schema.
 4. Cobra adapts flags, arguments, context and output. Business rules,
-   installation, status, configuration and host operations belong to internal
+   installation, status and host operations belong to internal
    services, not command handlers.
-5. Termux is the Android host and Ubuntu via PRoot is the development userland.
-   Never assume Ubuntu has host access, real root, systemd or full namespaces.
-6. Host-only actions validate the runtime and, from Ubuntu or SSH, return an
-   objective explanation telling the user to return to Termux.
+5. Termux is the Android host and the development userland. Do not introduce a
+   PRoot/Ubuntu execution boundary without an explicit scope decision.
+6. SSH uses the same Termux environment; do not add remote Ubuntu-mode blocking.
 7. Do not detect Termux with `runtime.GOOS` alone. Use project markers and
    canonical paths such as `PREFIX` and `paths.Current()`.
-8. Simple processes use `executil`; Ubuntu commands cross the declared
-   `proot-distro` boundary. The TUI never calls `apt`, `pipx`, `npm`,
-   `proot-distro` or scripts directly.
+8. Simple processes use `executil`. The TUI never calls package managers or
+   scripts directly.
 9. Every long process receives `cmd.Context()` or equivalent, supports
    cancellation, and leaves state and logs consistent after partial failure.
 10. New commands need tests for invalid arguments, text mode, JSON mode when
@@ -90,8 +86,9 @@ the MVP.
    a keyboard equivalent.
 4. Every mouse/touch action also works by keyboard; unavailable actions explain
    why in the same flow.
-5. Tapping an app row opens details before install, removal or configuration.
-   Destructive actions require in-screen confirmation.
+5. Tapping an app row opens details before install or removal. Destructive
+   actions require in-screen confirmation. Application configuration and
+   LazyVim are deferred.
 6. Busy, error, conflict, completed and blocked states are visible and prevent
    duplicate or incompatible actions.
 7. Screens work in narrow terminals without fixed widths or clipped controls.
@@ -100,8 +97,8 @@ the MVP.
 
 ## Validation and documentation
 
-Run `make check` before completing changes. Docker validates logic and the
-simulated userland; final integration requires real Termux on the POCO F6.
+Run `make check` before completing changes. Docker validates logic; final
+integration requires real Termux on the POCO F6.
 
 Read `docs/MISSION.md` before changing architecture or scope. Update:
 

@@ -15,7 +15,7 @@ import (
 func TestUninstallOperationResultKeepsStructuredFailure(t *testing.T) {
 	result := uninstallOperationResult(install.Result{
 		Language: "neovim", State: "failed", Source: "detected",
-		Conflicts: []string{"/root/.local/bin/nvim"},
+		Conflicts: []string{"/home/user/.local/bin/nvim"},
 	}, "nvim", errors.New("installation was only detected"))
 	if result.Success || result.Target != "nvim" || result.Action != "uninstall" || result.State != "failed" || result.Source != "detected" {
 		t.Fatalf("unexpected uninstall result: %+v", result)

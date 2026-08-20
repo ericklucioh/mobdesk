@@ -36,26 +36,18 @@ func (ExecRunner) Run(ctx context.Context, name string, args ...string) CommandR
 	var stderr bytes.Buffer
 	command.Stderr = &stderr
 	stdout, err := command.Output()
-	if err == nil {
-		return CommandResult{Stdout: stdout, Stderr: stderr.Bytes()}
-	}
-	return CommandResult{Err: err, Stdout: stdout, Stderr: stderr.Bytes()}
+	return CommandResult{Stdout: stdout, Stderr: stderr.Bytes(), Err: err}
 }
 
-// InteractiveRunner keeps commands attached to a terminal so package
-// managers and installers can ask the user questions. Output is copied into
-// the result for logs and version verification while remaining visible.
+// InteractiveRunner gives native package managers terminal ownership while
+// retaining their output for the installation log.
 type InteractiveRunner struct{}
 
 func (InteractiveRunner) Run(ctx context.Context, name string, args ...string) CommandResult {
-	if name == "proot-distro" && containsArgument(args, "apt-get") {
-		args = addUbuntuEnvironment(args, "DEBIAN_FRONTEND=noninteractive")
-	}
 	command, err := executil.CommandContext(ctx, name, args...)
 	if err != nil {
 		return CommandResult{Err: err}
 	}
-	command.WaitDelay = 500 * time.Millisecond
 	if _, err := fmt.Fprintf(os.Stdout, "\n$ %s %s\n", name, strings.Join(args, " ")); err != nil {
 		return CommandResult{Err: err}
 	}
@@ -102,15 +94,6 @@ func (InteractiveRunner) Run(ctx context.Context, name string, args ...string) C
 	return CommandResult{Stdout: output.Bytes(), Err: waitErr}
 }
 
-func containsArgument(args []string, value string) bool {
-	for _, arg := range args {
-		if arg == value {
-			return true
-		}
-	}
-	return false
-}
-
 func copyTerminalInput(ctx context.Context, destination io.Writer, source *os.File) {
 	buffer := make([]byte, 4096)
 	for {
@@ -119,7 +102,6 @@ func copyTerminalInput(ctx context.Context, destination io.Writer, source *os.Fi
 			return
 		default:
 		}
-
 		poll := []unix.PollFd{{Fd: int32(source.Fd()), Events: unix.POLLIN}}
 		_, err := unix.Poll(poll, 100)
 		if err == unix.EINTR {
@@ -131,7 +113,6 @@ func copyTerminalInput(ctx context.Context, destination io.Writer, source *os.Fi
 		if poll[0].Revents&unix.POLLIN == 0 {
 			continue
 		}
-
 		count, err := source.Read(buffer)
 		if count > 0 {
 			if _, writeErr := destination.Write(buffer[:count]); writeErr != nil {
@@ -144,28 +125,12 @@ func copyTerminalInput(ctx context.Context, destination io.Writer, source *os.Fi
 	}
 }
 
-type nonInteractiveRunner struct {
-	Runner CommandRunner
-}
-
-func (r nonInteractiveRunner) Run(ctx context.Context, name string, args ...string) CommandResult {
-	if name == "proot-distro" {
-		args = addUbuntuEnvironment(args, "DEBIAN_FRONTEND=noninteractive")
+func runnerFor(options Options) CommandRunner {
+	if options.Runner != nil {
+		return options.Runner
 	}
-	return r.Runner.Run(ctx, name, args...)
-}
-
-func addUbuntuEnvironment(args []string, variables ...string) []string {
-	result := append([]string(nil), args...)
-	for index, arg := range result {
-		if arg != "env" {
-			continue
-		}
-		insert := index + 1
-		result = append(result, make([]string, len(variables))...)
-		copy(result[insert+len(variables):], result[insert:len(result)-len(variables)])
-		copy(result[insert:insert+len(variables)], variables)
-		return result
+	if options.Interactive {
+		return InteractiveRunner{}
 	}
-	return result
+	return ExecRunner{}
 }

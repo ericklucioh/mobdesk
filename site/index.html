@@ -3,9 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Mobdesk transforma um celular Android em um workstation Ubuntu para desenvolvimento e estudos.">
+    <meta name="description" content="Mobdesk transforma um celular Android em uma workstation Termux para desenvolvimento e estudos.">
     <meta name="theme-color" content="#0d0817">
-    <title>Mobdesk | Ubuntu no bolso</title>
+    <title>Mobdesk | Termux no bolso</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -34,7 +34,7 @@
           <div class="hero-copy">
             <p class="eyebrow"><span class="pulse"></span> beta experimental · open source</p>
             <h1>Seu ambiente de desenvolvimento.<br><em>No bolso.</em></h1>
-            <p class="hero-lead">O Mobdesk transforma um celular Android ARM64 em uma workstation Ubuntu persistente para estudar, programar e trabalhar de qualquer lugar.</p>
+            <p class="hero-lead">O Mobdesk transforma um celular Android ARM64 em uma workstation Termux persistente para estudar, programar e trabalhar de qualquer lugar.</p>
             <div class="hero-actions">
               <a class="button button-primary" href="https://github.com/ericklucioh/mobdesk/releases/latest">Começar agora <span aria-hidden="true">↗</span></a>
               <a class="button button-quiet" href="#como-funciona">Ver como funciona <span aria-hidden="true">↓</span></a>
@@ -51,7 +51,7 @@
             <div class="terminal-body">
               <div class="terminal-line muted">$ mobdesk status</div>
               <div class="terminal-line output"><span class="ok">●</span> workstation online</div>
-              <div class="terminal-line output indent">ubuntu <span>persistent · arm64</span></div>
+              <div class="terminal-line output indent">termux <span>native · arm64</span></div>
               <div class="terminal-line output indent">workspace <span>~/mobdesk/workspace</span></div>
               <div class="terminal-line output indent">ssh <span class="accent">ready · :8022</span></div>
               <div class="terminal-gap"></div>
@@ -73,7 +73,7 @@
       <section class="signal-bar" aria-label="Características principais">
         <div class="container signal-grid">
           <div><strong>ARM64</strong><span>feito para Android</span></div>
-          <div><strong>Ubuntu</strong><span>ambiente persistente</span></div>
+          <div><strong>Termux</strong><span>ambiente persistente</span></div>
           <div><strong>SSH</strong><span>na sua rede local</span></div>
           <div><strong>MIT</strong><span>código aberto</span></div>
         </div>
@@ -86,18 +86,18 @@
               <p class="eyebrow">01 / arquitetura</p>
               <h2>Uma workstation Linux,<br><span>sem carregar um notebook.</span></h2>
             </div>
-            <p>O Android continua sendo o host. O Termux controla o ambiente e o PRoot-Distro mantém um Ubuntu persistente para seus projetos e ferramentas.</p>
+            <p>O Android continua sendo o host. O Termux é o ambiente de desenvolvimento, onde o Mobdesk organiza seu workspace persistente, ferramentas nativas e SSH.</p>
           </div>
           <div class="flow" aria-label="Fluxo da arquitetura Mobdesk">
             <div class="flow-node"><small>ANDROID</small><strong>Seu celular</strong><span>hardware ARM64</span></div>
             <div class="flow-arrow" aria-hidden="true">→</div>
-            <div class="flow-node highlighted"><small>HOST</small><strong>Termux</strong><span>controle do sistema</span></div>
+            <div class="flow-node highlighted"><small>HOST</small><strong>Termux</strong><span>ambiente nativo</span></div>
             <div class="flow-arrow" aria-hidden="true">→</div>
-            <div class="flow-node"><small>WORKSPACE</small><strong>Ubuntu</strong><span>via PRoot-Distro</span></div>
+            <div class="flow-node"><small>WORKSTATION</small><strong>Mobdesk</strong><span>workspace, ferramentas e SSH</span></div>
             <div class="flow-arrow" aria-hidden="true">→</div>
-            <div class="flow-node"><small>ACESSO</small><strong>Shell ou SSH</strong><span>local ou rede confiável</span></div>
+            <div class="flow-node"><small>ACESSO</small><strong>Shell ou SSH</strong><span>mesmo ambiente Termux</span></div>
           </div>
-          <p class="architecture-footnote"><span class="line"></span> Uma fronteira explícita entre o host Android e o seu ambiente de desenvolvimento.</p>
+          <p class="architecture-footnote"><span class="line"></span> Um único ambiente de desenvolvimento nativo no Termux.</p>
         </div>
       </section>
 
@@ -120,21 +120,21 @@
             <article class="feature-card">
               <div class="feature-icon">↻</div>
               <p class="card-kicker">PERSISTENTE</p>
-              <h3>Configure uma vez</h3>
-              <p>Seu Ubuntu, workspace e configuração continuam no celular entre sessões.</p>
+              <h3>Prepare uma vez</h3>
+              <p>Seu workspace e as ferramentas instaladas no Termux continuam no celular entre sessões.</p>
             </article>
             <article class="feature-card">
               <div class="feature-icon">&gt;_</div>
               <p class="card-kicker">CONECTADO</p>
               <h3>Use SSH quando quiser</h3>
-              <p>Abra o ambiente de outro computador na mesma rede confiável, sem mover seus projetos.</p>
+              <p>Acesse a mesma workstation Termux de outro computador em uma rede confiável, sem mover seus projetos.</p>
             </article>
             <article class="feature-card feature-wide accent-card">
               <div class="language-orbit" aria-hidden="true"><span>Go</span><span>JS</span><span>Py</span><span>C++</span></div>
               <div>
                 <p class="card-kicker">PERFIS DE FERRAMENTAS</p>
                 <h3>Comece com o que você já usa</h3>
-                <p>Perfis iniciais para Go, Python, Node.js, C, C++, Lua e configuração do Neovim/LazyVim.</p>
+                <p>Ferramentas nativas do Termux para Git, Neovim, tmux, Go, Python, Node.js, C e C++.</p>
               </div>
             </article>
           </div>
@@ -160,7 +160,7 @@ BASE_URL=<span class="code-string">"https://github.com/ericklucioh/mobdesk/relea
 curl -fL -o mobdesk <span class="code-string">"$BASE_URL/mobdesk-linux-arm64"</span>
 chmod 0755 mobdesk
 ./mobdesk setup</code></pre>
-            <div class="code-caption">O setup cria o workspace Ubuntu, configura o SSH e instala o launcher.</div>
+            <div class="code-caption">O setup instala os pacotes necessários no Termux, cria o workspace persistente, configura o SSH e instala o launcher.</div>
           </div>
         </div>
       </section>
@@ -171,10 +171,10 @@ chmod 0755 mobdesk
           <div>
             <p class="eyebrow">04 / transparência</p>
             <h2>Feito para desenvolvimento.<br><span>Não para produção.</span></h2>
-            <p class="section-copy">Mobdesk é experimental e a compatibilidade ainda está sendo ampliada. O Android pode suspender processos, o PRoot usa o kernel do aparelho e o desempenho depende do seu hardware.</p>
+            <p class="section-copy">Mobdesk é experimental e a validação em aparelhos Android ainda está sendo ampliada. Ele exige ARM64 e Termux de fonte confiável; mantenha espaço para o Termux, seus projetos e ferramentas instaladas. O Android pode suspender processos, e o SSH deve ficar apenas em redes confiáveis.</p>
             <div class="limits-grid">
               <div><strong>ARM64</strong><span>Arquitetura necessária</span></div>
-              <div><strong>~1,5 GB</strong><span>Instalação base do Ubuntu</span></div>
+              <div><strong>ARMAZENAMENTO</strong><span>Termux, projetos e ferramentas</span></div>
               <div><strong>LAN</strong><span>SSH apenas em rede confiável</span></div>
             </div>
           </div>
@@ -197,7 +197,7 @@ chmod 0755 mobdesk
     <footer class="site-footer">
       <div class="container footer-grid">
         <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true">M<span>_</span></span><span>mobdesk</span></a>
-        <p>Ubuntu development workstation on Android.</p>
+        <p>Workstation de desenvolvimento Termux no Android.</p>
         <div class="footer-links">
           <a href="https://github.com/ericklucioh/mobdesk">GitHub</a>
           <a href="https://github.com/ericklucioh/mobdesk/blob/main/LICENSE">MIT License</a>

@@ -11,7 +11,7 @@ RUN mkdir -p /bin && ln -sf /data/data/com.termux/files/usr/bin/sh /bin/sh
 USER 1000:1000
 RUN pkg update -y && \
     pkg upgrade -y && \
-    pkg install -y golang make expect
+    pkg install -y golang make expect git perl ripgrep
 
 WORKDIR /data/data/com.termux/files/home/mobdesk
 ENV PATH="/data/data/com.termux/files/usr/bin:/data/data/com.termux/files/home/go/bin:${PATH}"
@@ -25,19 +25,3 @@ RUN mkdir -p /data/data/com.termux/files/home/go/bin && \
 USER 1000:1000
 RUN --mount=type=cache,target=/data/data/com.termux/files/home/go/pkg,uid=1000,gid=1000 \
     go install github.com/air-verse/air@latest
-
-FROM termux-base AS termux-catalog-fixture
-# This layer is deliberately before source code. Catalog changes reuse the
-# installed Ubuntu instead of provisioning PRoot again.
-RUN pkg install -y proot-distro && proot-distro install ubuntu
-
-FROM termux-catalog-fixture AS termux-catalog-test
-COPY --chown=1000:1000 go.mod go.sum ./
-RUN --mount=type=cache,target=/data/data/com.termux/files/home/go/pkg,uid=1000,gid=1000 \
-    --mount=type=cache,target=/data/data/com.termux/files/home/.cache/go-build,uid=1000,gid=1000 \
-    go mod download
-COPY --chown=1000:1000 . ./
-RUN --mount=type=cache,target=/data/data/com.termux/files/home/go/pkg,uid=1000,gid=1000 \
-    --mount=type=cache,target=/data/data/com.termux/files/home/.cache/go-build,uid=1000,gid=1000 \
-    go build -o /data/data/com.termux/files/home/mobdesk/bin/mobdesk ./cmd/mobdesk
-CMD ["bash"]

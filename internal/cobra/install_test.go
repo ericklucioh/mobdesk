@@ -12,7 +12,7 @@ import (
 )
 
 func TestInstallOperationResultReportsFailureAsJSON(t *testing.T) {
-	installErr := errors.New("apt-get failed")
+	installErr := errors.New("pkg failed")
 	result := installOperationResult(install.Result{Language: "go", State: "installing", LogPath: "/private/install.log"}, installErr)
 
 	wantMessage := i18n.New(i18n.LocaleENUS).Text(i18n.ErrorOperationFailed, map[string]any{"Detail": installErr.Error()})
@@ -62,7 +62,7 @@ func TestOperationResultKeepsStorageEstimateOptional(t *testing.T) {
 	}
 }
 
-func TestInstallRejectsUbuntuRuntime(t *testing.T) {
+func TestInstallRejectsUnsupportedRuntime(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("PREFIX", "/not-termux")
 	t.Setenv("TERMUX_VERSION", "")

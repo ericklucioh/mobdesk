@@ -40,6 +40,8 @@ func (p Paths) ConfigDir() string { return filepath.Join(p.Home, ".config", "mob
 
 func (p Paths) StateDir() string { return filepath.Join(p.DataDir(), "state") }
 
+func (p Paths) Workspace() string { return filepath.Join(p.Home, "workspace") }
+
 func (p Paths) SetupPhase(phase string) string { return filepath.Join(p.StateDir(), phase+".done") }
 
 func (p Paths) SetupDone() string { return filepath.Join(p.DataDir(), "setup.done") }
@@ -47,12 +49,6 @@ func (p Paths) SetupDone() string { return filepath.Join(p.DataDir(), "setup.don
 func (p Paths) PasswordDone() string { return filepath.Join(p.DataDir(), "password.done") }
 
 func (p Paths) InstallationsDir() string { return filepath.Join(p.StateDir(), "installations") }
-
-func (p Paths) ConfigurationsDir() string { return filepath.Join(p.StateDir(), "configurations") }
-
-func (p Paths) ConfigurationState(app string) string {
-	return filepath.Join(p.ConfigurationsDir(), app+".json")
-}
 
 func (p Paths) InstallLogsDir() string { return filepath.Join(p.DataDir(), "logs", "install") }
 
@@ -64,8 +60,6 @@ func (p Paths) SSHPID() string { return filepath.Join(p.SSHRuntimeDir(), "sshd.p
 
 func (p Paths) SSHLog() string { return filepath.Join(p.SSHRuntimeDir(), "sshd.log") }
 
-func (p Paths) SSHWrapper() string { return filepath.Join(p.SSHRuntimeDir(), "mobdesk-ssh-shell") }
-
 func (p Paths) SSHLock() string { return filepath.Join(p.SSHRuntimeDir(), "sshd.lock") }
 
 func (p Paths) SetupLock() string { return filepath.Join(p.StateDir(), "setup.lock") }
@@ -74,12 +68,4 @@ func (p Paths) InstallLock() string { return filepath.Join(p.StateDir(), "instal
 
 func (p Paths) Launcher() string { return filepath.Join(p.Prefix, "bin", "mobdesk") }
 
-func (p Paths) UbuntuWorkspace() string { return "/root/workspace" }
-
-func (p Paths) UbuntuConfigDir() string { return "/root/.config/mobdesk" }
-
-func (p Paths) UbuntuShellConfig() string { return filepath.Join(p.UbuntuConfigDir(), "bashrc") }
-
-func (p Paths) UbuntuShellLauncher() string { return filepath.Join(p.UbuntuConfigDir(), "shell") }
-
-func (p Paths) UbuntuDataDir() string { return "/root/.local/share/mobdesk" }
+func (p Paths) ShellConfig() string { return filepath.Join(p.ConfigDir(), "shell.bash") }

@@ -6,15 +6,14 @@ implementation without an explicit scope change.
 
 ## Current decisions
 
-### Ubuntu through PRoot is the primary environment
+### Termux is the sole workstation
 
-Persistent Ubuntu prioritizes compatibility with conventional Linux tools,
-`apt`, glibc, standard paths and common dependencies.
+Termux owns Android integration, networking, startup, wake-lock, SSH,
+Termux:API, development tools and the user workspace. It is the only active
+development userland; PRoot-Distro and Ubuntu are removed.
 
-### Termux is the host
-
-Termux owns Android integration, networking, startup, wake-lock, SSH, PRoot and
-Termux:API. It is not the user's primary development userland.
+Existing PRoot-based installations have no migration path. Users must perform a
+full Termux reset and install the Termux-only version fresh.
 
 ### Go is the control-plane language
 
@@ -28,9 +27,9 @@ installation and the workflow are proven.
 
 ### Installation is guided and idempotent
 
-Users should not need to know `pkg`, `proot-distro`, `apt`, mounts or scripts.
+Users should not need to know `pkg`, scripts or internal paths.
 The desired flow is install Mobdesk, run `mobdesk start`, and select tools in
-the TUI. Ubuntu, tools, projects and configuration persist across runs.
+the TUI. Termux tools, projects and state persist across runs.
 
 ### App presentation uses curated metadata
 
@@ -45,12 +44,10 @@ consistent across apps.
 `mobdesk start` starts the workstation without automatically opening a shell.
 The TUI suspends the terminal only when the user explicitly opens the shell.
 
-### The TUI respects the Termux/Ubuntu boundary
+### The TUI uses the Termux boundary
 
-The status identifies Termux host mode versus an SSH session inside Ubuntu. In
-remote Ubuntu mode, SSH, PRoot, setup, installation and binary update actions
-are unavailable; workspace information and the local Ubuntu shell remain
-available.
+The TUI runs against the Termux workstation. SSH connects to the same Termux
+environment; there is no Ubuntu remote mode or PRoot boundary to manage.
 
 ### Operations have one JSON result
 
@@ -66,32 +63,11 @@ suspends temporarily through `tea.ExecProcess` for these operations and resumes
 after the command exits. JSON and progress modes remain non-interactive and
 receive deterministic package configuration defaults instead of reading stdin.
 
-### Ubuntu timezone follows Android
+### Application configuration is deferred
 
-Setup reads the Android timezone, validates it against Ubuntu's zoneinfo
-database and persists `/etc/localtime` and `/etc/timezone`; repeated setup runs
-reconcile changes. Non-interactive APT operations rely on that persisted value
-instead of forcing UTC.
-
-### APT repairs interrupted dpkg state first
-
-APT operations run `dpkg --configure -a` before changing packages. This is a
-safe, idempotent repair for interrupted package configuration; broader
-dependency repair is not performed automatically. Interactive PTY stdin
-forwarding is cancellable and must finish before the terminal is restored.
-
-### Go tools default to pure Go builds
-
-The generated Ubuntu shell exports `CGO_ENABLED=0`, and Mobdesk also sets it
-explicitly for Go-based tool installs. This avoids requiring a C toolchain and
-headers in the PRoot userland; tools that genuinely require CGO remain outside
-the current default installation profile.
-
-### LazyVim is an optional versioned profile
-
-LazyVim is separate from Neovim installation. Embedded files and fixed plugin
-revisions are used, existing configuration is refused, and manually modified
-plugin checkouts are preserved on removal.
+Application configuration profiles are not part of the Termux-only first
+sprint. Neovim configuration and LazyVim are deferred rather than installed or
+managed by Mobdesk.
 
 ### Updates preserve an executable version
 
@@ -103,20 +79,7 @@ release authenticity.
 ### Setup is safely repeatable
 
 Concurrent setup is serialized, state is private, and a failed setup can be
-repeated without deleting Ubuntu, the workspace or projects.
-
-### JVM toolchains are Ubuntu-owned
-
-Java 21 is the managed JVM for the Ubuntu environment. Termux Java is not
-forwarded into PRoot. Kotlin/JVM 2.2.20 and Gradle 8.14.3 use pinned official
-archives with SHA-256 checksums; Maven is an independent optional APT profile.
-This keeps build tools on one JVM while preserving optional installation.
-
-### Project wrappers control project builds
-
-Executable `./gradlew` and `./mvnw` wrappers take precedence over global tools.
-Invalid wrappers fail with an explicit diagnostic and missing wrappers fall back
-to the corresponding global command. Mobdesk never edits project files.
+repeated without deleting the Termux workspace or projects.
 
 ### Storage thresholds are global
 
@@ -124,37 +87,41 @@ Installations warn below 20 GB of free storage and block new changes below
 10 GB. The rule is applied before package changes, downloads or removals and is
 visible in CLI, JSON, status and TUI flows.
 
-### Spring fixtures are validation-only
+## Superseded decisions
 
-Spring Boot 4.0.0 Java and Kotlin fixtures validate PRoot, Java 21, Gradle and
-Maven without introducing a project manager, Docker, Testcontainers, systemd or
-an external database. Runtime ports remain unprivileged and local.
+The following decisions describe the retired PRoot/Ubuntu product line. They
+are retained for release history and must not guide Termux-only work.
+
+- Ubuntu through PRoot as the primary environment, including its timezone,
+  `dpkg` recovery, generated shell and JVM ownership.
+- PRoot-specific pure-Go defaults, project-wrapper behavior and Spring fixtures.
+- Versioned LazyVim profiles and other Mobdesk-managed application
+  configuration.
+- The Termux/Ubuntu remote-mode boundary and Ubuntu-owned state.
 
 ## Deferred alternatives
 
-- Termux-native development as the primary runtime may be faster but has glibc,
-  manylinux, path and native-dependency compatibility costs.
+- PRoot/Ubuntu development is superseded, not an active alternative in this
+  sprint. Reintroduction requires a new explicit decision and migration design.
 - Nix-on-Droid may help declarative configuration and rollback, but is outside
   the core because of complexity, storage and diagnostic cost.
 - A graphical desktop through X11, VNC or a full desktop increases consumption,
   latency and failure modes; TUI and later individual web applications remain
   preferred.
-- Neko is an experimental remote-browser line and depends on validating
-  Firefox, Xorg, PulseAudio, GStreamer, WebRTC and PRoot on real hardware.
-- PRoot is not Docker. Real Docker, VM and kernel features remain outside the
-  educational MVP.
+- Neko is an experimental remote-browser line outside this sprint. Any future
+  evaluation requires a new Termux-native feasibility decision.
+- Real Docker, VM and kernel features remain outside the educational MVP.
 
 Remote-browser research and the current baseline are recorded in
 [`docs/ideas/REMOTE-BROWSER-RESEARCH.md`](ideas/REMOTE-BROWSER-RESEARCH.md).
 
 ## Hypotheses to validate
 
-- Ubuntu ARM64 through PRoot is acceptable for classes and small projects;
-- the complete installation fits comfortably on the POCO;
-- HyperOS keeps Termux and Ubuntu active during use;
+- Termux-native tools are acceptable for classes and small projects;
+- the complete Termux-only installation fits comfortably on the POCO;
+- HyperOS keeps Termux active during use;
 - the TUI is comfortable on a virtual keyboard and SSH;
-- selected tools are available or installable in Ubuntu;
-- the Termux/Ubuntu project mount preserves the intended workflow;
+- selected tools are available or installable in Termux;
 - Mobdesk can follow processes and sessions without losing output;
 - Termux:Widget shortcuts are sufficient before an APK exists.
 
@@ -166,5 +133,5 @@ Remote-browser research and the current baseline are recorded in
 - keep development servers on localhost when possible;
 - preserve authentication in future applications;
 - never store passwords in the repository;
-- confirm before deleting Ubuntu, profiles or projects;
+- confirm before deleting Termux-managed profiles or projects;
 - keep backups outside the phone.

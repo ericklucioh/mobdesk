@@ -1,6 +1,6 @@
 # Mobdesk
 
-Turn an Android phone into a personal Ubuntu development workstation.
+Turn an Android phone into a personal Termux development workstation.
 
 **[Open the landing page](https://ericklucioh.github.io/mobdesk/)**
 
@@ -9,13 +9,12 @@ Turn an Android phone into a personal Ubuntu development workstation.
 > progress. Use it for learning, development and lightweight local services,
 > not production workloads.
 
-Mobdesk uses Termux as the Android control host and persistent Ubuntu through
-PRoot-Distro as the development environment:
+Mobdesk uses Termux as both the Android integration layer and the sole
+development environment:
 
 ```text
 Android
-  Termux -> Mobdesk -> Ubuntu via PRoot
-                      -> local shell or SSH on port 8022
+  Termux -> Mobdesk -> local shell or SSH on port 8022
 ```
 
 The project does not require root, a virtual machine, Docker on the phone,
@@ -23,40 +22,27 @@ systemd, a graphical desktop or kernel modules.
 
 ## What is available
 
-- repeatable setup of Ubuntu, SSH, networking and workspace state;
+- repeatable setup of Termux, SSH, networking and workspace state;
 - a dedicated Mobdesk SSH server on port `8022`;
-- local Ubuntu shell access with `mobdesk shell`;
+- local Termux shell access with `mobdesk shell`;
 - human-readable and JSON output for automation and the TUI;
-- idempotent installation of Go, Python, Node.js, C, C++, Lua, Java 21 and Kotlin/JVM profiles;
-- optional Gradle 8.14.3 and Maven build profiles, both using Ubuntu Java 21;
+- idempotent installation of Termux-native tool profiles;
 - status, setup, tools, shell and update screens in the TUI;
-- app configuration profiles, starting with Neovim/LazyVim;
 - verified binary updates with rollback and recovery handling;
 - English (`en-US`) and Brazilian Portuguese (`pt-BR`) presentation.
 
 Projects, persistent sessions, services and a web interface remain outside the
 current MVP and belong to later roadmap stages.
 
-### JVM and Spring Boot
-
-Mobdesk installs Java 21 inside Ubuntu, not a Termux JDK. The generated Ubuntu
-shell discovers the real JDK path and exports `JAVA_HOME`; Gradle and Maven
-inherit it. Kotlin/JVM 2.2.20 and Gradle 8.14.3 are downloaded from pinned
-official distributions with SHA-256 verification. Maven is an independent
-optional APT profile. In projects, executable `./gradlew` and `./mvnw` wrappers
-take precedence over global commands; Mobdesk does not modify project files.
-
-Spring Boot 4.x fixtures are validation examples, not a project manager. They
-use ports above 1024 and should be treated as lightweight development
-workloads. PRoot does not provide systemd, cgroups, Docker or a separate kernel.
+Application configuration, including Neovim/LazyVim, is deferred for the first
+sprint. Managed JVM and Spring Boot tooling are also not current sprint scope.
 
 ## Requirements
 
 - Android phone with ARM64 architecture;
 - Termux from a trusted source, preferably [F-Droid](https://f-droid.org/packages/com.termux/)
   or the [official releases](https://github.com/termux/termux-app/releases);
-- approximately 1.5 GB of free storage for the base Ubuntu installation;
-- additional storage for projects and installed tools; Mobdesk warns below
+- storage for Termux, projects and installed tools; Mobdesk warns below
   20 GB free and blocks new installations below 10 GB;
 - a trusted local network if connecting from another computer.
 
@@ -93,8 +79,14 @@ chmod 0755 mobdesk
 
 The checksum verifies file integrity. Release signatures are not available
 yet, so this does not independently authenticate a release. The first setup
-installs the required Termux packages, downloads Ubuntu, creates the
-persistent workspace, configures SSH and installs the `mobdesk` launcher.
+installs the required Termux packages, creates the persistent workspace,
+configures SSH and installs the `mobdesk` launcher.
+
+### Existing PRoot installations
+
+The Termux-only first sprint does not migrate PRoot-Distro or Ubuntu
+installations. Back up anything you need, perform a full Termux reset, then
+install Mobdesk fresh. Do not attempt an in-place upgrade or migration.
 
 ### Option 2: build with Go
 
@@ -132,7 +124,7 @@ mobdesk start
 ```
 
 `mobdesk start` starts the SSH server and displays the connection details. To
-open Ubuntu locally without SSH, use:
+open Termux locally without SSH, use:
 
 ```bash
 mobdesk shell
@@ -174,10 +166,8 @@ tools, shell and system updates. Important actions work with touch/mouse and
 keyboard. `Tab` changes focus, `Enter` activates an action, `Esc` goes back and
 `q` starts the quit confirmation.
 
-The TUI can also be opened through an SSH session, where it is running inside
-Ubuntu. In that remote mode it can show the workspace and open the local shell,
-but host-only actions such as setup, SSH control, installation and binary
-updates are blocked and explained.
+The TUI can also be opened through SSH. That session uses the same Termux
+workstation, not a separate Ubuntu or PRoot environment.
 
 ### Language
 
@@ -202,9 +192,8 @@ JSON keys and state values remain in English.
 
 ## Limitations
 
-- PRoot is not a virtual machine and does not provide a separate kernel;
-- Docker, systemd, kernel modules and privileged device access are not
-  available through Mobdesk;
+- Docker, systemd, kernel modules and privileged device access are not available
+  through Mobdesk;
 - Android may suspend or terminate Termux; exempt Termux from battery
   optimization when appropriate;
 - Docker validation does not reproduce Android permissions, battery behavior,
@@ -222,7 +211,7 @@ make check
 ```
 
 Before contributing, read [CONTRIBUTING](.github/CONTRIBUTING.md). The
-repository uses Docker for repeatable checks, but Termux/SSH/PRoot changes also
+repository uses Docker for repeatable checks, but Termux/SSH changes also
 require validation on real Termux when a device is available.
 
 ## Documentation and community
@@ -232,8 +221,8 @@ require validation on real Termux when a device is available.
 - [Architecture](docs/ARCHITECTURE.md)
 - [Decisions](docs/DECISIONS.md)
 - [Roadmap](docs/ROADMAP.md)
-- [App configuration refactor plan](docs/APP-CONFIGURATION-REFACTOR-PLAN.md)
-- [App configuration implementation plan](docs/APP-CONFIGURATION-IMPLEMENTATION-PLAN.md)
+- [Superseded app configuration refactor plan](docs/APP-CONFIGURATION-REFACTOR-PLAN.md)
+- [Superseded app configuration implementation plan](docs/APP-CONFIGURATION-IMPLEMENTATION-PLAN.md)
 - [Next features plan](docs/PLAN-NEXT-FEATURES.md)
 - [Tool catalog](docs/ideas/TOOL-CATALOG.md)
 - [Changelog](CHANGELOG.md)

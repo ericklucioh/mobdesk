@@ -6,6 +6,14 @@ All notable changes to Mobdesk are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Active documentation now defines Termux as the sole workstation and removes
+  PRoot-Distro and Ubuntu from the first-sprint scope.
+- Application configuration, including LazyVim, is deferred.
+- Existing PRoot-based installs require a full Termux reset and fresh
+  installation; no migration is provided.
+
 ### Added
 
 - Public project documentation in the root README.

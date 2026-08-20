@@ -40,7 +40,7 @@ func (b *realBackend) OperationCmd(args ...string) tea.Cmd {
 	if len(args) > 0 && !containsArg(args, "--json") && (args[0] == "install" || args[0] == "setup") {
 		return runInteractiveOperationWithLocale(b.ctx, b.locale, args...)
 	}
-	if len(args) > 0 && containsArg(args, "--progress") && (args[0] == "install" || args[0] == "uninstall" || args[0] == "config") {
+	if len(args) > 0 && containsArg(args, "--progress") && (args[0] == "install" || args[0] == "uninstall") {
 		return runInstallCommandWithLocale(b.ctx, b.locale, args...)
 	}
 	return runCommandWithLocale(b.ctx, b.locale, args...)
@@ -128,9 +128,8 @@ func (m *mockBackend) OperationCmd(args ...string) tea.Cmd {
 		case "setup":
 			m.status.Setup.Completed = true
 			m.status.Setup.State = status.CheckOK
-			m.status.Ubuntu.Installed = true
-			m.status.Ubuntu.Accessible = true
-			m.status.Ubuntu.Workspace = true
+			m.status.Workspace.Exists = true
+			m.status.Workspace.State = status.CheckOK
 			if upgradeOnly {
 				result.Message = m.localizer.Text(i18n.TUIOperationCompleted, nil)
 			}
@@ -158,12 +157,6 @@ func (m *mockBackend) OperationCmd(args ...string) tea.Cmd {
 				m.uninstall(args[1])
 				result.Target = args[1]
 			}
-		case "config":
-			if len(args) > 2 {
-				m.configure(args[1], args[2])
-				result.Target = args[2]
-				result.Action = args[1]
-			}
 		}
 		return operationMessage{command: command, result: result}
 	}
@@ -185,11 +178,6 @@ func validateMockOperation(args []string, localizer i18n.Localizer) error {
 	case "uninstall":
 		if len(args) < 2 || args[1] == "" {
 			return i18n.NewError(i18n.ErrorInvalidArgs, "mock_invalid_args", map[string]any{"Detail": localizer.Text(i18n.CommandUninstallUse, nil)}, nil)
-		}
-		return nil
-	case "config":
-		if len(args) < 3 || (args[1] != "apply" && args[1] != "remove") || args[2] == "" {
-			return i18n.NewError(i18n.ErrorInvalidArgs, "mock_invalid_args", map[string]any{"Detail": localizer.Text(i18n.CommandConfigApplyUse, nil)}, nil)
 		}
 		return nil
 	case "setup", "update":
@@ -252,33 +240,15 @@ func (m *mockBackend) uninstall(name string) {
 	}
 }
 
-func (m *mockBackend) configure(action, name string) {
-	for index := range m.status.Configurations {
-		if m.status.Configurations[index].App == name {
-			if action == "apply" {
-				m.status.Configurations[index].State = status.ConfigStateApplied
-			} else {
-				m.status.Configurations[index].State = status.ConfigStateRemoved
-			}
-			return
-		}
-	}
-	state := status.ConfigStateApplied
-	if action == "remove" {
-		state = status.ConfigStateRemoved
-	}
-	m.status.Configurations = append(m.status.Configurations, status.ConfigurationStatus{App: name, Profile: "lazyvim", State: state})
-}
-
 func mockStatus(scenario string) status.SystemStatus {
 	value := status.SystemStatus{
-		SchemaVersion: 1,
+		SchemaVersion: 2,
 		GeneratedAt:   time.Now(),
 		Overall:       status.StateHealthy,
-		Host:          status.HostStatus{State: status.CheckOK, Termux: true, OS: "Android", Architecture: "arm64", ProotDistro: true, OpenSSH: true, Ifconfig: true, WakeLockAvailable: true},
-		Setup:         status.SetupStatus{State: status.CheckOK, Completed: true, Phases: map[string]string{"directories": "completed", "ubuntu-installed": "completed", "workspace-created": "completed", "ssh-configured": "completed"}},
+		Host:          status.HostStatus{State: status.CheckOK, Termux: true, OS: "Android", Architecture: "arm64", OpenSSH: true, Ifconfig: true, WakeLockAvailable: true},
+		Setup:         status.SetupStatus{State: status.CheckOK, Completed: true, Phases: map[string]string{"directories": "done", "workspace-created": "done", "ssh-configured": "done"}},
+		Workspace:     status.WorkspaceStatus{State: status.CheckOK, Exists: true, Path: "/data/data/com.termux/files/home/workspace"},
 		Storage:       status.StorageStatus{State: status.CheckOK, DeviceTotal: 128 * 1024 * 1024 * 1024, DeviceFree: 42 * 1024 * 1024 * 1024},
-		Ubuntu:        status.UbuntuStatus{State: status.CheckOK, Installed: true, Accessible: true, Workspace: true, WorkspacePath: "/root/workspace"},
 		SSH:           status.SSHStatus{State: status.CheckOK, Enabled: true, Running: true, Port: 8022},
 		Network:       status.NetworkStatus{State: status.CheckOK, Addresses: []string{"172.19.0.1", "172.18.0.1", "10.42.0.1"}, Preferred: "172.19.0.1"},
 		Battery:       status.BatteryStatus{State: status.CheckOK, Available: true, Percentage: intPointer(72), Status: "normal", Plugged: "unplugged"},
@@ -297,14 +267,15 @@ func mockStatus(scenario string) status.SystemStatus {
 		value.Battery.State = status.CheckWarning
 		value.Battery.Percentage = intPointer(18)
 		value.Battery.Status = "low"
-		value.Ubuntu.Workspace = false
+		value.Workspace.Exists = false
+		value.Workspace.State = status.CheckWarning
 		value.Alerts = status.AlertSummary{OK: 7, Warnings: 5, Missing: 2}
 		value.Installations = nil
 	}
 	if scenario == "error" {
 		value.Overall = status.StateError
 		value.Setup.State = status.CheckError
-		value.Ubuntu.State = status.CheckError
+		value.Workspace.State = status.CheckError
 		value.SSH.State = status.CheckError
 		value.Network.State = status.CheckError
 		value.Alerts = status.AlertSummary{OK: 3, Warnings: 4, Errors: 5}

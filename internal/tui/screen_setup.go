@@ -21,7 +21,6 @@ func (m Model) renderSetup() string {
 	view += setupAction(m.setupActions.width, m.setupActions.Index() == 1, m.text(i18n.TUISetupUpgrade, nil), false) + "\n"
 	view += m.renderSetupStep(width, m.text(i18n.TUISetupDirectories, nil), m.text(i18n.TUISetupDirectoriesDetail, nil), "directories")
 	view += m.renderSetupStep(width, m.text(i18n.TUISetupPackages, nil), m.text(i18n.TUISetupPackagesDetail, nil), "packages-installed")
-	view += m.renderSetupStep(width, m.text(i18n.TUISetupUbuntu, nil), m.text(i18n.TUISetupUbuntuDetail, nil), "ubuntu-installed")
 	view += m.renderSetupStep(width, m.text(i18n.TUISetupWorkspace, nil), m.text(i18n.TUISetupWorkspaceDetail, nil), "workspace-created", "password-configured", "ssh-configured", "shell-configured", "launcher-installed")
 	view += "\n"
 	view += setupAdvancedLocalized(width, m.focus == 1, m.localizer)

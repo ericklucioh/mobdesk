@@ -1,49 +1,43 @@
 # Mobdesk Roadmap
 
-Mobdesk evolves through four stages. Termux remains the control host and
-Ubuntu through PRoot remains the primary development environment.
+Mobdesk begins with a Termux-only first sprint. Termux is the sole workstation;
+PRoot-Distro and Ubuntu are removed. Existing PRoot-based installations require
+a full Termux reset and fresh installation because no migration is provided.
 
 ## Overview
 
 | Stage | Category | Name | Result |
 |---|---|---|---|
-| 1 | MVP | Ubuntu bootstrap | Install and access persistent Ubuntu by shell and SSH |
-| 2 | MVP | TUI workstation | Work with organized terminal tools |
+| 1 | MVP | Termux-only foundation | Establish the sole workstation and reset boundary |
+| 2 | MVP | TUI workstation | Work with organized Termux tools |
 | 3 | MVP | Persistent environment | Recover sessions, services and remote access |
 | 4 | Application | Mobdesk Manager | Manage projects, sessions and services |
 
-The current JVM support Goal adds an Ubuntu-owned Java 21 environment, pinned
-Kotlin/JVM 2.2.20 and Gradle 8.14.3, optional Maven, project-wrapper precedence,
-partial toolchain status and Spring Boot 4.0.0 validation fixtures. It does not
-turn Mobdesk into a project manager; projects and services remain future scope.
+Application configuration and LazyVim are deferred. The first sprint does not
+promise a managed JVM, project wrappers or configuration profiles.
 
-## Stage 1 - Ubuntu bootstrap
+## Stage 1 - Termux-only foundation
 
-**Status:** initial implementation complete and tested on a real Android/Termux
-device; validation across a broader device matrix is still ongoing.
+**Status:** active.
 
-The goal is to take a Termux installation with Go to persistent Ubuntu
-accessible on the phone and through SSH. Scope includes PRoot-Distro, OpenSSH,
-diagnostic tools, Ubuntu ARM64, workspace and local state, dedicated SSH,
-safe start/stop, `mobdesk shell`, `mobdesk status`, initial tool profiles,
-local addresses, wake-lock when available, and resumable setup.
+The goal is a single Termux development workstation accessible on the phone and
+through SSH. Scope includes Termux packages, OpenSSH, workspace and local state,
+safe start/stop, `mobdesk shell`, `mobdesk status`, initial tool profiles, local
+addresses, wake-lock when available and repeatable setup.
 
-Out of scope: TUI, projects, services, persistent sessions, `doctor`, Tailscale
-and port forwarding.
+Out of scope: PRoot-Distro, Ubuntu, application configuration, LazyVim, projects,
+services, persistent sessions, `doctor`, Tailscale and port forwarding.
 
 ## Stage 2 - TUI workstation
 
-**Status:** initial implementation in progress and tested on a real
-Android/Termux device; validation across a broader device matrix is still
-ongoing.
+**Status:** planned after Stage 1 validation.
 
-The goal is an organized text interface for working in Ubuntu on the phone or
+The goal is an organized text interface for working in Termux on the phone or
 through SSH. Scope includes status, setup, start, stop and update screens,
-initial tool profiles, keyboard/mouse/mobile terminal support, remote-session
-identification and host-action blocking, optional app configuration profiles
-starting with Neovim/LazyVim, versioned JSON CLI operations, separate app and
-configuration states, standardized app metadata, and touch-first
-details/actions/confirmation popups.
+initial tool profiles, keyboard/mouse/mobile terminal support, versioned JSON
+CLI operations, standardized app metadata, and touch-first
+details/actions/confirmation popups. Application configuration, including
+Neovim/LazyVim, remains deferred.
 
 The criterion is that users can study and develop without a long sequence of
 internal commands, that every catalog app presents the same useful metadata,
@@ -62,10 +56,10 @@ continued without rebuilding its environment.
 
 ## Stage 4 - Mobdesk Manager
 
-The goal is a local management center for Termux, PRoot and Ubuntu. Planned
-scope includes projects, environments, installed tools, sessions, services,
-ports, tunnels, logs, diagnostics, recovery, backups, controlled updates and
-observable persisted configuration.
+The goal is a local management center for Termux. Planned scope includes
+projects, installed tools, sessions, services, ports, tunnels, logs,
+diagnostics, recovery, backups, controlled updates and observable persisted
+state.
 
 ## Evolution principles
 
@@ -84,3 +78,9 @@ observable persisted configuration.
 - Neko as a requirement;
 - multiple users;
 - heavy production workloads.
+
+## Superseded roadmap material
+
+The previous Ubuntu bootstrap and PRoot-based workstation stages are superseded
+by the Termux-only first sprint. They are retained in repository history but do
+not define active work.
