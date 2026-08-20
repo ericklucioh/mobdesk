@@ -49,7 +49,7 @@ EXPECT_SCRIPT
 test -d "$WORKSPACE"
 test ! -L "$WORKSPACE"
 
-profiles=(git neovim tmux go python node c cpp lua)
+profiles=(git neovim tmux go java python node c cpp lua)
 for profile in "${profiles[@]}"; do
     "$MOBDESK_TEST_BIN" install "$profile" --json > "$TEST_DIR/${profile}-first.json"
     grep -q '"success":true' "$TEST_DIR/${profile}-first.json"
@@ -73,6 +73,11 @@ git -C git commit -qm 'Add workflow fixture'
 test -z "$(git -C git status --porcelain)"
 
 test "$(go run ./go/main.go)" = 'hello-go'
+mkdir -p .mobdesk-workflows/java
+javac -d .mobdesk-workflows/java ./java/Main.java
+test "$(java -cp .mobdesk-workflows/java Main)" = 'hello-java'
+jar --create --file .mobdesk-workflows/hello-java.jar --main-class Main -C .mobdesk-workflows/java Main.class
+test "$(java -jar .mobdesk-workflows/hello-java.jar)" = 'hello-java'
 test "$(python ./python/main.py)" = 'hello-python'
 npm --version >/dev/null
 test "$(npm --prefix ./node run --silent smoke)" = 'hello-node'
@@ -100,8 +105,9 @@ trap - EXIT
 "$MOBDESK_TEST_BIN" status --json > "$TEST_DIR/status.json"
 grep -q '"workspace"' "$TEST_DIR/status.json"
 for profile in "${profiles[@]}"; do
-    grep -q "\"name\": \"${profile}\"" "$TEST_DIR/status.json"
+	grep -q "\"name\": \"${profile}\"" "$TEST_DIR/status.json"
 done
+grep -q '"java_home":' "$TEST_DIR/status.json"
 ! command -v proot-distro >/dev/null 2>&1
 printf '%s\n' 'Termux native workflow test: PASS'
 CONTAINER_SCRIPT

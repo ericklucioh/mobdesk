@@ -44,8 +44,10 @@ consistent across apps.
 Catalog installation and version checks are not sufficient evidence that a
 developer tool works. Core profiles receive a small offline workflow test in a
 clean Termux fixture, executed from the Mobdesk workspace. The Node profile
-requires both `node` and `npm` from its native package; dependency installation,
-application configuration and framework setup remain deferred.
+requires both `node` and `npm` from its native package. The Java profile requires
+`java`, `javac` and `jar` from `openjdk-21`, and records a runtime-discovered
+Java home only when it is below `$PREFIX`. Dependency installation, application
+configuration and framework setup remain deferred.
 
 ### The TUI remains in control after start
 

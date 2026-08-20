@@ -31,6 +31,7 @@ var catalog = []AppProfile{
 	{Name: "neovim", Aliases: []string{"nvim"}, DescriptionID: i18n.AppNeovimDescription, Usage: "nvim [file or directory]", Package: "neovim", Executable: "nvim", VersionArg: []string{"--version"}, Kind: "editor", InstallKind: "pkg", StorageEstimate: plannedStorage(15, 30, 0, 20)},
 	{Name: "tmux", DescriptionID: i18n.AppTmuxDescription, Usage: "tmux [command]", Package: "tmux", Executable: "tmux", VersionArg: []string{"-V"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(2, 5, 0, 2)},
 	{Name: "go", Aliases: []string{"golang"}, DescriptionID: i18n.AppGoDescription, Usage: "go [command]", Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(180, 300, 0, 50)},
+	{Name: "java", Aliases: []string{"jdk", "openjdk"}, DescriptionID: i18n.AppJavaDescription, Usage: "java [options] <class>", Package: "openjdk-21", Executable: "java", VersionArg: []string{"--version"}, RequiredExecutables: []ExecutableSpec{{Name: "java", VersionArg: []string{"--version"}}, {Name: "javac", VersionArg: []string{"--version"}}, {Name: "jar", VersionArg: []string{"--version"}}}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(257, 360, 50, 150)},
 	{Name: "python", Aliases: []string{"python3"}, DescriptionID: i18n.AppPythonDescription, Usage: "python [script]", Package: "python", Executable: "python", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(35, 60, 0, 20)},
 	{Name: "node", Aliases: []string{"nodejs"}, DescriptionID: i18n.AppNodeDescription, Usage: "node [script]", Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, RequiredExecutables: []ExecutableSpec{{Name: "node", VersionArg: []string{"--version"}}, {Name: "npm", VersionArg: []string{"--version"}}}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(70, 130, 20, 60)},
 	{Name: "c", Aliases: []string{"c-lang"}, DescriptionID: i18n.AppCDescription, Usage: "clang [options] <files...>", Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(250, 450, 20, 80)},
@@ -148,10 +149,45 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	}
 	result.Version, result.Installed, result.State = commandVersions(profile, versions), true, "installed"
 	record.State, record.Version, record.InstalledAt = result.State, result.Version, options.Now().UTC()
+	if profile.Name == "java" {
+		javaHome, discoverErr := discoverJavaHome(ctx, runner, options.CommandTimeout, logPath, options.Paths.Prefix)
+		if discoverErr != nil {
+			return failInstallation(options.Paths.InstallationsDir(), record, result, i18n.NewError(i18n.ServiceInstallVerify, "install_java_home", map[string]any{"Name": profile.Name}, discoverErr))
+		}
+		result.JavaHome, record.JavaHome = javaHome, javaHome
+	}
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
 		return result, i18n.NewError(i18n.ServiceInstallRecord, "install_record", nil, err)
 	}
 	return result, nil
+}
+
+func discoverJavaHome(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath, prefix string) (string, error) {
+	result := runTermuxLogged(ctx, runner, timeout, logPath, "java", "-XshowSettings:properties", "-version")
+	if result.Err != nil {
+		return "", fmt.Errorf("read java.home: %w", result.Err)
+	}
+	return parseJavaHome(string(result.Stdout)+"\n"+string(result.Stderr), prefix)
+}
+
+func parseJavaHome(output, prefix string) (string, error) {
+	prefix = filepath.Clean(strings.TrimSpace(prefix))
+	if !filepath.IsAbs(prefix) {
+		return "", fmt.Errorf("Termux prefix is not absolute")
+	}
+	for _, line := range strings.Split(output, "\n") {
+		name, value, ok := strings.Cut(strings.TrimSpace(line), "=")
+		if !ok || strings.TrimSpace(name) != "java.home" {
+			continue
+		}
+		home := filepath.Clean(strings.TrimSpace(value))
+		relative, err := filepath.Rel(prefix, home)
+		if !filepath.IsAbs(home) || err != nil || relative == "." || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+			return "", fmt.Errorf("java.home %q is outside Termux prefix %q", home, prefix)
+		}
+		return home, nil
+	}
+	return "", fmt.Errorf("java.home was not reported by the runtime")
 }
 
 func installDefaults(options Options) Options {

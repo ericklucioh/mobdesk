@@ -1,6 +1,7 @@
 # Post-Termux Sprint Plan
 
-**Status:** proposed
+**Status:** Sprint 4 implementation and Docker validation are complete. Device
+acceptance is required before support is claimed.
 
 This plan extends the native Termux workstation after the Termux-only
 foundation is accepted on a reset ARM64 device. It does not restore PRoot,
@@ -46,21 +47,25 @@ evidence.
 Provide a native Java 21 JDK that can compile and run programs in
 `$HOME/workspace`.
 
-### Scope
+### Delivered implementation
+
+- `java` installs Termux `openjdk-21` and requires `java`, `javac` and `jar`.
+- Installation discovers `java.home`, accepts only an absolute child of
+  `$PREFIX`, and persists it in the private installation record.
+- `status --json` adds a `java` object without changing the schema version.
+- The native workflow compiles and runs the Java hello fixture, then builds and
+  runs its executable JAR.
+
+### Remaining device acceptance
 
 - Audit `openjdk-21` in the Termux fixture and on the POCO F6.
-- Add a curated `java` profile backed by `pkg install openjdk-21`.
-- Require `java`, `javac` and `jar` to be available.
-- Verify `java --version`, `javac --version` and `jar --version`.
-- Discover the runtime `java.home` after installation and accept it only when
-  it is an absolute path below `$PREFIX`.
-- Record the JDK version, required executables and discovered Java home in
-  private Mobdesk state.
-- Add Java toolchain information to `status --json` as an additive field.
-- Activate the Java hello fixture: compile a class, run it, build a JAR and run
-  the JAR from the workspace.
-- Cover install, reinstall, status reconciliation, missing executables,
-  cancellation, storage blocking and safe uninstall.
+- Install and reinstall `java` on the POCO F6, then record the package version,
+  storage use and discovered `java.home`.
+- Verify `java --version`, `javac --version` and `jar --version` on the device.
+- Compile and run the Java fixture, then build and run its executable JAR from
+  the workspace.
+- Verify the profile's status reconciliation, storage block, cancellation and
+  safe uninstall behavior on the device.
 
 ### JVM Environment Policy
 

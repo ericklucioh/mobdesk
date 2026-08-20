@@ -176,7 +176,11 @@ func statusRows(value status.SystemStatus, width int, localizers ...i18n.Localiz
 	right := func(text string) string {
 		return lipgloss.NewStyle().Width(stateWidth).Align(lipgloss.Right).Render(text)
 	}
-	return []table.Row{{localizer.Text(i18n.TUIStatusHost, nil), right(checkStateLabel(value.Host.State, localizer))}, {localizer.Text(i18n.TUIStatusArchitecture, nil), right(valueOr(value.Host.Architecture, localizer.Text(i18n.TUIStatusUnknownArchitecture, nil)))}, {localizer.Text(i18n.TUIStatusWorkspace, nil), right(checkStateLabel(value.Workspace.State, localizer))}, {localizer.Text(i18n.StatusSSH, nil), right(checkStateLabel(value.SSH.State, localizer))}, {localizer.Text(i18n.TUIStatusSSHPort, nil), right(fmt.Sprintf("%d", value.SSH.Port))}, {localizer.Text(i18n.TUIStatusWakeLock, nil), right(availableLocalized(value.Host.WakeLockAvailable, localizer))}, {localizer.Text(i18n.TUIStatusBattery, nil), right(batterySummaryLocalized(value.Battery, localizer))}, {localizer.Text(i18n.TUIStatusWiFi, nil), right(wifiSummaryLocalized(value.WiFi, localizer))}}
+	rows := []table.Row{{localizer.Text(i18n.TUIStatusHost, nil), right(checkStateLabel(value.Host.State, localizer))}, {localizer.Text(i18n.TUIStatusArchitecture, nil), right(valueOr(value.Host.Architecture, localizer.Text(i18n.TUIStatusUnknownArchitecture, nil)))}, {localizer.Text(i18n.TUIStatusWorkspace, nil), right(checkStateLabel(value.Workspace.State, localizer))}, {localizer.Text(i18n.StatusSSH, nil), right(checkStateLabel(value.SSH.State, localizer))}, {localizer.Text(i18n.TUIStatusSSHPort, nil), right(fmt.Sprintf("%d", value.SSH.Port))}, {localizer.Text(i18n.TUIStatusWakeLock, nil), right(availableLocalized(value.Host.WakeLockAvailable, localizer))}, {localizer.Text(i18n.TUIStatusBattery, nil), right(batterySummaryLocalized(value.Battery, localizer))}, {localizer.Text(i18n.TUIStatusWiFi, nil), right(wifiSummaryLocalized(value.WiFi, localizer))}}
+	if value.Java.Installed {
+		rows = append(rows, table.Row{localizer.Text(i18n.StatusJava, nil), right(valueOr(value.Java.Version, checkStateLabel(value.Java.State, localizer)))})
+	}
+	return rows
 }
 
 func statusTableColumns(width int, localizers ...i18n.Localizer) []table.Column {

@@ -16,6 +16,32 @@ type nativeRunner struct {
 	versions int
 }
 
+type javaRunner struct {
+	commands  []string
+	installed bool
+}
+
+type canceledRunner struct{}
+
+func (canceledRunner) Run(ctx context.Context, _ string, _ ...string) CommandResult {
+	return CommandResult{Err: ctx.Err()}
+}
+
+func (r *javaRunner) Run(_ context.Context, name string, args ...string) CommandResult {
+	r.commands = append(r.commands, name+" "+strings.Join(args, " "))
+	if name == "pkg" {
+		r.installed = true
+		return CommandResult{}
+	}
+	if !r.installed {
+		return CommandResult{Err: errors.New("java missing")}
+	}
+	if name == "java" && len(args) > 0 && args[0] == "-XshowSettings:properties" {
+		return CommandResult{Stderr: []byte("Property settings:\n    java.home = /data/data/com.termux/files/usr/lib/jvm/java-21-openjdk\n")}
+	}
+	return CommandResult{Stdout: []byte(name + " 21.0.12\n")}
+}
+
 func (r *nativeRunner) Run(_ context.Context, name string, args ...string) CommandResult {
 	r.commands = append(r.commands, name+" "+strings.Join(args, " "))
 	if name == "git" {
@@ -51,7 +77,7 @@ func TestInstallUsesNativePkg(t *testing.T) {
 func TestCatalogUsesOnlyNativePkgProfiles(t *testing.T) {
 	want := map[string]bool{
 		"git": true, "neovim": true, "tmux": true, "go": true, "python": true,
-		"node": true, "c": true, "cpp": true, "lua": true, "gh": true,
+		"java": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
 		"tree": true, "htop": true, "ncdu": true, "micro": true,
 	}
 	for _, profile := range Tools() {
@@ -65,6 +91,98 @@ func TestCatalogUsesOnlyNativePkgProfiles(t *testing.T) {
 	}
 	if len(want) > 0 {
 		t.Fatalf("missing catalog profiles: %v", want)
+	}
+}
+
+func TestJavaProfileRequiresJDKCommands(t *testing.T) {
+	profile, ok := Resolve("java")
+	if !ok {
+		t.Fatal("java profile is missing")
+	}
+	want := []ExecutableSpec{{Name: "java", VersionArg: []string{"--version"}}, {Name: "javac", VersionArg: []string{"--version"}}, {Name: "jar", VersionArg: []string{"--version"}}}
+	if profile.Package != "openjdk-21" || !sameExecutableSpecs(profileExecutables(profile), want) {
+		t.Fatalf("unexpected Java profile: %+v", profile)
+	}
+}
+
+func TestInstallJavaRecordsTermuxJavaHome(t *testing.T) {
+	runner := &javaRunner{}
+	prefix := "/data/data/com.termux/files/usr"
+	p := paths.New(t.TempDir(), prefix)
+	result, err := Install(context.Background(), "java", Options{
+		Paths:       p,
+		Runner:      runner,
+		Now:         time.Now,
+		StorageFree: func(string) (int64, error) { return StorageWarningBytes + 1, nil },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Installed || !result.Changed || result.JavaHome != prefix+"/lib/jvm/java-21-openjdk" {
+		t.Fatalf("unexpected Java installation result: %+v", result)
+	}
+	if !containsCommand(runner.commands, "pkg install -y openjdk-21") {
+		t.Fatalf("OpenJDK package was not installed: %v", runner.commands)
+	}
+	record, err := loadInstallationRecord(p, "java")
+	if err != nil || record.JavaHome != result.JavaHome {
+		t.Fatalf("Java home was not persisted: %+v, %v", record, err)
+	}
+}
+
+func TestParseJavaHomeRejectsOutsideTermuxPrefix(t *testing.T) {
+	prefix := "/data/data/com.termux/files/usr"
+	if _, err := parseJavaHome("java.home = /tmp/jdk", prefix); err == nil {
+		t.Fatal("outside Java home was accepted")
+	}
+	if _, err := parseJavaHome("java.home = /data/data/com.termux/files/usr/lib/jvm/java-21-openjdk", prefix); err != nil {
+		t.Fatalf("native Java home was rejected: %v", err)
+	}
+}
+
+func TestInstallJavaRecordsCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	p := paths.New(t.TempDir(), "/data/data/com.termux/files/usr")
+	result, err := Install(ctx, "java", Options{
+		Paths:       p,
+		Runner:      canceledRunner{},
+		Now:         time.Now,
+		StorageFree: func(string) (int64, error) { return StorageWarningBytes + 1, nil },
+	})
+	if err == nil || result.State != "failed" {
+		t.Fatalf("canceled Java installation = %+v, %v", result, err)
+	}
+	record, loadErr := loadInstallationRecord(p, "java")
+	if loadErr != nil || record.State != "failed" {
+		t.Fatalf("canceled Java installation state = %+v, %v", record, loadErr)
+	}
+}
+
+func TestInstallJavaHonorsStorageBlock(t *testing.T) {
+	p := paths.New(t.TempDir(), "/data/data/com.termux/files/usr")
+	result, err := Install(context.Background(), "java", Options{
+		Paths:       p,
+		Now:         time.Now,
+		StorageFree: func(string) (int64, error) { return StorageBlockBytes - 1, nil },
+	})
+	if err == nil || result.State != "blocked" || !result.StorageBlocked {
+		t.Fatalf("blocked Java installation = %+v, %v", result, err)
+	}
+}
+
+func TestUninstallJavaRemovesManagedPackage(t *testing.T) {
+	p := paths.New(t.TempDir(), "/data/data/com.termux/files/usr")
+	if err := os.MkdirAll(p.InstallationsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveRecord(p.InstallationsDir(), InstallationRecord{Name: "java", Package: "openjdk-21", Packages: []string{"openjdk-21"}, Strategy: "pkg", State: "installed"}); err != nil {
+		t.Fatal(err)
+	}
+	runner := &nativeRunner{}
+	result, err := Uninstall(context.Background(), "java", Options{Paths: p, Runner: runner, Now: time.Now})
+	if err != nil || result.State != "uninstalled" || !containsCommand(runner.commands, "pkg uninstall -y openjdk-21") {
+		t.Fatalf("Java uninstall = %+v, %v, commands=%v", result, err, runner.commands)
 	}
 }
 

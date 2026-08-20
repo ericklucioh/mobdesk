@@ -258,6 +258,7 @@ func mockStatus(scenario string) status.SystemStatus {
 		Network:       status.NetworkStatus{State: status.CheckOK, Addresses: []string{"172.19.0.1", "172.18.0.1", "10.42.0.1"}, Preferred: "172.19.0.1"},
 		Battery:       status.BatteryStatus{State: status.CheckOK, Available: true, Percentage: intPointer(72), Status: "normal", Plugged: "unplugged"},
 		WiFi:          status.WiFiStatus{State: status.CheckOK, Available: true, Connected: true, SSID: "mobdesk-lab", IP: "172.19.0.1"},
+		Java:          status.JavaStatus{State: status.CheckOK, Installed: true, Version: "openjdk 21", Home: "/data/data/com.termux/files/usr/lib/jvm/java-21-openjdk"},
 		Alerts:        status.AlertSummary{OK: 12},
 	}
 	for _, profile := range install.Tools() {

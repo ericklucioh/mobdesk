@@ -39,6 +39,16 @@ func RenderText(w io.Writer, value SystemStatus, localizers ...i18n.Localizer) e
 	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:       %d\n  %s:    %s\n", localizer.Text(i18n.StatusSSH, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.SSH.State), localizer.Text(i18n.StatusPort, nil), value.SSH.Port, localizer.Text(i18n.StatusRunning, nil), yesNo(localizer, value.SSH.Running))
 	fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:   %s\n", localizer.Text(i18n.StatusNetwork, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.Network.State), localizer.Text(i18n.StatusAddresses, nil), joinOrUnknown(localizer, value.Network.Addresses))
 	fmt.Fprintf(&text, "\n%s\n  %s:     %s\n  %s:       %s\n", localizer.Text(i18n.StatusDevice, nil), localizer.Text(i18n.StatusBattery, nil), batteryText(localizer, value.Battery), localizer.Text(i18n.StatusWiFi, nil), wifiText(localizer, value.WiFi))
+	if value.Java.Installed || value.Java.State != CheckMissing {
+		version := value.Java.Version
+		if version == "" {
+			version = localizedCheck(localizer, value.Java.State)
+		}
+		fmt.Fprintf(&text, "\n%s\n  %s:      %s\n  %s:       %s\n", localizer.Text(i18n.StatusJava, nil), localizer.Text(i18n.StatusState, nil), localizedCheck(localizer, value.Java.State), localizer.Text(i18n.StatusVersion, nil), version)
+		if value.Java.Home != "" {
+			fmt.Fprintf(&text, "  %s:        %s\n", localizer.Text(i18n.StatusJavaHome, nil), value.Java.Home)
+		}
+	}
 
 	if len(value.Installations) > 0 {
 		text.WriteString("\n" + localizer.Text(i18n.StatusInstallations, nil) + "\n")

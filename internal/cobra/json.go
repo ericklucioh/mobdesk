@@ -35,6 +35,7 @@ type operationResult struct {
 	Paths             []string                 `json:"paths,omitempty"`
 	Conflicts         []string                 `json:"conflicts,omitempty"`
 	PreservedPackages []string                 `json:"preserved_packages,omitempty"`
+	JavaHome          string                   `json:"java_home,omitempty"`
 }
 
 func decorateResult(result operationResult, localizers []i18n.Localizer, messageID i18n.MessageID, operationErr error) operationResult {

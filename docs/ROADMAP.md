@@ -13,8 +13,8 @@ a full Termux reset and fresh installation because no migration is provided.
 | 3 | MVP | Persistent environment | Recover sessions, services and remote access |
 | 4 | Application | Mobdesk Manager | Manage projects, sessions and services |
 
-Application configuration and LazyVim are deferred. The first sprint does not
-promise a managed JVM, project wrappers or configuration profiles.
+Application configuration and LazyVim are deferred. The native Java 21 profile
+is delivered separately from project wrappers and configuration profiles.
 
 ## Stage 1 - Termux-only foundation
 
@@ -25,8 +25,8 @@ through SSH. Scope includes Termux packages, OpenSSH, workspace and local state,
 safe start/stop, `mobdesk shell`, `mobdesk status`, initial tool profiles, local
 addresses, wake-lock when available and repeatable setup.
 
-The current validation sprint executes small native Git, Go, Python, Node/npm,
-C, C++, Lua, Neovim and tmux workflows in `~/workspace` before the required
+The current validation sprint executes small native Git, Go, Java, Python,
+Node/npm, C, C++, Lua, Neovim and tmux workflows in `~/workspace` before the required
 real-device acceptance. It remains part of Stage 1; it does not start the
 persistent-environment Stage 3.
 

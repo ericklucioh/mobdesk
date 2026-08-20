@@ -41,6 +41,7 @@ type SystemStatus struct {
 	Network       NetworkStatus        `json:"network"`
 	Battery       BatteryStatus        `json:"battery"`
 	WiFi          WiFiStatus           `json:"wifi"`
+	Java          JavaStatus           `json:"java,omitempty"`
 	Installations []InstallationStatus `json:"installations"`
 	Alerts        AlertSummary         `json:"alerts"`
 }
@@ -123,6 +124,16 @@ type WiFiStatus struct {
 	Error         string     `json:"error,omitempty"`
 }
 
+// JavaStatus is additive toolchain information for the managed Java profile.
+// Java remains optional, so an absent profile does not affect overall health.
+type JavaStatus struct {
+	State     CheckState `json:"state"`
+	Installed bool       `json:"installed"`
+	Version   string     `json:"version,omitempty"`
+	Home      string     `json:"home,omitempty"`
+	Error     string     `json:"error,omitempty"`
+}
+
 type InstallationStatus struct {
 	Name                string                   `json:"name"`
 	Kind                string                   `json:"kind"`
@@ -139,6 +150,7 @@ type InstallationStatus struct {
 	Source              string                   `json:"source,omitempty"`
 	Managed             bool                     `json:"managed,omitempty"`
 	Version             string                   `json:"version,omitempty"`
+	JavaHome            string                   `json:"java_home,omitempty"`
 	InstalledAt         time.Time                `json:"installed_at,omitempty"`
 	LastAttemptAt       time.Time                `json:"last_attempt_at"`
 	LastError           string                   `json:"last_error,omitempty"`

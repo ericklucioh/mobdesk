@@ -192,6 +192,9 @@ const (
 	StatusDevice            MessageID = "status.device"
 	StatusBattery           MessageID = "status.battery"
 	StatusWiFi              MessageID = "status.wifi"
+	StatusJava              MessageID = "status.java"
+	StatusJavaHome          MessageID = "status.java_home"
+	StatusVersion           MessageID = "status.version"
 	StatusInstallations     MessageID = "status.installations"
 	StatusConfiguration     MessageID = "status.configurations"
 	StatusAlerts            MessageID = "status.alerts"
@@ -541,7 +544,7 @@ var requiredMessageIDs = []MessageID{
 	StatusTitle, StatusSummary, StatusUpdated, StatusHost, StatusRuntime, StatusArchitecture,
 	StatusWakeLock, StatusTermuxAPI, StatusStorage, StatusDeviceStorage, StatusSetup,
 	StatusComplete, StatusWorkspace, StatusPath, StatusSSH, StatusPort,
-	StatusRunning, StatusNetwork, StatusAddresses, StatusDevice, StatusBattery, StatusWiFi,
+	StatusRunning, StatusNetwork, StatusAddresses, StatusDevice, StatusBattery, StatusWiFi, StatusJava, StatusJavaHome, StatusVersion,
 	StatusInstallations, StatusConfiguration, StatusAlerts, StatusState, StatusError, StatusLog,
 	StatusAvailable, StatusMissing, StatusYes, StatusNo, StatusNone, StatusBatteryAPIMissing,
 	StatusConnected, StatusDisconnected, StatusOverallHealthy, StatusOverallDegraded,

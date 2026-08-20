@@ -59,9 +59,47 @@ func Collect(ctx context.Context, options Options) SystemStatus {
 	result := SystemStatus{SchemaVersion: SchemaVersion, GeneratedAt: o.Now().UTC(), Host: collectHost(o), Setup: collectSetup(o), Workspace: collectWorkspace(o), Storage: collectStorage(o), SSH: collectSSH(ctx, o), Network: collectNetwork(ctx, o)}
 	result.Battery, result.WiFi = collectTermuxAPIs(ctx, o)
 	result.Installations = reconcileInstallations(ctx, o, collectInstallations(o))
+	result.Java = collectJava(result.Installations, o.Paths.Prefix)
 	result.Alerts = summarize(result)
 	result.Overall = overallState(result)
 	return result
+}
+
+func collectJava(installations []InstallationStatus, prefix string) JavaStatus {
+	result := JavaStatus{State: CheckMissing, Error: "java_not_installed"}
+	for _, installation := range installations {
+		if installation.Name != "java" {
+			continue
+		}
+		if installation.State == "uninstalled" {
+			return result
+		}
+		result.Installed, result.Version = installation.State == "installed", installation.Version
+		if installation.State != "installed" {
+			result.State, result.Error = CheckWarning, "java_installation_incomplete"
+			return result
+		}
+		home, err := validJavaHome(installation.JavaHome, prefix)
+		if err != nil {
+			result.State, result.Error = CheckWarning, "java_home_invalid"
+			return result
+		}
+		result.State, result.Home, result.Error = CheckOK, home, ""
+		return result
+	}
+	return result
+}
+
+func validJavaHome(home, prefix string) (string, error) {
+	home, prefix = filepath.Clean(strings.TrimSpace(home)), filepath.Clean(strings.TrimSpace(prefix))
+	if !filepath.IsAbs(home) || !filepath.IsAbs(prefix) {
+		return "", fmt.Errorf("java home or Termux prefix is not absolute")
+	}
+	relative, err := filepath.Rel(prefix, home)
+	if err != nil || relative == "." || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("java home is outside Termux prefix")
+	}
+	return home, nil
 }
 
 func ReadInstallations(p paths.Paths) []InstallationStatus {

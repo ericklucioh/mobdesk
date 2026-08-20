@@ -101,6 +101,7 @@ func installOperationResult(result install.Result, installErr error, localizers 
 		StorageFreeBytes: result.StorageFreeBytes,
 		StorageWarning:   result.StorageWarning,
 		StorageBlocked:   result.StorageBlocked,
+		JavaHome:         result.JavaHome,
 		Message:          localized(localizers, i18n.OutputInstallInstalled, nil),
 	}
 	if installErr != nil {

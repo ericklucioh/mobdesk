@@ -7,8 +7,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ericklucioh/mobdesk/internal/install"
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
+
+type javaStatusRunner struct{}
+
+func (javaStatusRunner) Run(context.Context, string, ...string) CommandResult {
+	return CommandResult{Stdout: []byte("openjdk 21.0.12\n")}
+}
 
 func TestCollectReportsNativeWorkspaceSchema(t *testing.T) {
 	t.Setenv("TERMUX_VERSION", "1")
@@ -44,5 +51,40 @@ func TestCollectReportsNativeWorkspaceSchema(t *testing.T) {
 	}
 	if _, ok := raw["ubuntu"]; ok {
 		t.Fatal("status retained a guest runtime")
+	}
+}
+
+func TestCollectReportsManagedJavaStatus(t *testing.T) {
+	prefix := "/data/data/com.termux/files/usr"
+	p := paths.New(t.TempDir(), prefix)
+	if err := os.MkdirAll(p.InstallationsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	record := install.InstallationRecord{Name: "java", Kind: "language", Package: "openjdk-21", Executable: "java", RequiredExecutables: []install.ExecutableSpec{{Name: "java", VersionArg: []string{"--version"}}, {Name: "javac", VersionArg: []string{"--version"}}, {Name: "jar", VersionArg: []string{"--version"}}}, State: "installed", Source: "mobdesk", Version: "openjdk 21.0.12", JavaHome: prefix + "/lib/jvm/java-21-openjdk"}
+	payload, err := json.Marshal(record)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(p.InstallationsDir()+"/java.json", payload, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	value := Collect(context.Background(), Options{Paths: p, CommandRunner: javaStatusRunner{}, LookPath: func(string) (string, error) { return "", os.ErrNotExist }})
+	if !value.Java.Installed || value.Java.State != CheckOK || value.Java.Home != record.JavaHome || value.Java.Version != record.Version {
+		t.Fatalf("unexpected Java status: %+v", value.Java)
+	}
+	payload, err = json.Marshal(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(payload, &raw); err != nil || raw["java"] == nil {
+		t.Fatalf("Java status is not present in JSON: %v", err)
+	}
+}
+
+func TestCollectJavaTreatsUninstalledProfileAsOptional(t *testing.T) {
+	value := collectJava([]InstallationStatus{{Name: "java", State: "uninstalled"}}, "/data/data/com.termux/files/usr")
+	if value.State != CheckMissing || value.Installed || value.Error != "java_not_installed" {
+		t.Fatalf("uninstalled Java status = %+v", value)
 	}
 }

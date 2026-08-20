@@ -115,6 +115,9 @@ operations.
 New catalog apps must declare the same presentation contract as existing apps:
 localized description, concise usage, installation profile and storage
 estimate. Application configuration profiles, including LazyVim, are deferred.
+The Java profile additionally resolves `java.home` at runtime and records it
+only when it is an absolute child of the Termux prefix; it never writes a global
+`JAVA_HOME` shell setting.
 
 ## Layer contracts
 

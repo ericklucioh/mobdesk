@@ -32,7 +32,7 @@ Included:
 
 Deferred:
 
-- Java, Kotlin, Gradle, Maven and all other unverified profiles;
+- Kotlin, Gradle, Maven and all other unverified profiles;
 - managed Go, npm, pipx and download installation strategies;
 - app configuration and LazyVim;
 - native fast/full catalog validation until profiles are audited on Termux

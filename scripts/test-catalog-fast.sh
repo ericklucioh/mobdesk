@@ -42,7 +42,7 @@ set result [wait]
 if {[lindex $result 3] != 0} { exit [lindex $result 3] }
 EXPECT_SCRIPT
 
-profiles=(git neovim tmux go python node c cpp lua gh tree htop ncdu micro)
+profiles=(git neovim tmux go java python node c cpp lua gh tree htop ncdu micro)
 for profile in "${profiles[@]}"; do
     "$MOBDESK_TEST_BIN" install "$profile" --json > "$TEST_DIR/${profile}-first.json"
     grep -q '"success":true' "$TEST_DIR/${profile}-first.json"
@@ -56,6 +56,10 @@ git --version >/dev/null
 nvim --version >/dev/null
 tmux -V >/dev/null
 go version >/dev/null
+java --version >/dev/null
+javac --version >/dev/null
+jar --version >/dev/null
+! grep -q 'JAVA_HOME' "$HOME/.bashrc" 2>/dev/null
 python --version >/dev/null
 node --version >/dev/null
 npm --version >/dev/null
@@ -70,8 +74,9 @@ micro --version >/dev/null
 
 "$MOBDESK_TEST_BIN" status --json > "$TEST_DIR/status.json"
 for profile in "${profiles[@]}"; do
-    grep -q "\"name\": \"${profile}\"" "$TEST_DIR/status.json"
+	grep -q "\"name\": \"${profile}\"" "$TEST_DIR/status.json"
 done
+grep -q '"java_home":' "$TEST_DIR/status.json"
 "$MOBDESK_TEST_BIN" logs --json > "$TEST_DIR/logs.json"
 grep -q '"schema_version": 1' "$TEST_DIR/logs.json"
 grep -q '"command": "logs"' "$TEST_DIR/logs.json"

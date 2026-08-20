@@ -92,6 +92,7 @@ type Result struct {
 	StorageFreeBytes  int64            `json:"storage_free_bytes,omitempty"`
 	StorageWarning    bool             `json:"storage_warning,omitempty"`
 	StorageBlocked    bool             `json:"storage_blocked,omitempty"`
+	JavaHome          string           `json:"java_home,omitempty"`
 }
 
 type InstallationRecord struct {
@@ -113,6 +114,7 @@ type InstallationRecord struct {
 	State               string            `json:"state"`
 	Source              string            `json:"source,omitempty"`
 	Version             string            `json:"version,omitempty"`
+	JavaHome            string            `json:"java_home,omitempty"`
 	InstalledAt         time.Time         `json:"installed_at,omitempty"`
 	LastAttemptAt       time.Time         `json:"last_attempt_at"`
 	LastError           string            `json:"last_error,omitempty"`
