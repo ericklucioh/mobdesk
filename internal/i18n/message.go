@@ -163,6 +163,7 @@ const (
 	ServiceUninstallDetected  MessageID = "service.uninstall.detected"
 	ServiceUninstallState     MessageID = "service.uninstall.state"
 	ServiceUninstallShared    MessageID = "service.uninstall.shared"
+	ServiceUninstallRequired  MessageID = "service.uninstall.required"
 	ServiceWorkstationError   MessageID = "service.workstation.error"
 	ServiceWorkstationWarning MessageID = "service.workstation.warning"
 	ServiceWorkstationPID     MessageID = "service.workstation.pid"
@@ -540,7 +541,7 @@ var requiredMessageIDs = []MessageID{
 	ServiceInstallHash, ServiceInstallLock, ServiceInstallWait, ServiceInstallStorage, ServiceConfigError,
 	ServiceConfigProgress, ServiceConfigPlugin, ServiceUninstallError, ServiceUninstallProgress,
 	ServiceWorkstationError, ServiceWorkstationWarning, ServiceWorkstationPID, ServiceUpdateError, ServiceLogsError,
-	ServiceUninstallDetected, ServiceUninstallState, ServiceUninstallShared, ServiceExecError,
+	ServiceUninstallDetected, ServiceUninstallState, ServiceUninstallShared, ServiceUninstallRequired, ServiceExecError,
 	StatusTitle, StatusSummary, StatusUpdated, StatusHost, StatusRuntime, StatusArchitecture,
 	StatusWakeLock, StatusTermuxAPI, StatusStorage, StatusDeviceStorage, StatusSetup,
 	StatusComplete, StatusWorkspace, StatusPath, StatusSSH, StatusPort,

@@ -32,7 +32,7 @@ Included:
 
 Deferred:
 
-- Kotlin, Gradle, Maven and all other unverified profiles;
+ - Kotlin, Gradle and all other unverified profiles;
 - managed Go, npm, pipx and download installation strategies;
 - app configuration and LazyVim;
 - native fast/full catalog validation until profiles are audited on Termux
@@ -66,6 +66,18 @@ The Node profile requires both `node` and `npm`, which the audited `nodejs`
 Termux package supplies. SSH smoke validation also proves that remote commands
 run in the same Termux home, prefix and workspace. This is a Stage 1 validation
 sprint, not the roadmap's persistent-environment Stage 3.
+
+## Sprint 4 and 5 Implementation Scope
+
+Sprint 4 adds `openjdk-21` as the Java profile and records a runtime-discovered
+Java home only when it is below `$PREFIX`. It validates compilation and an
+executable JAR without setting a global `JAVA_HOME`.
+
+Sprint 5 audits native Termux `maven`, which depends on `openjdk-21`, and adds a
+Maven profile that requires Java. `make spring-test` validates a pinned Spring
+Boot fixture by building and testing it, serving `GET /health` on loopback and
+terminating the child JAR process. Maven cache and full workflow evidence remain
+required on a reset ARM64 device.
 
 ## 1. Product Boundary
 

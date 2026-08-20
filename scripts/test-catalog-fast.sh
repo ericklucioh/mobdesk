@@ -42,7 +42,7 @@ set result [wait]
 if {[lindex $result 3] != 0} { exit [lindex $result 3] }
 EXPECT_SCRIPT
 
-profiles=(git neovim tmux go java python node c cpp lua gh tree htop ncdu micro)
+profiles=(git neovim tmux go java maven python node c cpp lua gh tree htop ncdu micro)
 for profile in "${profiles[@]}"; do
     "$MOBDESK_TEST_BIN" install "$profile" --json > "$TEST_DIR/${profile}-first.json"
     grep -q '"success":true' "$TEST_DIR/${profile}-first.json"
@@ -60,6 +60,7 @@ java --version >/dev/null
 javac --version >/dev/null
 jar --version >/dev/null
 ! grep -q 'JAVA_HOME' "$HOME/.bashrc" 2>/dev/null
+mvn --version >/dev/null
 python --version >/dev/null
 node --version >/dev/null
 npm --version >/dev/null

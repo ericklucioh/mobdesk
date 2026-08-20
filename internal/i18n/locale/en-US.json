@@ -145,6 +145,7 @@
   "service.uninstall.detected": "it is not safe to uninstall {{.Name}}: the installation was only detected",
   "service.uninstall.state": "it is not safe to uninstall {{.Name}} in state {{.State}}",
   "service.uninstall.shared": "it is not safe to remove {{.Name}}: package is shared",
+  "service.uninstall.required": "it is not safe to remove {{.Name}}: required by {{.Dependents}}",
   "service.workstation.error": "workstation operation failed: {{.Detail}}",
   "service.workstation.warning": "Warning: {{.Detail}}",
   "service.workstation.pid": "PID {{.PID}} does not belong to the Mobdesk SSH server",

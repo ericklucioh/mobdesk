@@ -1,7 +1,7 @@
 # Post-Termux Sprint Plan
 
-**Status:** Sprint 4 implementation and Docker validation are complete. Device
-acceptance is required before support is claimed.
+**Status:** Sprints 4 and 5 implementation and Docker validation are complete.
+Device acceptance is required before support is claimed.
 
 This plan extends the native Termux workstation after the Termux-only
 foundation is accepted on a reset ARM64 device. It does not restore PRoot,
@@ -94,24 +94,29 @@ process, external JDK or permanent Java shell configuration.
 Prove a small Spring Boot API can build, start, answer locally and stop without
 an orphan process.
 
-### Scope
+### Delivered implementation
 
-- Audit the native Termux Maven package. If it is not supportable, audit only a
-  project-local executable Maven Wrapper; do not download a Maven distribution
-  globally.
-- Add a `maven` profile only after its package or wrapper strategy passes the
-  native audit and device test.
-- Make Maven depend on the Java profile.
-- Reuse `ResolveBuildCommand` to prefer an executable project `mvnw`, then use
-  the native Maven command when appropriate.
-- Add a pinned Spring Boot Maven fixture with a `GET /health` endpoint and a
-  simple test.
-- Add `make spring-test`: build the fixture, start the generated JAR, wait for
-  the endpoint, call it with `curl`, and stop only the process created by the
+- The native Termux `maven` package was audited in the Docker fixture at version
+  3.9.16. It depends on `openjdk-21`.
+- The `maven` profile requires the managed `java` profile and verifies `mvn`.
+  Mobdesk refuses to remove Java while Maven is installed.
+- `ResolveBuildCommand` continues to prefer an executable project `mvnw` and
+  otherwise resolves the native `mvn` command without modifying a wrapper.
+- The pinned Spring Boot 3.5.0 fixture provides `GET /health` and a MockMvc
   test.
-- Bound network, build and startup operations with context cancellation and
-  useful private logs.
-- Measure Maven cache and build storage on the POCO F6.
+- `make spring-test` installs Maven through Mobdesk, builds and tests the
+  fixture, starts its JAR, calls the local endpoint with `curl`, and terminates
+  only the process it created. The test is bounded by `SPRING_TIMEOUT`.
+
+### Remaining device acceptance
+
+- Install and reinstall `maven` on the POCO F6 and record Maven, Java and
+  package versions.
+- Build, test, start and stop the Spring fixture from `$HOME/workspace`.
+- Measure Maven cache, build output, download time and storage use on the
+  device.
+- Verify cancellation during dependency download, build and application startup
+  leaves no running child process.
 
 ### Out of Scope
 

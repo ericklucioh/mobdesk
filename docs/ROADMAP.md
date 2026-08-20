@@ -13,8 +13,9 @@ a full Termux reset and fresh installation because no migration is provided.
 | 3 | MVP | Persistent environment | Recover sessions, services and remote access |
 | 4 | Application | Mobdesk Manager | Manage projects, sessions and services |
 
-Application configuration and LazyVim are deferred. The native Java 21 profile
-is delivered separately from project wrappers and configuration profiles.
+Application configuration and LazyVim are deferred. Native Java 21 and Maven
+profiles are delivered separately from project wrappers and configuration
+profiles.
 
 ## Stage 1 - Termux-only foundation
 

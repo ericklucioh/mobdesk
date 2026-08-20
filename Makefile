@@ -4,8 +4,9 @@ COMPOSE ?= docker compose
 SERVICE ?= termux
 TERMUX_ARCH ?= latest
 CATALOG_TIMEOUT ?= 30m
+SPRING_TIMEOUT ?= 15m
 
-.PHONY: help termux build-image shell test integration-test catalog-test-fast workflow-test vet build run dev clean-env reset-env clean-image arm64-image fmt i18n-check check
+.PHONY: help termux build-image shell test integration-test catalog-test-fast workflow-test spring-test vet build run dev clean-env reset-env clean-image arm64-image fmt i18n-check check
 
 help:
 	@printf '%s\n' \
@@ -18,6 +19,7 @@ help:
 		'make integration-test - test the Termux/SSH flow in Docker' \
 		'make catalog-test-fast - install and verify every native pkg profile' \
 		'make workflow-test    - run native development workflows in Termux' \
+		'make spring-test      - build, run and stop the Spring Boot fixture in Termux' \
 		'make vet             - run go vet ./...' \
 		'make build           - build Mobdesk inside the container' \
 		'make run             - run the Mobdesk binary' \
@@ -47,6 +49,9 @@ catalog-test-fast:
 
 workflow-test:
 	timeout $(CATALOG_TIMEOUT) env TERMUX_ARCH=$(TERMUX_ARCH) COMPOSE="$(COMPOSE)" ./scripts/test-native-workflows.sh
+
+spring-test:
+	timeout $(SPRING_TIMEOUT) env TERMUX_ARCH=$(TERMUX_ARCH) COMPOSE="$(COMPOSE)" ./scripts/test-spring.sh
 
 vet:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm $(SERVICE) bash -lc 'go vet ./...'

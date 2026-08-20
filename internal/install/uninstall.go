@@ -44,6 +44,10 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 	if record.State != "installed" && record.State != "failed" && record.State != "partial" {
 		return result, i18n.NewError(i18n.ServiceUninstallState, "uninstall_invalid_state", map[string]any{"Name": profile.Name, "State": record.State}, nil)
 	}
+	if dependents := dependentInstallations(options.Paths, record.Name); len(dependents) > 0 {
+		result.Conflicts = dependents
+		return result, i18n.NewError(i18n.ServiceUninstallRequired, "uninstall_required", map[string]any{"Name": profile.Name, "Dependents": strings.Join(dependents, ", ")}, nil)
+	}
 	sharedPackages := sharedPackagesByAnotherInstallation(options.Paths, record)
 	record.State, record.LastAttemptAt = "uninstalling", options.Now().UTC()
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
@@ -73,6 +77,30 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 	}
 	result.State, result.Changed = "uninstalled", true
 	return result, nil
+}
+
+func dependentInstallations(p paths.Paths, dependency string) []string {
+	entries, err := os.ReadDir(p.InstallationsDir())
+	if err != nil {
+		return nil
+	}
+	var result []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		record, err := loadInstallationRecord(p, strings.TrimSuffix(entry.Name(), ".json"))
+		if err != nil || record.State != "installed" {
+			continue
+		}
+		for _, current := range record.Dependencies {
+			if current == dependency {
+				result = append(result, record.Name)
+				break
+			}
+		}
+	}
+	return result
 }
 
 func sharedPackagesByAnotherInstallation(p paths.Paths, target InstallationRecord) []string {

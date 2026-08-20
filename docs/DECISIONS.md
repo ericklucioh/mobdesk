@@ -47,7 +47,12 @@ clean Termux fixture, executed from the Mobdesk workspace. The Node profile
 requires both `node` and `npm` from its native package. The Java profile requires
 `java`, `javac` and `jar` from `openjdk-21`, and records a runtime-discovered
 Java home only when it is below `$PREFIX`. Dependency installation, application
-configuration and framework setup remain deferred.
+configuration remains deferred.
+
+The Maven profile uses the native Termux `maven` package, requires the managed
+Java profile and verifies `mvn`. Mobdesk preserves Java while Maven depends on
+it. Spring Boot receives a separate networked fixture: it must build, test,
+serve a loopback health endpoint and stop the exact JAR process it started.
 
 ### The TUI remains in control after start
 

@@ -117,7 +117,9 @@ localized description, concise usage, installation profile and storage
 estimate. Application configuration profiles, including LazyVim, are deferred.
 The Java profile additionally resolves `java.home` at runtime and records it
 only when it is an absolute child of the Termux prefix; it never writes a global
-`JAVA_HOME` shell setting.
+`JAVA_HOME` shell setting. The Maven profile is a native `pkg` profile requiring
+Java. A managed Java prerequisite cannot be removed while its Maven record is
+installed.
 
 ## Layer contracts
 
@@ -184,6 +186,11 @@ integration requires a real device.
 and safe removal. `make workflow-test` runs the tracked offline fixtures from
 `~/workspace` to validate the installed development tools. Both use Docker only
 as a repeatable Termux fixture and do not replace ARM64 device validation.
+
+`make spring-test` is a separate, bounded networked workflow: it installs the
+native Maven profile, builds and tests a pinned Spring Boot fixture, verifies a
+loopback-only health endpoint and stops the child JAR process. Maven dependency
+download, cache size and Android behavior still require POCO F6 validation.
 
 ## Superseded architecture
 

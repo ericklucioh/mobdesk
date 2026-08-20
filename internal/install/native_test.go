@@ -21,6 +21,10 @@ type javaRunner struct {
 	installed bool
 }
 
+type mavenRunner struct {
+	packages map[string]bool
+}
+
 type canceledRunner struct{}
 
 func (canceledRunner) Run(ctx context.Context, _ string, _ ...string) CommandResult {
@@ -40,6 +44,39 @@ func (r *javaRunner) Run(_ context.Context, name string, args ...string) Command
 		return CommandResult{Stderr: []byte("Property settings:\n    java.home = /data/data/com.termux/files/usr/lib/jvm/java-21-openjdk\n")}
 	}
 	return CommandResult{Stdout: []byte(name + " 21.0.12\n")}
+}
+
+func (r *mavenRunner) Run(_ context.Context, name string, args ...string) CommandResult {
+	if r.packages == nil {
+		r.packages = make(map[string]bool)
+	}
+	if name == "pkg" {
+		for _, arg := range args {
+			if arg == "openjdk-21" || arg == "maven" {
+				r.packages[arg] = true
+			}
+		}
+		return CommandResult{}
+	}
+	if name == "java" && len(args) > 0 && args[0] == "-XshowSettings:properties" {
+		if !r.packages["openjdk-21"] {
+			return CommandResult{Err: errors.New("java missing")}
+		}
+		return CommandResult{Stderr: []byte("java.home = /data/data/com.termux/files/usr/lib/jvm/java-21-openjdk\n")}
+	}
+	if name == "java" || name == "javac" || name == "jar" {
+		if !r.packages["openjdk-21"] {
+			return CommandResult{Err: errors.New("java missing")}
+		}
+		return CommandResult{Stdout: []byte(name + " 21.0.12\n")}
+	}
+	if name == "mvn" {
+		if !r.packages["maven"] {
+			return CommandResult{Err: errors.New("maven missing")}
+		}
+		return CommandResult{Stdout: []byte("Apache Maven 3.9.16\n")}
+	}
+	return CommandResult{}
 }
 
 func (r *nativeRunner) Run(_ context.Context, name string, args ...string) CommandResult {
@@ -77,7 +114,7 @@ func TestInstallUsesNativePkg(t *testing.T) {
 func TestCatalogUsesOnlyNativePkgProfiles(t *testing.T) {
 	want := map[string]bool{
 		"git": true, "neovim": true, "tmux": true, "go": true, "python": true,
-		"java": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
+		"java": true, "maven": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
 		"tree": true, "htop": true, "ncdu": true, "micro": true,
 	}
 	for _, profile := range Tools() {
@@ -102,6 +139,26 @@ func TestJavaProfileRequiresJDKCommands(t *testing.T) {
 	want := []ExecutableSpec{{Name: "java", VersionArg: []string{"--version"}}, {Name: "javac", VersionArg: []string{"--version"}}, {Name: "jar", VersionArg: []string{"--version"}}}
 	if profile.Package != "openjdk-21" || !sameExecutableSpecs(profileExecutables(profile), want) {
 		t.Fatalf("unexpected Java profile: %+v", profile)
+	}
+}
+
+func TestMavenProfileRequiresJava(t *testing.T) {
+	profile, ok := Resolve("maven")
+	if !ok {
+		t.Fatal("maven profile is missing")
+	}
+	if profile.Package != "maven" || !sameStrings(profile.Requires, []string{"java"}) {
+		t.Fatalf("unexpected Maven profile: %+v", profile)
+	}
+	runner := &mavenRunner{}
+	result, err := Install(context.Background(), "maven", Options{
+		Paths:       paths.New(t.TempDir(), "/data/data/com.termux/files/usr"),
+		Runner:      runner,
+		Now:         time.Now,
+		StorageFree: func(string) (int64, error) { return StorageWarningBytes + 1, nil },
+	})
+	if err != nil || !result.Installed || !runner.packages["openjdk-21"] || !runner.packages["maven"] {
+		t.Fatalf("Maven installation = %+v, %v, packages=%v", result, err, runner.packages)
 	}
 }
 
@@ -183,6 +240,25 @@ func TestUninstallJavaRemovesManagedPackage(t *testing.T) {
 	result, err := Uninstall(context.Background(), "java", Options{Paths: p, Runner: runner, Now: time.Now})
 	if err != nil || result.State != "uninstalled" || !containsCommand(runner.commands, "pkg uninstall -y openjdk-21") {
 		t.Fatalf("Java uninstall = %+v, %v, commands=%v", result, err, runner.commands)
+	}
+}
+
+func TestUninstallJavaRefusesRequiredProfile(t *testing.T) {
+	p := paths.New(t.TempDir(), "/data/data/com.termux/files/usr")
+	if err := os.MkdirAll(p.InstallationsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, record := range []InstallationRecord{
+		{Name: "java", Package: "openjdk-21", Packages: []string{"openjdk-21"}, Strategy: "pkg", State: "installed"},
+		{Name: "maven", Package: "maven", Packages: []string{"maven"}, Dependencies: []string{"java"}, Strategy: "pkg", State: "installed"},
+	} {
+		if err := saveRecord(p.InstallationsDir(), record); err != nil {
+			t.Fatal(err)
+		}
+	}
+	result, err := Uninstall(context.Background(), "java", Options{Paths: p, Runner: &nativeRunner{}, Now: time.Now})
+	if err == nil || !sameStrings(result.Conflicts, []string{"maven"}) {
+		t.Fatalf("Java uninstall did not report Maven dependency: %+v, %v", result, err)
 	}
 }
 
