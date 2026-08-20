@@ -29,7 +29,7 @@ root, a virtual machine, Docker on the phone, systemd or a graphical desktop.
 - touch/mouse/keyboard TUI;
 - status and JSON output for automation;
 - idempotent Termux `pkg` installation profiles for Git, Neovim, tmux, Go,
-  Python, Node.js, C and C++;
+  Python, Node.js, C/C++, Lua, GitHub CLI, tree, htop, ncdu and Micro;
 - rollback-aware binary updates;
 - English (`en-US`) and Brazilian Portuguese (`pt-BR`) presentation.
 

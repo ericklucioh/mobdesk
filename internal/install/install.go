@@ -35,9 +35,15 @@ var catalog = []AppProfile{
 	{Name: "node", Aliases: []string{"nodejs"}, DescriptionID: i18n.AppNodeDescription, Usage: "node [script]", Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(70, 130, 20, 60)},
 	{Name: "c", Aliases: []string{"c-lang"}, DescriptionID: i18n.AppCDescription, Usage: "clang [options] <files...>", Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(250, 450, 20, 80)},
 	{Name: "cpp", Aliases: []string{"c++", "cplusplus"}, DescriptionID: i18n.AppCPPDescription, Usage: "clang++ [options] <files...>", Package: "clang", Executable: "clang++", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(250, 450, 20, 80)},
+	{Name: "lua", Aliases: []string{"lua5.4"}, DescriptionID: i18n.AppLuaDescription, Usage: "lua [script]", Package: "lua54", Executable: "lua", VersionArg: []string{"-v"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 3, 0, 1)},
+	{Name: "gh", Aliases: []string{"github-cli"}, DescriptionID: i18n.AppGHDescription, Usage: "gh <command> [options]", Package: "gh", Executable: "gh", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg", StorageEstimate: plannedStorage(10, 20, 0, 5)},
+	{Name: "tree", DescriptionID: i18n.AppTreeDescription, Usage: "tree [directory]", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 2, 0, 1)},
+	{Name: "htop", DescriptionID: i18n.AppHtopDescription, Usage: "htop", Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 3, 0, 1)},
+	{Name: "ncdu", DescriptionID: i18n.AppNcduDescription, Usage: "ncdu [directory]", Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 2, 0, 1)},
+	{Name: "micro", DescriptionID: i18n.AppMicroDescription, Usage: "micro [files...]", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(4, 8, 0, 2)},
 }
 
-var catalogEstimateMeasuredAt = time.Date(2026, 8, 19, 0, 0, 0, 0, time.UTC)
+var catalogEstimateMeasuredAt = time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
 
 func plannedStorage(appMin, appMax, dependenciesMin, dependenciesMax int64) *StorageEstimate {
 	return &StorageEstimate{AppMinMB: appMin, AppMaxMB: appMax, DependenciesMinMB: dependenciesMin, DependenciesMaxMB: dependenciesMax, Source: "planning", Version: "termux-first", Architecture: "arm64", MeasuredAt: catalogEstimateMeasuredAt}

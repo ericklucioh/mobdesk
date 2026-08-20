@@ -38,6 +38,18 @@ Deferred:
 - native fast/full catalog validation until profiles are audited on Termux
   ARM64.
 
+## Sprint 2 Implementation Scope
+
+Sprint 2 expands the native package-manager catalog without adding a second
+installation strategy. It adds Lua (`lua54` package and `lua` executable),
+GitHub CLI, tree, htop, ncdu and Micro. Each profile uses `InstallKind: "pkg"`
+and was installed and version-checked in the Termux Docker fixture.
+
+`make catalog-test-fast` now provisions a clean Termux fixture, installs every
+active profile, verifies its executable, repeats installation and checks the
+persisted status. ARM64 device validation remains required before treating this
+catalog as validated for the target phone.
+
 ## 1. Product Boundary
 
 ### 1.1 Target topology

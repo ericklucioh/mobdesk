@@ -26,7 +26,8 @@ gráfico ou módulos do kernel.
 - servidor SSH dedicado do Mobdesk na porta `8022`;
 - acesso local ao Termux com `mobdesk shell`;
 - saída humana e JSON para automação e para a TUI;
-- instalação idempotente de perfis de ferramentas nativas do Termux;
+- instalação idempotente por `pkg` de Git, Neovim, tmux, Go, Python, Node.js,
+  Clang/C++, Lua, GitHub CLI, tree, htop, ncdu e Micro;
 - telas de status, setup, ferramentas, shell e atualização na TUI;
 - atualização verificável do binário com rollback e recuperação;
 - apresentação em inglês (`en-US`) e português do Brasil (`pt-BR`).

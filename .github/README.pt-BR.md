@@ -30,7 +30,7 @@ gráfico.
 - TUI com suporte a toque, mouse e teclado;
 - status e saída JSON para automação;
 - perfis de instalação idempotente pelo `pkg` do Termux para Git, Neovim,
-  tmux, Go, Python, Node.js, C e C++;
+  tmux, Go, Python, Node.js, C/C++, Lua, GitHub CLI, tree, htop, ncdu e Micro;
 - atualizações do binário com rollback;
 - apresentação em inglês (`en-US`) e português do Brasil (`pt-BR`).
 
