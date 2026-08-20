@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ericklucioh/mobdesk/internal/i18n"
 	"github.com/ericklucioh/mobdesk/internal/paths"
@@ -48,7 +50,17 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 		result.Conflicts = dependents
 		return result, i18n.NewError(i18n.ServiceUninstallRequired, "uninstall_required", map[string]any{"Name": profile.Name, "Dependents": strings.Join(dependents, ", ")}, nil)
 	}
-	sharedPackages := sharedPackagesByAnotherInstallation(options.Paths, record)
+	if profile.UserBin {
+		link, target, _ := managedExecutablePaths(options.Paths, profile)
+		if err := ensureManagedLink(link, target); err != nil {
+			result.Conflicts = []string{link}
+			return result, err
+		}
+	}
+	sharedPackages := []string(nil)
+	if record.Strategy == "pkg" {
+		sharedPackages = sharedPackagesByAnotherInstallation(options.Paths, record)
+	}
 	record.State, record.LastAttemptAt = "uninstalling", options.Now().UTC()
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
 		return result, i18n.NewError(i18n.ServiceUninstallError, "uninstall_record", nil, err)
@@ -62,21 +74,63 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 		result.State, result.Changed, result.PreservedPackages = "uninstalled", true, sharedPackages
 		return result, nil
 	}
-	if record.Strategy != "pkg" {
-		return result, fmt.Errorf("unsupported native uninstall strategy %q", record.Strategy)
-	}
-	removed := runTermuxLogged(ctx, runnerFor(options), options.CommandTimeout, record.LogPath, "pkg", append([]string{"uninstall", "-y"}, record.Packages...)...)
+	removed := uninstallTool(ctx, runnerFor(options), options.CommandTimeout, record.LogPath, options.Paths, profile, record.Strategy)
 	if removed.Err != nil {
 		record.State, record.LastError, record.LastErrorCode = "failed", removed.Err.Error(), i18n.ErrorCode(removed.Err)
 		_ = saveRecord(options.Paths.InstallationsDir(), record)
 		return result, removed.Err
 	}
-	record.State, record.LastError, record.RemovedPackages = "uninstalled", "", append(record.RemovedPackages, record.Packages...)
+	record.State, record.LastError = "uninstalled", ""
+	if record.Strategy == "pkg" {
+		record.RemovedPackages = append(record.RemovedPackages, record.Packages...)
+	} else {
+		record.RemovedFiles = append(record.RemovedFiles, record.InstalledFiles...)
+		result.Paths = append(result.Paths, record.InstalledFiles...)
+		for _, directory := range record.InstalledDirs {
+			if err := os.Remove(directory); err != nil && !os.IsNotExist(err) {
+				record.PreservedFiles = append(record.PreservedFiles, directory)
+				result.Conflicts = append(result.Conflicts, directory)
+			}
+		}
+	}
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
 		return result, i18n.NewError(i18n.ServiceUninstallError, "uninstall_record", nil, err)
 	}
 	result.State, result.Changed = "uninstalled", true
 	return result, nil
+}
+
+func uninstallTool(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, p paths.Paths, profile AppProfile, strategy string) CommandResult {
+	switch strategy {
+	case "pkg":
+		return runTermuxLogged(ctx, runner, timeout, logPath, "pkg", append([]string{"uninstall", "-y"}, profilePackages(profile)...)...)
+	case "pipx":
+		link, target, directory := managedExecutablePaths(p, profile)
+		home := filepath.Join(directory, "home")
+		bin := filepath.Dir(target)
+		pipx := filepath.Join(p.ManagedToolsDir(), "pipx", "runtime", "bin", "pipx")
+		result := runWithEnvironment(ctx, runner, timeout, logPath, []string{"PIPX_HOME=" + home, "PIPX_BIN_DIR=" + bin, "PIPX_DEFAULT_PYTHON=python"}, pipx, "uninstall", pipxPackageName(profile.Package))
+		if result.Err == nil {
+			result.Err = removeManagedLink(link)
+		}
+		return result
+	default:
+		return CommandResult{Err: fmt.Errorf("unsupported native uninstall strategy %q", strategy)}
+	}
+}
+
+func pipxPackageName(value string) string {
+	name, _, _ := strings.Cut(value, "==")
+	return name
+}
+
+func removeManagedLink(path string) error {
+	if _, err := os.Lstat(path); os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	return os.Remove(path)
 }
 
 func dependentInstallations(p paths.Paths, dependency string) []string {

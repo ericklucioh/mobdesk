@@ -111,19 +111,23 @@ func TestInstallUsesNativePkg(t *testing.T) {
 	}
 }
 
-func TestCatalogUsesOnlyNativePkgProfiles(t *testing.T) {
+func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 	want := map[string]bool{
 		"git": true, "neovim": true, "tmux": true, "go": true, "python": true,
-		"java": true, "maven": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
-		"tree": true, "htop": true, "ncdu": true, "micro": true,
+		"java": true, "maven": true, "kotlin": true, "gradle": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
+		"zellij": true, "lazygit": true, "tree": true, "htop": true, "ncdu": true, "inxi": true, "yazi": true, "micro": true,
+		"posting": true, "tuifi": true,
 	}
 	for _, profile := range Tools() {
 		if !want[profile.Name] {
 			t.Fatalf("unexpected catalog profile %q", profile.Name)
 		}
 		delete(want, profile.Name)
-		if profile.InstallKind != "pkg" || profile.Package == "" || profile.Executable == "" {
-			t.Fatalf("profile %q is not a complete native pkg profile: %+v", profile.Name, profile)
+		if profile.InstallKind != "pkg" && profile.InstallKind != "pipx" {
+			t.Fatalf("profile %q has unsupported native strategy: %+v", profile.Name, profile)
+		}
+		if profile.Package == "" || profile.Executable == "" {
+			t.Fatalf("profile %q is incomplete: %+v", profile.Name, profile)
 		}
 	}
 	if len(want) > 0 {

@@ -364,7 +364,11 @@ func reconcileInstallations(ctx context.Context, o Options, values []Installatio
 			}
 		}
 		for _, executable := range profileExecutables(profile) {
-			if runWithTimeout(ctx, o, executable.Name, executable.VersionArg...).Err != nil {
+			name := executable.Name
+			if profile.UserBin {
+				name = filepath.Join(o.Paths.UserBinDir(), name)
+			}
+			if runWithTimeout(ctx, o, name, executable.VersionArg...).Err != nil {
 				values[index].MissingExecutables = append(values[index].MissingExecutables, executable.Name)
 			}
 		}

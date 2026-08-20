@@ -5,8 +5,9 @@ SERVICE ?= termux
 TERMUX_ARCH ?= latest
 CATALOG_TIMEOUT ?= 30m
 SPRING_TIMEOUT ?= 15m
+USER_CLI_TIMEOUT ?= 30m
 
-.PHONY: help termux build-image shell test integration-test catalog-test-fast workflow-test spring-test vet build run dev clean-env reset-env clean-image arm64-image fmt i18n-check check
+.PHONY: help termux build-image shell test integration-test catalog-test-fast workflow-test spring-test user-cli-test vet build run dev clean-env reset-env clean-image arm64-image fmt i18n-check check
 
 help:
 	@printf '%s\n' \
@@ -20,6 +21,7 @@ help:
 		'make catalog-test-fast - install and verify every native pkg profile' \
 		'make workflow-test    - run native development workflows in Termux' \
 		'make spring-test      - build, run and stop the Spring Boot fixture in Termux' \
+		'make user-cli-test    - install, verify and remove private pipx profiles' \
 		'make vet             - run go vet ./...' \
 		'make build           - build Mobdesk inside the container' \
 		'make run             - run the Mobdesk binary' \
@@ -52,6 +54,9 @@ workflow-test:
 
 spring-test:
 	timeout $(SPRING_TIMEOUT) env TERMUX_ARCH=$(TERMUX_ARCH) COMPOSE="$(COMPOSE)" ./scripts/test-spring.sh
+
+user-cli-test:
+	timeout $(USER_CLI_TIMEOUT) env TERMUX_ARCH=$(TERMUX_ARCH) COMPOSE="$(COMPOSE)" ./scripts/test-user-clis.sh
 
 vet:
 	TERMUX_ARCH=$(TERMUX_ARCH) $(COMPOSE) run --rm $(SERVICE) bash -lc 'go vet ./...'

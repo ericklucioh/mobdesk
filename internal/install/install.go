@@ -33,16 +33,24 @@ var catalog = []AppProfile{
 	{Name: "go", Aliases: []string{"golang"}, DescriptionID: i18n.AppGoDescription, Usage: "go [command]", Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(180, 300, 0, 50)},
 	{Name: "java", Aliases: []string{"jdk", "openjdk"}, DescriptionID: i18n.AppJavaDescription, Usage: "java [options] <class>", Package: "openjdk-21", Executable: "java", VersionArg: []string{"--version"}, RequiredExecutables: []ExecutableSpec{{Name: "java", VersionArg: []string{"--version"}}, {Name: "javac", VersionArg: []string{"--version"}}, {Name: "jar", VersionArg: []string{"--version"}}}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(257, 360, 50, 150)},
 	{Name: "maven", Aliases: []string{"mvn"}, DescriptionID: i18n.AppMavenDescription, Usage: "mvn [goal]", Package: "maven", Executable: "mvn", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg", Requires: []string{"java"}, StorageEstimate: plannedStorage(9, 15, 0, 0)},
+	{Name: "kotlin", Aliases: []string{"kotlin-jvm", "kotlinc"}, DescriptionID: i18n.AppKotlinDescription, Usage: "kotlinc [options] <source files>", Package: "kotlin", Executable: "kotlinc", VersionArg: []string{"-version"}, RequiredExecutables: []ExecutableSpec{{Name: "kotlinc", VersionArg: []string{"-version"}}, {Name: "kotlin", VersionArg: []string{"-version"}}}, Kind: "language", InstallKind: "pkg", Requires: []string{"java"}, StorageEstimate: plannedStorage(85, 110, 0, 0)},
+	{Name: "gradle", Aliases: []string{"gradle-build"}, DescriptionID: i18n.AppGradleDescription, Usage: "gradle [options] [tasks...]", Package: "gradle", Executable: "gradle", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg", Requires: []string{"java"}, StorageEstimate: plannedStorage(140, 190, 0, 0)},
 	{Name: "python", Aliases: []string{"python3"}, DescriptionID: i18n.AppPythonDescription, Usage: "python [script]", Package: "python", Executable: "python", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(35, 60, 0, 20)},
 	{Name: "node", Aliases: []string{"nodejs"}, DescriptionID: i18n.AppNodeDescription, Usage: "node [script]", Package: "nodejs", Executable: "node", VersionArg: []string{"--version"}, RequiredExecutables: []ExecutableSpec{{Name: "node", VersionArg: []string{"--version"}}, {Name: "npm", VersionArg: []string{"--version"}}}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(70, 130, 20, 60)},
 	{Name: "c", Aliases: []string{"c-lang"}, DescriptionID: i18n.AppCDescription, Usage: "clang [options] <files...>", Package: "clang", Executable: "clang", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(250, 450, 20, 80)},
 	{Name: "cpp", Aliases: []string{"c++", "cplusplus"}, DescriptionID: i18n.AppCPPDescription, Usage: "clang++ [options] <files...>", Package: "clang", Executable: "clang++", VersionArg: []string{"--version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(250, 450, 20, 80)},
 	{Name: "lua", Aliases: []string{"lua5.4"}, DescriptionID: i18n.AppLuaDescription, Usage: "lua [script]", Package: "lua54", Executable: "lua", VersionArg: []string{"-v"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 3, 0, 1)},
 	{Name: "gh", Aliases: []string{"github-cli"}, DescriptionID: i18n.AppGHDescription, Usage: "gh <command> [options]", Package: "gh", Executable: "gh", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg", StorageEstimate: plannedStorage(10, 20, 0, 5)},
+	{Name: "zellij", DescriptionID: i18n.AppZellijDescription, Usage: "zellij [options]", Package: "zellij", Executable: "zellij", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(20, 30, 0, 5)},
+	{Name: "lazygit", DescriptionID: i18n.AppLazygitDescription, Usage: "lazygit [directory]", Package: "lazygit", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg", StorageEstimate: plannedStorage(15, 25, 0, 5)},
 	{Name: "tree", DescriptionID: i18n.AppTreeDescription, Usage: "tree [directory]", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 2, 0, 1)},
 	{Name: "htop", DescriptionID: i18n.AppHtopDescription, Usage: "htop", Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 3, 0, 1)},
 	{Name: "ncdu", DescriptionID: i18n.AppNcduDescription, Usage: "ncdu [directory]", Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 2, 0, 1)},
+	{Name: "inxi", DescriptionID: i18n.AppInxiDescription, Usage: "inxi [options]", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg", StorageEstimate: plannedStorage(5, 15, 0, 5)},
+	{Name: "yazi", Aliases: []string{"yazi-fm"}, DescriptionID: i18n.AppYaziDescription, Usage: "yazi [directory]", Package: "yazi", Executable: "yazi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "pkg", StorageEstimate: plannedStorage(25, 40, 0, 0)},
 	{Name: "micro", DescriptionID: i18n.AppMicroDescription, Usage: "micro [files...]", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(4, 8, 0, 2)},
+	{Name: "posting", DescriptionID: i18n.AppPostingDescription, Usage: "posting", Package: "posting", Executable: "posting", VersionArg: []string{"--help"}, Kind: "terminal", InstallKind: "pipx", Requires: []string{"python"}, NativePackages: []string{"rust"}, UserBin: true, StorageEstimate: plannedStorage(20, 60, 10, 40)},
+	{Name: "tuifi", Aliases: []string{"tuifimanager"}, DescriptionID: i18n.AppTuifiDescription, Usage: "tuifi [directory]", Package: "TUIFIManager==5.2.6", Executable: "tuifi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "pipx", Requires: []string{"python"}, UserBin: true, StorageEstimate: plannedStorage(20, 40, 90, 180)},
 }
 
 var catalogEstimateMeasuredAt = time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
@@ -131,24 +139,30 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 	logPath := filepath.Join(options.Paths.InstallLogsDir(), profile.Name+".log")
 	result.LogPath = logPath
 	record := InstallationRecord{Name: profile.Name, Kind: profile.Kind, Package: profile.Package, Packages: profilePackages(profile), Executable: profile.Executable, RequiredExecutables: profileExecutables(profile), Strategy: profile.InstallKind, Dependencies: append([]string(nil), profile.Requires...), InstalledPackages: profilePackages(profile), State: "installing", Source: "mobdesk", LastAttemptAt: options.Now().UTC(), LogPath: logPath}
+	if profile.UserBin {
+		link, _, directory := managedExecutablePaths(options.Paths, profile)
+		record.InstalledFiles = []string{link}
+		record.InstalledDirs = []string{directory}
+	}
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
 		return result, i18n.NewError(i18n.ServiceInstallRecord, "install_record", nil, err)
 	}
 	runner := runnerFor(options)
 	progress(options, i18n.ServiceInstallVerify, map[string]any{"Name": profile.Name})
-	versions := runToolVersions(ctx, runner, options.CommandTimeout, logPath, profile)
+	versions := runToolVersions(ctx, runner, options.CommandTimeout, logPath, options.Paths, profile)
 	if firstCommandError(versions) != nil {
 		progress(options, i18n.ServiceInstallTool, map[string]any{"Name": profile.Name})
-		if installed := installTool(ctx, runner, options.CommandTimeout, logPath, profile); installed.Err != nil {
+		if installed := installTool(ctx, runner, options.CommandTimeout, logPath, options.Paths, profile); installed.Err != nil {
 			return failInstallation(options.Paths.InstallationsDir(), record, result, i18n.NewError(i18n.ServiceInstallTool, "install_tool", map[string]any{"Name": profile.Name}, installed.Err))
 		}
 		result.Changed = true
-		versions = runToolVersions(ctx, runner, options.CommandTimeout, logPath, profile)
+		versions = runToolVersions(ctx, runner, options.CommandTimeout, logPath, options.Paths, profile)
 	}
 	if verifyErr := firstCommandError(versions); verifyErr != nil {
 		return failInstallation(options.Paths.InstallationsDir(), record, result, i18n.NewError(i18n.ServiceInstallVerify, "install_verify", map[string]any{"Name": profile.Name}, verifyErr))
 	}
 	result.Version, result.Installed, result.State = commandVersions(profile, versions), true, "installed"
+	result.Paths = append(result.Paths, record.InstalledFiles...)
 	record.State, record.Version, record.InstalledAt = result.State, result.Version, options.Now().UTC()
 	if profile.Name == "java" {
 		javaHome, discoverErr := discoverJavaHome(ctx, runner, options.CommandTimeout, logPath, options.Paths.Prefix)
@@ -236,19 +250,120 @@ func progress(options Options, id i18n.MessageID, data map[string]any) {
 	options.Progress(options.Localizer.Text(id, data))
 }
 
-func runToolVersions(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, profile AppProfile) []CommandResult {
+func runToolVersions(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, p paths.Paths, profile AppProfile) []CommandResult {
 	results := make([]CommandResult, 0, len(profileExecutables(profile)))
 	for _, executable := range profileExecutables(profile) {
-		results = append(results, runTermuxLogged(ctx, runner, timeout, logPath, executable.Name, executable.VersionArg...))
+		results = append(results, runTermuxLogged(ctx, runner, timeout, logPath, executablePath(p, profile, executable.Name), executable.VersionArg...))
 	}
 	return results
 }
 
-func installTool(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, profile AppProfile) CommandResult {
-	if profile.InstallKind != "pkg" {
+func installTool(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, p paths.Paths, profile AppProfile) CommandResult {
+	switch profile.InstallKind {
+	case "pkg":
+		return runTermuxLogged(ctx, runner, timeout, logPath, "pkg", append([]string{"install", "-y"}, profilePackages(profile)...)...)
+	case "pipx":
+		return installPipx(ctx, runner, timeout, logPath, p, profile)
+	default:
 		return CommandResult{Err: fmt.Errorf("unsupported native install strategy %q", profile.InstallKind)}
 	}
-	return runTermuxLogged(ctx, runner, timeout, logPath, "pkg", append([]string{"install", "-y"}, profilePackages(profile)...)...)
+}
+
+func installPipx(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, p paths.Paths, profile AppProfile) CommandResult {
+	link, target, directory := managedExecutablePaths(p, profile)
+	if err := ensureManagedLink(link, target); err != nil {
+		return CommandResult{Err: err}
+	}
+	if len(profile.NativePackages) > 0 {
+		if result := runTermuxLogged(ctx, runner, timeout, logPath, "pkg", append([]string{"install", "-y"}, profile.NativePackages...)...); result.Err != nil {
+			return result
+		}
+	}
+	runtime := filepath.Join(p.ManagedToolsDir(), "pipx", "runtime")
+	pipx := filepath.Join(runtime, "bin", "pipx")
+	if _, err := os.Stat(pipx); os.IsNotExist(err) {
+		if result := runTermuxLogged(ctx, runner, timeout, logPath, "python", "-m", "venv", runtime); result.Err != nil {
+			return result
+		}
+		if result := runTermuxLogged(ctx, runner, timeout, logPath, filepath.Join(runtime, "bin", "python"), "-m", "pip", "install", "--disable-pip-version-check", "pipx"); result.Err != nil {
+			return result
+		}
+	} else if err != nil {
+		return CommandResult{Err: err}
+	}
+	home := filepath.Join(directory, "home")
+	bin := filepath.Dir(target)
+	if err := os.MkdirAll(bin, 0o700); err != nil {
+		return CommandResult{Err: err}
+	}
+	result := runWithEnvironment(ctx, runner, timeout, logPath, []string{"PIPX_HOME=" + home, "PIPX_BIN_DIR=" + bin, "PIPX_DEFAULT_PYTHON=python"}, pipx, "install", "--force", profile.Package)
+	if result.Err != nil {
+		return result
+	}
+	if err := publishManagedLink(link, target); err != nil {
+		return CommandResult{Err: err}
+	}
+	return result
+}
+
+func runWithEnvironment(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, environment []string, name string, args ...string) CommandResult {
+	command := append(append([]string(nil), environment...), name)
+	command = append(command, args...)
+	return runTermuxLogged(ctx, runner, timeout, logPath, "env", command...)
+}
+
+func executablePath(p paths.Paths, profile AppProfile, executable string) string {
+	if !profile.UserBin {
+		return executable
+	}
+	return filepath.Join(p.UserBinDir(), executable)
+}
+
+func managedExecutablePaths(p paths.Paths, profile AppProfile) (link, target, directory string) {
+	link = filepath.Join(p.UserBinDir(), profile.Executable)
+	switch profile.InstallKind {
+	case "pipx":
+		directory = filepath.Join(p.ManagedToolsDir(), "pipx", profile.Name)
+		target = filepath.Join(directory, "bin", profile.Executable)
+	}
+	return link, target, directory
+}
+
+func ensureManagedLink(link, target string) error {
+	info, err := os.Lstat(link)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		return fmt.Errorf("managed executable path %q already exists", link)
+	}
+	current, err := os.Readlink(link)
+	if err != nil {
+		return err
+	}
+	if current != target {
+		return fmt.Errorf("managed executable path %q points outside Mobdesk", link)
+	}
+	return nil
+}
+
+func publishManagedLink(link, target string) error {
+	if _, err := os.Stat(target); err != nil {
+		return fmt.Errorf("managed executable %q was not created: %w", target, err)
+	}
+	if err := ensureManagedLink(link, target); err != nil {
+		return err
+	}
+	if _, err := os.Lstat(link); err == nil {
+		return nil
+	}
+	if err := os.MkdirAll(filepath.Dir(link), 0o700); err != nil {
+		return err
+	}
+	return os.Symlink(target, link)
 }
 
 func runTermuxLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath, name string, args ...string) CommandResult {

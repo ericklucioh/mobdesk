@@ -42,7 +42,7 @@ set result [wait]
 if {[lindex $result 3] != 0} { exit [lindex $result 3] }
 EXPECT_SCRIPT
 
-profiles=(git neovim tmux go java maven python node c cpp lua gh tree htop ncdu micro)
+profiles=(git neovim tmux go java maven kotlin gradle python node c cpp lua gh zellij lazygit tree htop ncdu inxi yazi micro)
 for profile in "${profiles[@]}"; do
     "$MOBDESK_TEST_BIN" install "$profile" --json > "$TEST_DIR/${profile}-first.json"
     grep -q '"success":true' "$TEST_DIR/${profile}-first.json"
@@ -61,6 +61,9 @@ javac --version >/dev/null
 jar --version >/dev/null
 ! grep -q 'JAVA_HOME' "$HOME/.bashrc" 2>/dev/null
 mvn --version >/dev/null
+kotlinc -version >/dev/null 2>&1
+kotlin -version >/dev/null 2>&1
+gradle --version >/dev/null
 python --version >/dev/null
 node --version >/dev/null
 npm --version >/dev/null
@@ -68,9 +71,13 @@ clang --version >/dev/null
 clang++ --version >/dev/null
 lua -v >/dev/null 2>&1
 gh --version >/dev/null
+zellij --version >/dev/null
+lazygit --version >/dev/null
 tree --version >/dev/null
 htop --version >/dev/null
 ncdu --version >/dev/null
+inxi --version >/dev/null
+yazi --version >/dev/null
 micro --version >/dev/null
 
 "$MOBDESK_TEST_BIN" status --json > "$TEST_DIR/status.json"

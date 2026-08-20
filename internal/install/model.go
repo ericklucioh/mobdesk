@@ -39,6 +39,7 @@ type AppProfile struct {
 	CatalogVersion   string           `json:"catalog_version,omitempty"`
 	InstallKind      string           `json:"install_kind,omitempty"`
 	Requires         []string         `json:"requires,omitempty"`
+	NativePackages   []string         `json:"native_packages,omitempty"`
 	UserBin          bool             `json:"-"`
 	Script           string           `json:"-"`
 	InstallProfile   string           `json:"install_profile,omitempty"`

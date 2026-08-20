@@ -36,6 +36,10 @@ func (p Paths) DataDir() string { return filepath.Join(p.Home, ".local", "share"
 
 func (p Paths) DataConfigDir() string { return filepath.Join(p.DataDir(), "config") }
 
+func (p Paths) ManagedToolsDir() string { return filepath.Join(p.DataDir(), "tools") }
+
+func (p Paths) UserBinDir() string { return filepath.Join(p.Home, ".local", "bin") }
+
 func (p Paths) ConfigDir() string { return filepath.Join(p.Home, ".config", "mobdesk") }
 
 func (p Paths) StateDir() string { return filepath.Join(p.DataDir(), "state") }
