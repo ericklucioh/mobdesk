@@ -56,6 +56,13 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 			result.Conflicts = []string{link}
 			return result, err
 		}
+		for path, digest := range record.InstalledFileHashes {
+			current, err := fileSHA256(path)
+			if err != nil || current != digest {
+				result.Conflicts = []string{path}
+				return result, fmt.Errorf("managed file %q was changed", path)
+			}
+		}
 	}
 	sharedPackages := []string(nil)
 	if record.Strategy == "pkg" {
@@ -87,7 +94,7 @@ func Uninstall(ctx context.Context, name string, options Options) (result Result
 		record.RemovedFiles = append(record.RemovedFiles, record.InstalledFiles...)
 		result.Paths = append(result.Paths, record.InstalledFiles...)
 		for _, directory := range record.InstalledDirs {
-			if err := os.Remove(directory); err != nil && !os.IsNotExist(err) {
+			if err := os.RemoveAll(directory); err != nil {
 				record.PreservedFiles = append(record.PreservedFiles, directory)
 				result.Conflicts = append(result.Conflicts, directory)
 			}
@@ -111,7 +118,7 @@ func uninstallTool(ctx context.Context, runner CommandRunner, timeout time.Durat
 		pipx := filepath.Join(p.ManagedToolsDir(), "pipx", "runtime", "bin", "pipx")
 		result := runWithEnvironment(ctx, runner, timeout, logPath, []string{"PIPX_HOME=" + home, "PIPX_BIN_DIR=" + bin, "PIPX_DEFAULT_PYTHON=python"}, pipx, "uninstall", pipxPackageName(profile.Package))
 		if result.Err == nil {
-			result.Err = removeManagedLink(link)
+			result.Err = removeManagedLink(link, target)
 		}
 		return result
 	default:
@@ -124,10 +131,13 @@ func pipxPackageName(value string) string {
 	return name
 }
 
-func removeManagedLink(path string) error {
+func removeManagedLink(path, target string) error {
 	if _, err := os.Lstat(path); os.IsNotExist(err) {
 		return nil
 	} else if err != nil {
+		return err
+	}
+	if err := ensureManagedLink(path, target); err != nil {
 		return err
 	}
 	return os.Remove(path)

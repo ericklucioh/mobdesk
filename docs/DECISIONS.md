@@ -54,6 +54,20 @@ Java profile and verifies `mvn`. Mobdesk preserves Java while Maven depends on
 it. Spring Boot receives a separate networked fixture: it must build, test,
 serve a loopback health endpoint and stop the exact JAR process it started.
 
+### Curated user CLIs use private pipx environments
+
+Only individually audited user CLIs enter the catalog. TUIFI is installed from
+the pinned `TUIFIManager==5.2.6` package in a private pipx runtime and profile
+environment below Mobdesk state, then exposed through a verified
+`$HOME/.local/bin/tuifi` link. Mobdesk never changes the user's global npm or
+pip prefix and refuses conflicting or replaced links on install and removal.
+
+The evaluated npm candidates `opencode-ai`, `@openai/codex` and
+`@anthropic-ai/claude-code` do not support Android and are not catalog profiles.
+Posting is also excluded: its current dependency set could not compile the
+required tree-sitter wheels in the Termux fixture. These are compatibility
+outcomes, not an arbitrary npm or pipx installation capability.
+
 ### The TUI remains in control after start
 
 `mobdesk start` starts the workstation without automatically opening a shell.

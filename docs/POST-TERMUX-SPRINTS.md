@@ -259,29 +259,50 @@ mobdesk service logs <id>
 Mobdesk can start a project service, show its logs, reconnect to it by SSH and
 stop it without affecting an unrelated tmux session.
 
-## Sprint 10: Curated npm-global and pipx CLIs
+## Sprint 10: Curated User CLIs
 
 ### Goal
 
 Install selected user CLIs without corrupting package-managed paths or removing
 user-owned files.
 
+### Delivered Docker Validation
+
+- The `tuifi` profile installs the pinned `TUIFIManager==5.2.6` package through
+  a private pipx runtime under `$HOME/.local/share/mobdesk/tools/pipx/runtime`.
+- Each pipx profile has its own private home and executable directory; Mobdesk
+  publishes only a verified `$HOME/.local/bin/tuifi` symlink.
+- Installation, idempotent reinstall, executable verification, `status --json`,
+  cancellation record handling, link-conflict refusal and uninstall are covered
+  by unit tests and `make user-cli-test` in the Termux Docker fixture.
+- `opencode-ai`, `@openai/codex` and `@anthropic-ai/claude-code` were rejected
+  because their npm platform metadata does not support Android. They are not
+  installed by a fallback or compatibility mode.
+- Posting was rejected because its current Termux/Python 3.14 dependency set
+  fails to build required tree-sitter wheels, even with Rust and
+  `ANDROID_API_LEVEL=24` for the pipx subprocess.
+
+### Remaining Device Acceptance
+
+- Install, reinstall, run and remove TUIFI on a clean POCO F6 Termux setup.
+- Confirm Python/pip/venv availability, private-path permissions, storage use,
+  cancellation and link-conflict behavior on ARM64.
+- Record TUIFI and Python versions. Do not claim any rejected candidate as
+  supported without a new audit.
+
 ### Scope
 
 - Add explicit native strategies for audited profiles only; never implement an
   arbitrary `npm` or `pipx` installer command.
-- Install each npm CLI in a profile-specific user-owned directory and publish
-  only verified, Mobdesk-owned links under `$HOME/.local/bin`.
-- Keep npm package files out of `$PREFIX` and do not alter the user's global
-  npm prefix.
-- Bootstrap pipx only after a native Python, pip and virtual-environment audit.
-- Use private `PIPX_HOME` and `PIPX_BIN_DIR` paths for Mobdesk-owned profiles.
+- Keep third-party package files out of `$PREFIX` and do not alter the user's
+  global npm or pip prefix.
+- Use private pipx runtime, `PIPX_HOME` and `PIPX_BIN_DIR` paths for
+  Mobdesk-owned profiles.
 - Record package version, source, expected executables, files and hashes.
 - Refuse executable-name conflicts and preserve modified or unmanaged files on
   removal.
-- Audit candidate profiles separately, including native module compilation and
-  authentication behavior. Potential candidates include Posting for pipx and
-  selected AI CLIs for npm.
+- Audit each candidate separately, including native module compilation and
+  authentication behavior.
 
 ### Acceptance
 

@@ -108,9 +108,13 @@ contain setup state, installation records, operation logs and SSH files.
 - projects and user data survive repeated operations;
 - Android external storage is not assumed to be a complete Unix filesystem.
 
-User-profile tools such as Zellij live in `$HOME/.local/bin`; generated shell
-configuration adds that path. Control and installation commands remain Termux
-operations.
+Native profiles remain under `$PREFIX`. Curated user-profile tools publish only
+Mobdesk-owned executable links in `$HOME/.local/bin`; generated shell
+configuration adds that path. Their pipx runtime and each profile's environment
+remain private under `$HOME/.local/share/mobdesk/tools`. Installation and
+removal refuse a pre-existing or replaced link rather than modifying an
+unmanaged `$HOME/.local/bin` file. Control and installation commands remain
+Termux operations.
 
 New catalog apps must declare the same presentation contract as existing apps:
 localized description, concise usage, installation profile and storage
@@ -191,6 +195,10 @@ as a repeatable Termux fixture and do not replace ARM64 device validation.
 native Maven profile, builds and tests a pinned Spring Boot fixture, verifies a
 loopback-only health endpoint and stops the child JAR process. Maven dependency
 download, cache size and Android behavior still require POCO F6 validation.
+
+`make user-cli-test` validates the curated pipx profile in a clean Termux
+fixture: install, idempotent reinstall, executable, `status --json` and safe
+uninstall. It does not replace ARM64 device validation.
 
 ## Superseded architecture
 

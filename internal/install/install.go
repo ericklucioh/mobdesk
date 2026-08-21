@@ -2,8 +2,10 @@ package install
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -49,7 +51,6 @@ var catalog = []AppProfile{
 	{Name: "inxi", DescriptionID: i18n.AppInxiDescription, Usage: "inxi [options]", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg", StorageEstimate: plannedStorage(5, 15, 0, 5)},
 	{Name: "yazi", Aliases: []string{"yazi-fm"}, DescriptionID: i18n.AppYaziDescription, Usage: "yazi [directory]", Package: "yazi", Executable: "yazi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "pkg", StorageEstimate: plannedStorage(25, 40, 0, 0)},
 	{Name: "micro", DescriptionID: i18n.AppMicroDescription, Usage: "micro [files...]", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(4, 8, 0, 2)},
-	{Name: "posting", DescriptionID: i18n.AppPostingDescription, Usage: "posting", Package: "posting", Executable: "posting", VersionArg: []string{"--help"}, Kind: "terminal", InstallKind: "pipx", Requires: []string{"python"}, NativePackages: []string{"rust"}, UserBin: true, StorageEstimate: plannedStorage(20, 60, 10, 40)},
 	{Name: "tuifi", Aliases: []string{"tuifimanager"}, DescriptionID: i18n.AppTuifiDescription, Usage: "tuifi [directory]", Package: "TUIFIManager==5.2.6", Executable: "tuifi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "pipx", Requires: []string{"python"}, UserBin: true, StorageEstimate: plannedStorage(20, 40, 90, 180)},
 }
 
@@ -171,6 +172,14 @@ func install(ctx context.Context, name string, options Options) (Result, error) 
 		}
 		result.JavaHome, record.JavaHome = javaHome, javaHome
 	}
+	if profile.UserBin {
+		_, target, _ := managedExecutablePaths(options.Paths, profile)
+		digest, hashErr := fileSHA256(target)
+		if hashErr != nil {
+			return failInstallation(options.Paths.InstallationsDir(), record, result, i18n.NewError(i18n.ServiceInstallVerify, "install_managed_file", map[string]any{"Name": profile.Name}, hashErr))
+		}
+		record.InstalledFileHashes = map[string]string{target: digest}
+	}
 	if err := saveRecord(options.Paths.InstallationsDir(), record); err != nil {
 		return result, i18n.NewError(i18n.ServiceInstallRecord, "install_record", nil, err)
 	}
@@ -274,11 +283,6 @@ func installPipx(ctx context.Context, runner CommandRunner, timeout time.Duratio
 	if err := ensureManagedLink(link, target); err != nil {
 		return CommandResult{Err: err}
 	}
-	if len(profile.NativePackages) > 0 {
-		if result := runTermuxLogged(ctx, runner, timeout, logPath, "pkg", append([]string{"install", "-y"}, profile.NativePackages...)...); result.Err != nil {
-			return result
-		}
-	}
 	runtime := filepath.Join(p.ManagedToolsDir(), "pipx", "runtime")
 	pipx := filepath.Join(runtime, "bin", "pipx")
 	if _, err := os.Stat(pipx); os.IsNotExist(err) {
@@ -296,7 +300,7 @@ func installPipx(ctx context.Context, runner CommandRunner, timeout time.Duratio
 	if err := os.MkdirAll(bin, 0o700); err != nil {
 		return CommandResult{Err: err}
 	}
-	result := runWithEnvironment(ctx, runner, timeout, logPath, []string{"PIPX_HOME=" + home, "PIPX_BIN_DIR=" + bin, "PIPX_DEFAULT_PYTHON=python"}, pipx, "install", "--force", profile.Package)
+	result := runWithEnvironment(ctx, runner, timeout, logPath, []string{"ANDROID_API_LEVEL=24", "PIPX_HOME=" + home, "PIPX_BIN_DIR=" + bin, "PIPX_DEFAULT_PYTHON=python"}, pipx, "install", "--force", profile.Package)
 	if result.Err != nil {
 		return result
 	}
@@ -364,6 +368,19 @@ func publishManagedLink(link, target string) error {
 		return err
 	}
 	return os.Symlink(target, link)
+}
+
+func fileSHA256(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = file.Close() }()
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
 func runTermuxLogged(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath, name string, args ...string) CommandResult {

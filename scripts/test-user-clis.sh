@@ -42,7 +42,7 @@ set result [wait]
 if {[lindex $result 3] != 0} { exit [lindex $result 3] }
 EXPECT_SCRIPT
 
-profiles=(posting tuifi)
+profiles=(tuifi)
 for profile in "${profiles[@]}"; do
     if ! "$MOBDESK_TEST_BIN" install "$profile" --json > "$TEST_DIR/${profile}-install.json"; then
         cat "$TEST_DIR/${profile}-install.json" >&2
@@ -51,10 +51,14 @@ for profile in "${profiles[@]}"; do
         exit 1
     fi
     grep -q '"success":true' "$TEST_DIR/${profile}-install.json"
+    "$MOBDESK_TEST_BIN" install "$profile" --json > "$TEST_DIR/${profile}-reinstall.json"
+    grep -q '"success":true' "$TEST_DIR/${profile}-reinstall.json"
+    grep -q '"changed":false' "$TEST_DIR/${profile}-reinstall.json"
 done
 
-"$HOME/.local/bin/posting" --help >/dev/null
 "$HOME/.local/bin/tuifi" --version >/dev/null
+"$MOBDESK_TEST_BIN" status --json > "$TEST_DIR/status.json"
+grep -q '"name": "tuifi"' "$TEST_DIR/status.json"
 
 for profile in "${profiles[@]}"; do
     if ! "$MOBDESK_TEST_BIN" uninstall "$profile" --json > "$TEST_DIR/${profile}-uninstall.json"; then
@@ -62,9 +66,13 @@ for profile in "${profiles[@]}"; do
         exit 1
     fi
     grep -q '"success":true' "$TEST_DIR/${profile}-uninstall.json"
+    if grep -q '"conflicts"' "$TEST_DIR/${profile}-uninstall.json"; then
+        cat "$TEST_DIR/${profile}-uninstall.json" >&2
+        exit 1
+    fi
 done
 
-for executable in posting tuifi; do
+for executable in tuifi; do
     test ! -e "$HOME/.local/bin/$executable"
 done
 printf '%s\n' 'Termux private user CLI test: PASS'

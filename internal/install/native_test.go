@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -27,7 +28,16 @@ type mavenRunner struct {
 
 type canceledRunner struct{}
 
+type pipxCanceledRunner struct{}
+
 func (canceledRunner) Run(ctx context.Context, _ string, _ ...string) CommandResult {
+	return CommandResult{Err: ctx.Err()}
+}
+
+func (pipxCanceledRunner) Run(ctx context.Context, name string, args ...string) CommandResult {
+	if name == "python" && len(args) > 0 && args[0] == "--version" {
+		return CommandResult{Stdout: []byte("Python 3\n")}
+	}
 	return CommandResult{Err: ctx.Err()}
 }
 
@@ -116,7 +126,7 @@ func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 		"git": true, "neovim": true, "tmux": true, "go": true, "python": true,
 		"java": true, "maven": true, "kotlin": true, "gradle": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
 		"zellij": true, "lazygit": true, "tree": true, "htop": true, "ncdu": true, "inxi": true, "yazi": true, "micro": true,
-		"posting": true, "tuifi": true,
+		"tuifi": true,
 	}
 	for _, profile := range Tools() {
 		if !want[profile.Name] {
@@ -132,6 +142,158 @@ func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 	}
 	if len(want) > 0 {
 		t.Fatalf("missing catalog profiles: %v", want)
+	}
+}
+
+func TestNativePkgProfilesUseOfficialPackages(t *testing.T) {
+	for name, want := range map[string]string{
+		"gradle": "gradle", "inxi": "inxi", "kotlin": "kotlin", "lazygit": "lazygit", "yazi": "yazi", "zellij": "zellij",
+	} {
+		profile, ok := Resolve(name)
+		if !ok || profile.InstallKind != "pkg" || profile.Package != want {
+			t.Fatalf("native profile %q = %+v, %t", name, profile, ok)
+		}
+	}
+	for _, name := range []string{"kotlin", "gradle"} {
+		profile, _ := Resolve(name)
+		if !sameStrings(profile.Requires, []string{"java"}) {
+			t.Fatalf("%s requirements = %v", name, profile.Requires)
+		}
+	}
+}
+
+func TestTuifiUsesPrivatePipxStrategy(t *testing.T) {
+	profile, ok := Resolve("tuifi")
+	if !ok || profile.InstallKind != "pipx" || !profile.UserBin || !sameStrings(profile.Requires, []string{"python"}) {
+		t.Fatalf("unexpected TUIFI profile: %+v", profile)
+	}
+}
+
+func TestPublishManagedLinkRejectsUserFile(t *testing.T) {
+	directory := t.TempDir()
+	target := filepath.Join(directory, "target")
+	link := filepath.Join(directory, "tool")
+	if err := os.WriteFile(target, []byte("tool"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(link, []byte("user file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := publishManagedLink(link, target); err == nil {
+		t.Fatal("managed link overwrote a user file")
+	}
+}
+
+func TestRemoveManagedLinkRejectsReplacement(t *testing.T) {
+	directory := t.TempDir()
+	target := filepath.Join(directory, "target")
+	link := filepath.Join(directory, "tool")
+	if err := os.WriteFile(target, []byte("tool"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(link); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(link, []byte("user file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := removeManagedLink(link, target); err == nil {
+		t.Fatal("managed link removal deleted a replacement file")
+	}
+}
+
+func TestFileSHA256ChangesWithManagedFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "tool")
+	if err := os.WriteFile(path, []byte("first"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	first, err := fileSHA256(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("second"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	second, err := fileSHA256(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first == second {
+		t.Fatal("managed file hash did not change")
+	}
+}
+
+func TestUninstallTuifiPreservesModifiedExecutable(t *testing.T) {
+	p := paths.New(t.TempDir(), "/data/data/com.termux/files/usr")
+	profile, _ := Resolve("tuifi")
+	link, target, directory := managedExecutablePaths(p, profile)
+	if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(target, []byte("original"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	digest, err := fileSHA256(target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Dir(link), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(target, []byte("modified"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(p.InstallationsDir(), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	record := InstallationRecord{
+		Name:                profile.Name,
+		Package:             profile.Package,
+		Strategy:            profile.InstallKind,
+		State:               "installed",
+		Source:              "mobdesk",
+		InstalledFiles:      []string{link},
+		InstalledDirs:       []string{directory},
+		InstalledFileHashes: map[string]string{target: digest},
+	}
+	if err := saveRecord(p.InstallationsDir(), record); err != nil {
+		t.Fatal(err)
+	}
+	runner := &nativeRunner{}
+	result, err := Uninstall(context.Background(), "tuifi", Options{
+		Paths: p, Runner: runner, Now: time.Now,
+		StorageFree: func(string) (int64, error) { return StorageWarningBytes + 1, nil },
+	})
+	if err == nil || !sameStrings(result.Conflicts, []string{target}) {
+		t.Fatalf("modified TUIFI uninstall = %+v, %v", result, err)
+	}
+	if len(runner.commands) != 0 {
+		t.Fatalf("modified executable ran pipx uninstall: %v", runner.commands)
+	}
+}
+
+func TestInstallTuifiRecordsCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	p := paths.New(t.TempDir(), "/data/data/com.termux/files/usr")
+	result, err := Install(ctx, "tuifi", Options{
+		Paths:       p,
+		Runner:      pipxCanceledRunner{},
+		Now:         time.Now,
+		StorageFree: func(string) (int64, error) { return StorageWarningBytes + 1, nil },
+	})
+	if err == nil || result.State != "failed" {
+		t.Fatalf("canceled TUIFI installation = %+v, %v", result, err)
+	}
+	record, loadErr := loadInstallationRecord(p, "tuifi")
+	if loadErr != nil || record.State != "failed" {
+		t.Fatalf("canceled TUIFI installation state = %+v, %v", record, loadErr)
 	}
 }
 
