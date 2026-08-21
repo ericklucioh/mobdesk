@@ -1,20 +1,17 @@
 ---
-description: Execute the Mobdesk English-first localization plan
+description: Execute a focused Mobdesk maintenance goal
 agent: build
 ---
 
-Execute the Mobdesk English-first localization and documentation migration plan
-end to end.
+Execute the requested Mobdesk maintenance goal end to end.
 
-Read `AGENTS.md` and `docs/PLAN-I18N-EN-PTBR.md` before changing code. Also read
-the canonical mission, architecture, decisions and app implementation
-documents: `docs/MISSION.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`,
-`docs/APP-CONFIGURATION-REFACTOR-PLAN.md`, and
-`docs/APP-CONFIGURATION-IMPLEMENTATION-PLAN.md`.
+Read `AGENTS.md` before changing code. Also read the canonical mission,
+architecture, decisions and roadmap documents: `docs/MISSION.md`,
+`docs/ARCHITECTURE.md`, `docs/DECISIONS.md` and `docs/ROADMAP.md`.
 
-Treat the localization plan, existing locked product decisions and JSON
-contract rules as authoritative. Do not reopen decisions already marked as
-closed. English is the primary locale; `pt-BR` is the supported second locale.
+Treat the current product decisions and JSON contract rules as authoritative.
+Do not reopen decisions already marked as closed. English is the primary locale;
+`pt-BR` is the supported second locale.
 
 If arguments were provided, interpret them as the requested scope, such as a
 phase number or a focused task. Without arguments, inspect the localization plan
@@ -76,6 +73,6 @@ Before finishing, run `make check`, summarize changed files and validation
 results, and list any checks that still require a real Termux/POCO F6 run. Run
 the expensive `make catalog-test` only when the phase changes the catalog,
 installation strategies, Termux boundary, catalog smoke script, or related
-runtime behavior; otherwise use `make check` and focused tests. For localization
-phases, also run the catalog, locale, JSON and bilingual TUI checks defined in
-`docs/PLAN-I18N-EN-PTBR.md`.
+runtime behavior; otherwise use `make check` and focused tests. For presentation
+changes, run the relevant catalog, locale, JSON and bilingual TUI checks in
+addition to the standard validation.

@@ -71,6 +71,7 @@ check_markdown_links() {
 		fi
 	done < <(
 		while IFS= read -r source; do
+			[[ -f "${source}" ]] || continue
 			perl -ne 'while (/\[[^]]+\]\(([^)[:space:]]+)/g) { print "$ARGV\t$1\n" }' "${source}"
 		done < <(git ls-files '*.md' 'AGENTS.md')
 	)

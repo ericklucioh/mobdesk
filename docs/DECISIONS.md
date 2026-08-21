@@ -152,9 +152,6 @@ are retained for release history and must not guide Termux-only work.
   evaluation requires a new Termux-native feasibility decision.
 - Real Docker, VM and kernel features remain outside the educational MVP.
 
-Remote-browser research and the current baseline are recorded in
-[`docs/ideas/REMOTE-BROWSER-RESEARCH.md`](ideas/REMOTE-BROWSER-RESEARCH.md).
-
 ## Hypotheses to validate
 
 - Termux-native tools are acceptable for classes and small projects;
