@@ -9,6 +9,7 @@ import (
 
 // ResolveBuildCommand selects a project wrapper without ever modifying it.
 // The returned command path is absolute when a wrapper exists.
+// ResolveBuildCommand selects a project-local build wrapper when one exists.
 func ResolveBuildCommand(projectDir, tool string) (string, error) {
 	projectDir = strings.TrimSpace(projectDir)
 	if projectDir == "" {

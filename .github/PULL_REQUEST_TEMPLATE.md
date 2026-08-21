@@ -7,14 +7,17 @@ Describe the problem and the behavior changed by this pull request.
 - [ ] `make check` passes.
 - [ ] Tests cover the changed behavior.
 - [ ] Documentation and i18n catalogs are updated when needed.
-- [ ] Termux/Ubuntu/SSH or Docker impact is described below.
+- [ ] Termux/Android/SSH or Docker impact is described below.
 
 ## Environments affected
 
 - Termux:
-- Ubuntu via PRoot:
+- Android integration:
 - SSH:
 - Docker fixture:
+- CLI / JSON contract:
+- TUI:
+- Catalog or installation:
 - Real-device validation:
 
 ## Limitations and follow-up

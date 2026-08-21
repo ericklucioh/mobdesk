@@ -23,6 +23,7 @@ import (
 )
 
 const (
+	// DefaultRepository is the GitHub repository queried by update operations.
 	DefaultRepository  = "ericklucioh/mobdesk"
 	maxReleaseResponse = 1 << 20
 	maxChecksumSize    = 1 << 20
@@ -30,15 +31,18 @@ const (
 	selfTestTimeout    = 10 * time.Second
 )
 
+// HTTPClient is the HTTP boundary used by update operations.
 type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
+// Asset is a downloadable file attached to a GitHub release.
 type Asset struct {
 	Name        string `json:"name"`
 	DownloadURL string `json:"browser_download_url"`
 }
 
+// Release is the subset of GitHub release metadata used by Mobdesk.
 type Release struct {
 	TagName    string  `json:"tag_name"`
 	Prerelease bool    `json:"prerelease"`
@@ -46,6 +50,7 @@ type Release struct {
 	Assets     []Asset `json:"assets"`
 }
 
+// Options configures an update lookup or application operation.
 type Options struct {
 	HTTPClient     HTTPClient
 	Repository     string
@@ -60,6 +65,7 @@ type Options struct {
 	ValidateBinary func(context.Context, string, string) error
 }
 
+// Result describes an available or applied binary update.
 type Result struct {
 	SchemaVersion  int    `json:"schema_version"`
 	CurrentVersion string `json:"current_version"`
@@ -70,6 +76,7 @@ type Result struct {
 	Updated        bool   `json:"updated"`
 }
 
+// Check compares the running binary with the latest supported release.
 func Check(ctx context.Context, options Options) (result Result, err error) {
 	defer func() {
 		if err != nil && i18n.ErrorCode(err) == "" {
@@ -97,6 +104,7 @@ func Check(ctx context.Context, options Options) (result Result, err error) {
 	return result, nil
 }
 
+// Apply replaces the running binary when a supported release is available.
 func Apply(ctx context.Context, options Options) (result Result, err error) {
 	defer func() {
 		if err != nil && i18n.ErrorCode(err) == "" {

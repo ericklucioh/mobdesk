@@ -31,6 +31,7 @@ gráfico.
 - status e saída JSON para automação;
 - perfis de instalação idempotente pelo `pkg` do Termux para Git, Neovim,
   tmux, Go, Python, Node.js, C/C++, Lua, GitHub CLI, tree, htop, ncdu e Micro;
+- perfis privados selecionados para TUIFI, Bitwarden CLI e Resterm;
 - fluxos offline de Git, Go, Python, Node/npm, C, C++, Lua, Neovim e tmux
   validados em Docker no workspace do Termux;
 - atualizações do binário com rollback;

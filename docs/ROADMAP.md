@@ -24,7 +24,7 @@ locations while real-device acceptance remains pending.
 
 ## Stage 1 - Termux-only foundation
 
-**Status:** active.
+**Status:** implemented; real-device acceptance in progress.
 
 The goal is a single Termux development workstation accessible on the phone and
 through SSH. Scope includes Termux packages, OpenSSH, workspace and local state,
@@ -41,19 +41,19 @@ services, persistent sessions, `doctor`, Tailscale and port forwarding.
 
 ## Stage 2 - TUI workstation
 
-**Status:** planned after Stage 1 validation.
+**Status:** implemented; real-device acceptance in progress.
 
-The goal is an organized text interface for working in Termux on the phone or
-through SSH. Scope includes status, setup, start, stop and update screens,
-initial tool profiles, keyboard/mouse/mobile terminal support, versioned JSON
-CLI operations, standardized app metadata, and touch-first
-details/actions/confirmation popups. Application configuration, including
-Neovim/LazyVim, remains deferred.
+The TUI provides status, setup, start, stop, update, tools, shell and system
+screens for working in Termux on the phone or through SSH. It includes initial
+tool profiles, keyboard/mouse/mobile terminal support, versioned JSON CLI
+operations, standardized app metadata, and touch-first details, actions and
+confirmation popups. Application configuration, including Neovim/LazyVim,
+remains deferred.
 
-The criterion is that users can study and develop without a long sequence of
-internal commands, that every catalog app presents the same useful metadata,
-and that interactive package installation can be completed from the TUI without
-losing access to terminal prompts.
+The remaining criterion is real-device acceptance: users can study and develop
+without a long sequence of internal commands, every catalog app presents the
+same useful metadata, and interactive package installation completes from the
+TUI without losing access to terminal prompts.
 
 ## Stage 3 - Persistent and remote environment
 

@@ -30,6 +30,7 @@ root, a virtual machine, Docker on the phone, systemd or a graphical desktop.
 - status and JSON output for automation;
 - idempotent Termux `pkg` installation profiles for Git, Neovim, tmux, Go,
   Python, Node.js, C/C++, Lua, GitHub CLI, tree, htop, ncdu and Micro;
+- curated private user CLI profiles for TUIFI, Bitwarden CLI and Resterm;
 - Docker-validated offline Git, Go, Python, Node/npm, C, C++, Lua, Neovim and
   tmux workflows in the Termux workspace;
 - rollback-aware binary updates;

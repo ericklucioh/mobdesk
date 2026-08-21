@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -136,7 +137,7 @@ func containsJSONArg(cmd *cobra.Command) bool {
 }
 
 func emitValidationJSON(cmd *cobra.Command, localizer i18n.Localizer, message string, messageID i18n.MessageID, errorCode string) error {
-	return encodeJSON(operationResult{
+	return encodeJSON(cmd.OutOrStdout(), operationResult{
 		SchemaVersion: 1,
 		Command:       cmd.Name(),
 		Success:       false,
@@ -148,8 +149,8 @@ func emitValidationJSON(cmd *cobra.Command, localizer i18n.Localizer, message st
 	})
 }
 
-func encodeJSON(value any) error {
-	return json.NewEncoder(os.Stdout).Encode(value)
+func encodeJSON(writer io.Writer, value any) error {
+	return json.NewEncoder(writer).Encode(value)
 }
 
 func localizeHelpTree(root *cobra.Command, state *commandState) {

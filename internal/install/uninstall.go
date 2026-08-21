@@ -12,6 +12,8 @@ import (
 	"github.com/ericklucioh/mobdesk/internal/paths"
 )
 
+// Uninstall removes Mobdesk-owned files for a named profile without deleting
+// user-managed package-manager state.
 func Uninstall(ctx context.Context, name string, options Options) (result Result, err error) {
 	defer func() {
 		if err != nil && i18n.ErrorCode(err) == "" {

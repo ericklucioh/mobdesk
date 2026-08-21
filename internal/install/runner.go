@@ -15,16 +15,19 @@ import (
 	"golang.org/x/term"
 )
 
+// CommandResult captures one process invocation and its output.
 type CommandResult struct {
 	Stdout []byte
 	Stderr []byte
 	Err    error
 }
 
+// CommandRunner runs a process without constructing shell syntax.
 type CommandRunner interface {
 	Run(ctx context.Context, name string, args ...string) CommandResult
 }
 
+// ExecRunner runs non-interactive processes through os/exec.
 type ExecRunner struct{}
 
 func (ExecRunner) Run(ctx context.Context, name string, args ...string) CommandResult {
@@ -41,6 +44,7 @@ func (ExecRunner) Run(ctx context.Context, name string, args ...string) CommandR
 
 // InteractiveRunner gives native package managers terminal ownership while
 // retaining their output for the installation log.
+// InteractiveRunner runs commands attached to the user's terminal.
 type InteractiveRunner struct{}
 
 func (InteractiveRunner) Run(ctx context.Context, name string, args ...string) CommandResult {

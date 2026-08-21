@@ -216,7 +216,7 @@ func (m *mockBackend) install(name string) {
 			return
 		}
 	}
-	for _, profile := range install.Tools() {
+	for _, profile := range install.Catalog() {
 		if profile.Name == name {
 			m.status.Installations = append(m.status.Installations, status.InstallationStatus{
 				Name:       profile.Name,
@@ -261,7 +261,7 @@ func mockStatus(scenario string) status.SystemStatus {
 		Java:          status.JavaStatus{State: status.CheckOK, Installed: true, Version: "openjdk 21", Home: "/data/data/com.termux/files/usr/lib/jvm/java-21-openjdk"},
 		Alerts:        status.AlertSummary{OK: 12},
 	}
-	for _, profile := range install.Tools() {
+	for _, profile := range install.Catalog() {
 		value.Installations = append(value.Installations, status.InstallationStatus{
 			Name: profile.Name, Kind: profile.Kind, Package: profile.Package, Executable: profile.Executable, State: "installed", Source: "mobdesk", Managed: true, Version: "mock-1.0",
 		})

@@ -477,7 +477,7 @@ func (m Model) controlCount() int {
 	case setupScreen:
 		return 2
 	case toolsScreen:
-		return len(install.Languages())
+		return len(install.Catalog())
 	default:
 		return 0
 	}

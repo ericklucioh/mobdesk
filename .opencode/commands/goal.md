@@ -33,15 +33,15 @@ For every phase:
 2. Implement the smallest correct change that satisfies the phase. Keep
    user-visible text in message catalogs and use message IDs in code.
 3. Add or update focused tests, including regression coverage for safety and
-   Termux/Ubuntu boundary behavior where relevant. Test both `en-US` and
+   Termux/Android boundary behavior where relevant. Test both `en-US` and
    `pt-BR` when presentation is affected.
 4. Update the project documentation required by the phase.
 5. Run the phase validation and fix failures before moving on.
 6. Review the diff and report the phase result explicitly.
 7. Create exactly one isolated commit for the completed phase before moving on.
 
-Respect the project boundaries: host actions run only in Termux, Ubuntu runs
-through PRoot, the TUI uses the CLI JSON contract, user input must not become
+Respect the project boundaries: all host actions run in Termux, the TUI uses
+the CLI JSON contract, user input must not become
 shell syntax, destructive actions require confirmation, existing user files
 must not be overwritten or removed silently, long operations must support
 context cancellation, and locale selection must not change machine-facing
@@ -67,7 +67,7 @@ After validation, inspect `git status`, `git diff`, and recent commits, stage
 only files belonging to the current phase, and commit using the phase message
 defined in the implementation plan. Never include unrelated pre-existing
 changes. Do not amend, push, reset, checkout, or remove unrelated changes. If
-the phase is not valid, do not commit it. Do not claim Termux or PRoot
+the phase is not valid, do not commit it. Do not claim Termux or Android device
 validation was performed unless it actually ran in that environment. Stop only
 for a genuine technical blocker or an unsafe ambiguity; otherwise choose the
 minimal option consistent with the locked decisions.
@@ -75,7 +75,7 @@ minimal option consistent with the locked decisions.
 Before finishing, run `make check`, summarize changed files and validation
 results, and list any checks that still require a real Termux/POCO F6 run. Run
 the expensive `make catalog-test` only when the phase changes the catalog,
-installation strategies, PRoot boundary, catalog smoke script, or related
+installation strategies, Termux boundary, catalog smoke script, or related
 runtime behavior; otherwise use `make check` and focused tests. For localization
 phases, also run the catalog, locale, JSON and bilingual TUI checks defined in
 `docs/PLAN-I18N-EN-PTBR.md`.

@@ -28,6 +28,9 @@ jobs:
         shell: bash
         run: test -z "$(gofmt -l .)"
 
+      - name: Validate localization and documentation
+        run: ./scripts/i18n-check.sh
+
       - name: Run tests
         run: go test ./...
 

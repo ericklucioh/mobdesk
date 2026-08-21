@@ -157,7 +157,7 @@ func toolEntries(kind string) []toolEntry {
 
 func toolEntriesLocalized(kind string, localizer i18n.Localizer) []toolEntry {
 	entries := make([]toolEntry, 0)
-	for _, item := range install.Tools(localizer) {
+	for _, item := range install.Catalog(localizer) {
 		entry := toolEntry{profile: item, kind: item.Kind}
 		if kind == "" || entry.kind == kind {
 			entries = append(entries, entry)

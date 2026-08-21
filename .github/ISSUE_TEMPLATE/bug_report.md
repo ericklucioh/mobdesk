@@ -17,7 +17,7 @@ Describe what went wrong and what you expected to happen.
 - Android/HyperOS version:
 - Termux source and version:
 - Architecture:
-- Where it happened: Termux, Ubuntu, SSH or Docker
+- Where it happened: Termux, Android integration, SSH or Docker
 
 ## Reproduction
 

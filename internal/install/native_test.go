@@ -193,7 +193,7 @@ func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 		"zellij": true, "lazygit": true, "tree": true, "htop": true, "ncdu": true, "inxi": true, "yazi": true, "micro": true,
 		"tuifi": true, "bitwarden": true, "resterm": true,
 	}
-	for _, profile := range Tools() {
+	for _, profile := range Catalog() {
 		if !want[profile.Name] {
 			t.Fatalf("unexpected catalog profile %q", profile.Name)
 		}

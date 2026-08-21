@@ -20,5 +20,5 @@ Describe any workaround or alternative you have considered.
 
 ## Scope and context
 
-Explain whether this affects Termux, Ubuntu via PRoot, SSH, the CLI or the
+Explain whether this affects Termux, Android integration, SSH, the CLI or the
 TUI. Include device and workflow details when relevant.

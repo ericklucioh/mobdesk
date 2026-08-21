@@ -327,7 +327,7 @@ func collectInstallations(o Options) []InstallationStatus {
 }
 
 func enrichInstallationMetadata(values []InstallationStatus) []InstallationStatus {
-	profiles := install.Tools()
+	profiles := install.Catalog()
 	for index := range values {
 		if values[index].Source == "" {
 			values[index].Source = "mobdesk"

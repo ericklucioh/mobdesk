@@ -21,7 +21,7 @@ help:
 		'make catalog-test-fast - install and verify every native pkg profile' \
 		'make workflow-test    - run native development workflows in Termux' \
 		'make spring-test      - build, run and stop the Spring Boot fixture in Termux' \
-		'make user-cli-test    - install, verify and remove private pipx profiles' \
+		'make user-cli-test    - install, verify and remove curated private user CLIs' \
 		'make vet             - run go vet ./...' \
 		'make build           - build Mobdesk inside the container' \
 		'make run             - run the Mobdesk binary' \

@@ -1,7 +1,7 @@
 # Contributing to Mobdesk
 
 Thank you for considering a contribution. Mobdesk is building a small,
-verifiable Ubuntu workstation for Android. The MVP has been tested on a real
+verifiable Termux development workstation for Android. The MVP has been tested on a real
 Android device; broader device validation is still ongoing.
 
 ## Before you start
@@ -10,7 +10,7 @@ Read:
 
 - [README](../README.md) for installation and usage;
 - [Mission](../docs/MISSION.md) for the product problem and value;
-- [Architecture](../docs/ARCHITECTURE.md) for the Termux/Ubuntu boundary;
+- [Architecture](../docs/ARCHITECTURE.md) for the Termux-only execution boundary;
 - [Roadmap](../docs/ROADMAP.md) for future scope;
 - [Decisions](../docs/DECISIONS.md) for current project choices;
 - [Code of Conduct](../CODE_OF_CONDUCT.md) for community expectations.
@@ -45,7 +45,7 @@ make check
 ```
 
 For Docker changes, also run `docker compose config` and `make build-image`.
-For Termux, SSH or PRoot changes, validate on real Termux as well. Docker does
+For Termux, Android integration or SSH changes, validate on real Termux as well. Docker does
 not reproduce Android permissions, networking, battery behavior or kernel
 restrictions. `make integration-test` validates the disposable Docker flow but
 does not replace a device test.
@@ -60,8 +60,8 @@ does not replace a device test.
 - `internal/update/`: update checks and application;
 - `docs/`: mission, architecture, decisions, roadmap and technical plans.
 
-Keep operations idempotent, preserve user data, separate Termux commands from
-Ubuntu commands, use context cancellation for long operations, validate input
+Keep operations idempotent, preserve user data, keep all host operations in
+Termux, use context cancellation for long operations, validate input
 before forming commands and never write passwords, tokens or keys to code or
 logs. Keep user-facing prose in the i18n catalogs. Update documentation when
 scope or architecture changes.
@@ -70,15 +70,15 @@ scope or architecture changes.
 
 Use short descriptive commits, preferably `type: short description`. A pull
 request should explain the problem, behavior change, tests, affected Termux,
-Docker or Ubuntu environments and remaining limitations. Do not combine
+Android, SSH or Docker environments and remaining limitations. Do not combine
 unrelated refactors, architecture changes and fixes.
 
 ## Current scope
 
-The MVP-1 flow is:
+The active MVP flow is:
 
 ```text
-Termux -> Mobdesk -> SSH -> Ubuntu via PRoot
+Termux -> Mobdesk -> local shell or SSH
 ```
 
 The current scope includes the CLI, TUI, development tool profiles, app
@@ -91,7 +91,7 @@ explicitly update the scope decision.
 
 Include the phone model and Android version, Termux source and version, Mobdesk
 version, command executed, complete error output and whether the problem
-occurred in Termux, Ubuntu, SSH or Docker. Never publish passwords, private
+occurred in Termux, SSH or Docker. Never publish passwords, private
 keys, tokens or personal data in logs. Use the [security policy](../SECURITY.md)
 and its private email address for vulnerabilities.
 

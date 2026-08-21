@@ -16,6 +16,10 @@ work for the Termux-only first sprint.
 
 # Historical Goal: Otimizar o catalog-test
 
+> **Historical planning material:** this retired plan describes the former
+> PRoot/Ubuntu product line. It must not be used to define current scope,
+> architecture or validation requirements.
+
 ## Status
 
 - Status: pending

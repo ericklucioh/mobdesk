@@ -82,14 +82,16 @@ func TestInvalidLocaleJSONIsValidAndLocalizedByFallback(t *testing.T) {
 		}
 		return ""
 	})
+	var output bytes.Buffer
+	root.SetOut(&output)
 	root.SetArgs([]string{"status", "--json", "--locale", "fr-FR"})
-	output, err := captureStdout(func() error { return root.Execute() })
+	err := root.Execute()
 	if err == nil || !strings.Contains(err.Error(), "locale") {
 		t.Fatalf("invalid locale error = %v", err)
 	}
 	var result operationResult
-	if decodeErr := json.Unmarshal([]byte(output), &result); decodeErr != nil {
-		t.Fatalf("invalid JSON: %q: %v", output, decodeErr)
+	if decodeErr := json.Unmarshal(output.Bytes(), &result); decodeErr != nil {
+		t.Fatalf("invalid JSON: %q: %v", output.String(), decodeErr)
 	}
 	if result.Success || result.State != "failed" || result.Locale != "pt-BR" || result.ErrorCode != "invalid_locale" || result.MessageID != string(i18n.ErrorInvalidLocale) {
 		t.Fatalf("invalid locale result: %+v", result)

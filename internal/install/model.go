@@ -6,6 +6,8 @@ import (
 	"github.com/ericklucioh/mobdesk/internal/i18n"
 )
 
+// AppState is the persisted lifecycle state of a managed application profile.
+// Its string representation is part of the versioned JSON contract.
 type AppState string
 
 const (
@@ -46,13 +48,14 @@ type AppProfile struct {
 	StorageEstimate  *StorageEstimate `json:"storage_estimate,omitempty"`
 }
 
-// ExecutableSpec describes one command that must be available for a profile
-// to be considered installed. The legacy executable fields remain supported.
+// ExecutableSpec describes one command that must be available for a profile to
+// be considered installed. The legacy executable fields remain supported.
 type ExecutableSpec struct {
 	Name       string   `json:"name"`
 	VersionArg []string `json:"version_arg,omitempty"`
 }
 
+// StorageEstimate records a conservative profile-size range in megabytes.
 type StorageEstimate struct {
 	AppMinMB          int64     `json:"app_min_mb"`
 	AppMaxMB          int64     `json:"app_max_mb"`
@@ -64,14 +67,18 @@ type StorageEstimate struct {
 	MeasuredAt        time.Time `json:"measured_at"`
 }
 
+// TotalMinMB returns the profile and dependency minimum combined.
 func (s StorageEstimate) TotalMinMB() int64 {
 	return s.AppMinMB + s.DependenciesMinMB
 }
 
+// TotalMaxMB returns the profile and dependency maximum combined.
 func (s StorageEstimate) TotalMaxMB() int64 {
 	return s.AppMaxMB + s.DependenciesMaxMB
 }
 
+// Result is the versioned outcome of an installation or removal operation.
+// Language is retained as the established JSON field name for the profile ID.
 type Result struct {
 	SchemaVersion     int              `json:"schema_version"`
 	Language          string           `json:"language"`
@@ -95,6 +102,7 @@ type Result struct {
 	JavaHome          string           `json:"java_home,omitempty"`
 }
 
+// InstallationRecord is the persisted state owned by Mobdesk for one profile.
 type InstallationRecord struct {
 	Name                string            `json:"name"`
 	Kind                string            `json:"kind"`

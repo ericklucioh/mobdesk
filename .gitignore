@@ -6,3 +6,6 @@ mobdesk
 /scripts/fixtures/**/.gradle/
 /scripts/fixtures/**/build/
 /scripts/fixtures/**/target/
+
+# Local dependencies for project-specific OpenCode commands.
+/.opencode/node_modules/

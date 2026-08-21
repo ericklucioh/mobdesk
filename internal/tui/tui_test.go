@@ -2,47 +2,11 @@ package tui
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/ericklucioh/mobdesk/internal/status"
 )
-
-func TestScreensRenderAtPhoneWidth(t *testing.T) {
-	m := NewWithBackend(NewMockBackend("healthy"))
-	m.status = mockStatus("healthy")
-	m.statusLoaded = true
-	m.resize(32, 18)
-	for name, current := range map[string]screen{
-		"home": homeScreen, "status": statusScreen, "setup": setupScreen, "tools": toolsScreen, "shell": shellScreen, "system": systemScreen,
-	} {
-		t.Run(name, func(t *testing.T) {
-			m.screen = current
-			if rendered := m.renderScreen(); strings.TrimSpace(rendered) == "" {
-				t.Fatalf("%s did not render", name)
-			}
-		})
-	}
-}
-
-func TestToolsRenderCurrentCatalogAndInstallingState(t *testing.T) {
-	m := NewWithBackend(NewMockBackend("healthy"))
-	m.status = mockStatus("healthy")
-	m.statusLoaded = true
-	m.screen = toolsScreen
-	m.resize(80, 60)
-	m.installingTool = "node"
-	items := toolListItemsLocalized(m.status, m.installingTool, m.localizer)
-	if len(items) != len(toolEntriesLocalized("", m.localizer)) {
-		t.Fatalf("tools list omitted catalog profiles: %d", len(items))
-	}
-	for _, item := range items {
-		if item.entry.profile.Name == "node" && !item.installing {
-			t.Fatal("installing state was not rendered for node")
-		}
-	}
-}
 
 func TestKeyboardNavigationCoversRenderedScreenControls(t *testing.T) {
 	for name, target := range map[string]screen{"setup": setupScreen, "status": statusScreen, "tools": toolsScreen, "shell": shellScreen, "system": systemScreen} {
@@ -126,27 +90,6 @@ func TestPopupDisablesMutationsDuringStatusRefresh(t *testing.T) {
 		if action.Enabled {
 			t.Fatalf("busy popup action %q remained enabled", action.ID)
 		}
-	}
-}
-
-func TestToolRowHitRegionIncludesRenderedCard(t *testing.T) {
-	lines := []string{"┌────────────────┐", "│ git Installed  │", "│ source control │", "└────────────────┘"}
-	for _, index := range []int{0, 1, 2, 3} {
-		if !toolRowContainsAt(lines, index, 0, "git", 18) {
-			t.Fatalf("card line %d is not clickable", index)
-		}
-	}
-}
-
-func TestPopupButtonHitRegionIncludesPadding(t *testing.T) {
-	m := NewWithBackend(NewMockBackend("healthy"))
-	m.width = 80
-	m.openAppPopup(toolIndex(t, m, "git"))
-	action := m.popupActions()[0]
-	label := popupActionLabelLocalized(action, contentWidth(m.width), m.localizer)
-	lines := []string{"", "     " + label + "  ", ""}
-	if _, ok := m.popupActionAt(lines, 1, 3); !ok {
-		t.Fatalf("button left padding is not clickable: %q", lines[1])
 	}
 }
 

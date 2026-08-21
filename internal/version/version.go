@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// SchemaVersion identifies the version command's JSON response schema.
 const SchemaVersion = 1
 
 var (
@@ -14,6 +15,7 @@ var (
 	BuiltAt = ""
 )
 
+// Info is the version command's JSON response.
 type Info struct {
 	SchemaVersion int    `json:"schema_version"`
 	Command       string `json:"command"`
@@ -29,6 +31,7 @@ type Info struct {
 	Architecture  string `json:"architecture"`
 }
 
+// Current returns metadata for the binary running this process.
 func Current() Info {
 	return Info{
 		SchemaVersion: SchemaVersion,
@@ -45,6 +48,7 @@ func Current() Info {
 	}
 }
 
+// BuiltTime parses the optional build timestamp, returning zero when absent.
 func BuiltTime() time.Time {
 	value, err := time.Parse(time.RFC3339, BuiltAt)
 	if err != nil {

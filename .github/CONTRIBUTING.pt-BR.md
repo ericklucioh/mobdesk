@@ -1,7 +1,7 @@
 # Contribuindo com o Mobdesk
 
 Obrigado por considerar contribuir com o Mobdesk. O projeto está construindo
-uma workstation Ubuntu pequena e verificável para Android. O MVP já foi testado
+uma workstation de desenvolvimento Termux pequena e verificável para Android. O MVP já foi testado
 em um aparelho Android real; a validação em uma matriz maior de dispositivos
 continua em andamento.
 
@@ -11,8 +11,8 @@ Leia:
 
 - o [README](../README.pt-BR.md) para instalação e uso;
 - a [Missão](../docs/MISSION.md) para entender o problema e o valor do produto;
-- a [Arquitetura](../docs/ARCHITECTURE.md) para entender a fronteira entre
-  Termux e Ubuntu;
+- a [Arquitetura](../docs/ARCHITECTURE.md) para entender a fronteira de
+  execução somente com Termux;
 - o [Roadmap](../docs/ROADMAP.md) para conhecer o escopo futuro;
 - as [Decisões](../docs/DECISIONS.md) para respeitar as escolhas atuais;
 - o [Código de Conduta](../CODE_OF_CONDUCT.md) para conhecer as expectativas da
@@ -48,7 +48,7 @@ make check
 ```
 
 Para alterações no Docker, execute também `docker compose config` e
-`make build-image`. Para alterações em Termux, SSH ou PRoot, valide também no
+`make build-image`. Para alterações em Termux, integração Android ou SSH, valide também no
 Termux real. O Docker não reproduz permissões do Android, rede, comportamento
 da bateria ou restrições do kernel. `make integration-test` valida o fluxo
 descartável no Docker, mas não substitui o teste em um aparelho.
@@ -63,8 +63,8 @@ descartável no Docker, mas não substitui o teste em um aparelho.
 - `internal/update/`: consulta e aplicação de atualizações;
 - `docs/`: missão, arquitetura, decisões, roadmap e planos técnicos.
 
-Mantenha operações idempotentes, preserve os dados do usuário, separe comandos
-do Termux dos comandos do Ubuntu, use cancelamento em processos longos, valide
+Mantenha operações idempotentes, preserve os dados do usuário, mantenha todas
+as operações do host no Termux, use cancelamento em processos longos, valide
 entradas antes de formar comandos e nunca grave senhas, tokens ou chaves no
 código ou nos logs. Mantenha textos voltados ao usuário nos catálogos de i18n.
 Atualize a documentação quando o escopo ou a arquitetura mudar.
@@ -73,16 +73,16 @@ Atualize a documentação quando o escopo ou a arquitetura mudar.
 
 Use commits curtos e descritivos, preferencialmente no formato
 `tipo: descrição curta`. Uma pull request deve explicar o problema, a mudança
-de comportamento, os testes, os ambientes Termux, Docker ou Ubuntu afetados e
+de comportamento, os testes, os ambientes Termux, Android, SSH ou Docker afetados e
 as limitações restantes. Não misture refatorações, mudanças de arquitetura e
 correções não relacionadas.
 
 ## Escopo atual
 
-O fluxo do MVP-1 é:
+O fluxo ativo do MVP é:
 
 ```text
-Termux -> Mobdesk -> SSH -> Ubuntu via PRoot
+Termux -> Mobdesk -> shell local ou SSH
 ```
 
 O escopo atual inclui a CLI, a TUI, os perfis de ferramentas de desenvolvimento,
@@ -95,7 +95,7 @@ seguir o roadmap ou atualizar explicitamente a decisão de escopo.
 
 Inclua o modelo do aparelho e a versão do Android, a origem e a versão do
 Termux, a versão do Mobdesk, o comando executado, a saída completa do erro e se
-o problema ocorreu no Termux, Ubuntu, SSH ou Docker. Nunca publique senhas,
+o problema ocorreu no Termux, SSH ou Docker. Nunca publique senhas,
 chaves privadas, tokens ou dados pessoais nos logs. Use a [política de
 segurança](../SECURITY.pt-BR.md) e o e-mail privado indicado nela para
 vulnerabilidades.

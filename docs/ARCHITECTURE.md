@@ -201,9 +201,10 @@ native Maven profile, builds and tests a pinned Spring Boot fixture, verifies a
 loopback-only health endpoint and stops the child JAR process. Maven dependency
 download, cache size and Android behavior still require POCO F6 validation.
 
-`make user-cli-test` validates the curated pipx profile in a clean Termux
-fixture: install, idempotent reinstall, executable, `status --json` and safe
-uninstall. It does not replace ARM64 device validation.
+`make user-cli-test` validates every curated private user-CLI profile in a
+clean Termux fixture: install, idempotent reinstall, executable,
+`status --json` and safe uninstall. It does not replace ARM64 device
+validation.
 
 ## Superseded architecture
 
