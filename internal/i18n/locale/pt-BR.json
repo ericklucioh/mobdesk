@@ -118,6 +118,8 @@
   "app.posting.description": "Cliente HTTP no terminal",
   "app.yazi.description": "Gerenciador de arquivos com previews",
   "app.tuifi.description": "Explorador visual de arquivos",
+  "app.bitwarden.description": "CLI de gerenciamento de senhas",
+  "app.resterm.description": "Workbench de API nativo do terminal",
   "app.neovim.description": "Editor modal",
   "app.opencode_cli.description": "Assistente de IA",
   "app.codex_cli.description": "Assistente de IA",

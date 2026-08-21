@@ -30,6 +30,13 @@ type canceledRunner struct{}
 
 type pipxCanceledRunner struct{}
 
+type userCLICanceledRunner struct{}
+
+type userCLIRunner struct {
+	commands  []string
+	installed bool
+}
+
 func (canceledRunner) Run(ctx context.Context, _ string, _ ...string) CommandResult {
 	return CommandResult{Err: ctx.Err()}
 }
@@ -39,6 +46,64 @@ func (pipxCanceledRunner) Run(ctx context.Context, name string, args ...string) 
 		return CommandResult{Stdout: []byte("Python 3\n")}
 	}
 	return CommandResult{Err: ctx.Err()}
+}
+
+func (userCLICanceledRunner) Run(ctx context.Context, name string, args ...string) CommandResult {
+	if (name == "node" || name == "npm") && sameStrings(args, []string{"--version"}) {
+		return CommandResult{Stdout: []byte("version 1.0\n")}
+	}
+	if name == "go" && sameStrings(args, []string{"version"}) {
+		return CommandResult{Stdout: []byte("version 1.0\n")}
+	}
+	return CommandResult{Err: ctx.Err()}
+}
+
+func (r *userCLIRunner) Run(_ context.Context, name string, args ...string) CommandResult {
+	r.commands = append(r.commands, name+" "+strings.Join(args, " "))
+	if name == "npm" {
+		for index := range args {
+			if args[index] == "--prefix" && index+1 < len(args) {
+				entrypoint := filepath.Join(args[index+1], "lib", "node_modules", "@bitwarden", "cli", "build", "bw.js")
+				if err := os.MkdirAll(filepath.Dir(entrypoint), 0o700); err != nil {
+					return CommandResult{Err: err}
+				}
+				if err := os.WriteFile(entrypoint, []byte("bw"), 0o700); err != nil {
+					return CommandResult{Err: err}
+				}
+				target := filepath.Join(args[index+1], "bin", "bw")
+				if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
+					return CommandResult{Err: err}
+				}
+				if err := os.WriteFile(target, []byte("bw"), 0o700); err != nil {
+					return CommandResult{Err: err}
+				}
+				r.installed = true
+				return CommandResult{}
+			}
+		}
+	}
+	if name == "env" {
+		for _, arg := range args {
+			if value, ok := strings.CutPrefix(arg, "GOBIN="); ok {
+				target := filepath.Join(value, "resterm")
+				if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
+					return CommandResult{Err: err}
+				}
+				if err := os.WriteFile(target, []byte("resterm"), 0o700); err != nil {
+					return CommandResult{Err: err}
+				}
+				r.installed = true
+				return CommandResult{}
+			}
+		}
+	}
+	if strings.Contains(name, string(filepath.Separator)+".local"+string(filepath.Separator)+"bin"+string(filepath.Separator)) {
+		if !r.installed {
+			return CommandResult{Err: errors.New("user CLI missing")}
+		}
+		return CommandResult{Stdout: []byte("version 1.0\n")}
+	}
+	return CommandResult{Stdout: []byte("version 1.0\n")}
 }
 
 func (r *javaRunner) Run(_ context.Context, name string, args ...string) CommandResult {
@@ -126,14 +191,14 @@ func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 		"git": true, "neovim": true, "tmux": true, "go": true, "python": true,
 		"java": true, "maven": true, "kotlin": true, "gradle": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
 		"zellij": true, "lazygit": true, "tree": true, "htop": true, "ncdu": true, "inxi": true, "yazi": true, "micro": true,
-		"tuifi": true,
+		"tuifi": true, "bitwarden": true, "resterm": true,
 	}
 	for _, profile := range Tools() {
 		if !want[profile.Name] {
 			t.Fatalf("unexpected catalog profile %q", profile.Name)
 		}
 		delete(want, profile.Name)
-		if profile.InstallKind != "pkg" && profile.InstallKind != "pipx" {
+		if profile.InstallKind != "pkg" && profile.InstallKind != "pipx" && profile.InstallKind != "npm" && profile.InstallKind != "go" {
 			t.Fatalf("profile %q has unsupported native strategy: %+v", profile.Name, profile)
 		}
 		if profile.Package == "" || profile.Executable == "" {
@@ -167,6 +232,90 @@ func TestTuifiUsesPrivatePipxStrategy(t *testing.T) {
 	if !ok || profile.InstallKind != "pipx" || !profile.UserBin || !sameStrings(profile.Requires, []string{"python"}) {
 		t.Fatalf("unexpected TUIFI profile: %+v", profile)
 	}
+}
+
+func TestBitwardenUsesPrivateNPMStrategy(t *testing.T) {
+	profile, ok := Resolve("bitwarden")
+	if !ok || profile.InstallKind != "npm" || !profile.UserBin || !sameStrings(profile.Requires, []string{"node"}) || profile.Package != "@bitwarden/cli@2025.12.0" {
+		t.Fatalf("unexpected Bitwarden profile: %+v", profile)
+	}
+	runner := &userCLIRunner{}
+	p := paths.New(t.TempDir(), "/data/data/com.termux/files/usr")
+	result, err := Install(context.Background(), "bitwarden", Options{Paths: p, Runner: runner, Now: time.Now, StorageFree: func(string) (int64, error) { return StorageWarningBytes + 1, nil }})
+	if err != nil || !result.Installed || !result.Changed {
+		t.Fatalf("Bitwarden installation = %+v, %v", result, err)
+	}
+	link, target, directory := managedExecutablePaths(p, profile)
+	if !sameStrings(result.Paths, []string{link}) || !strings.HasPrefix(target, filepath.Join(p.ManagedToolsDir(), "npm")+string(filepath.Separator)) {
+		t.Fatalf("unexpected Bitwarden paths: result=%+v target=%q", result, target)
+	}
+	if !strings.Contains(string(mustReadFile(t, target)), "/data/data/com.termux/files/usr/bin/node") {
+		t.Fatalf("Bitwarden launcher does not use Termux Node: %s", target)
+	}
+	if !containsCommand(runner.commands, "npm install --global --prefix "+directory+" --cache "+filepath.Join(directory, "cache")+" --no-audit --no-fund @bitwarden/cli@2025.12.0") {
+		t.Fatalf("Bitwarden did not use a private npm prefix: %v", runner.commands)
+	}
+	removeInstalledUserCLI(t, p, "bitwarden", directory, runner)
+}
+
+func TestRestermUsesPrivateGoStrategy(t *testing.T) {
+	profile, ok := Resolve("resterm")
+	if !ok || profile.InstallKind != "go" || !profile.UserBin || !sameStrings(profile.Requires, []string{"go"}) || profile.Package != "github.com/unkn0wn-root/resterm/cmd/resterm@v1.2.1" {
+		t.Fatalf("unexpected Resterm profile: %+v", profile)
+	}
+	runner := &userCLIRunner{}
+	p := paths.New(t.TempDir(), "/data/data/com.termux/files/usr")
+	result, err := Install(context.Background(), "resterm", Options{Paths: p, Runner: runner, Now: time.Now, StorageFree: func(string) (int64, error) { return StorageWarningBytes + 1, nil }})
+	if err != nil || !result.Installed || !result.Changed {
+		t.Fatalf("Resterm installation = %+v, %v", result, err)
+	}
+	link, target, directory := managedExecutablePaths(p, profile)
+	if !sameStrings(result.Paths, []string{link}) || !strings.HasPrefix(target, filepath.Join(p.ManagedToolsDir(), "go")+string(filepath.Separator)) {
+		t.Fatalf("unexpected Resterm paths: result=%+v target=%q", result, target)
+	}
+	want := "env GOBIN=" + filepath.Dir(target) + " GOPATH=" + filepath.Join(directory, "gopath") + " GOCACHE=" + filepath.Join(directory, "cache") + " GOFLAGS=-modcacherw go install github.com/unkn0wn-root/resterm/cmd/resterm@v1.2.1"
+	if !containsCommand(runner.commands, want) {
+		t.Fatalf("Resterm did not use private Go paths: %v", runner.commands)
+	}
+	removeInstalledUserCLI(t, p, "resterm", directory, runner)
+}
+
+func TestInstallUserCLIsRecordCancellation(t *testing.T) {
+	for _, name := range []string{"bitwarden", "resterm"} {
+		t.Run(name, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+			p := paths.New(t.TempDir(), "/data/data/com.termux/files/usr")
+			result, err := Install(ctx, name, Options{Paths: p, Runner: userCLICanceledRunner{}, Now: time.Now, StorageFree: func(string) (int64, error) { return StorageWarningBytes + 1, nil }})
+			if err == nil || result.State != "failed" {
+				t.Fatalf("canceled %s installation = %+v, %v", name, result, err)
+			}
+			record, loadErr := loadInstallationRecord(p, name)
+			if loadErr != nil || record.State != "failed" {
+				t.Fatalf("canceled %s installation state = %+v, %v", name, record, loadErr)
+			}
+		})
+	}
+}
+
+func removeInstalledUserCLI(t *testing.T, p paths.Paths, name, directory string, runner CommandRunner) {
+	t.Helper()
+	result, err := Uninstall(context.Background(), name, Options{Paths: p, Runner: runner, Now: time.Now})
+	if err != nil || result.State != "uninstalled" || !result.Changed {
+		t.Fatalf("%s uninstall = %+v, %v", name, result, err)
+	}
+	if _, err := os.Stat(directory); !os.IsNotExist(err) {
+		t.Fatalf("%s private directory remains: %v", name, err)
+	}
+}
+
+func mustReadFile(t *testing.T, path string) []byte {
+	t.Helper()
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return content
 }
 
 func TestPublishManagedLinkRejectsUserFile(t *testing.T) {

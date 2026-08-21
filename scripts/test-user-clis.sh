@@ -42,12 +42,11 @@ set result [wait]
 if {[lindex $result 3] != 0} { exit [lindex $result 3] }
 EXPECT_SCRIPT
 
-profiles=(tuifi)
+profiles=(tuifi bitwarden resterm)
 for profile in "${profiles[@]}"; do
     if ! "$MOBDESK_TEST_BIN" install "$profile" --json > "$TEST_DIR/${profile}-install.json"; then
         cat "$TEST_DIR/${profile}-install.json" >&2
         cat "$HOME/.local/share/mobdesk/logs/install/${profile}.log" >&2 || true
-        cat "$HOME/.local/share/mobdesk/tools/pipx/${profile}/home/logs/"*.log >&2 || true
         exit 1
     fi
     grep -q '"success":true' "$TEST_DIR/${profile}-install.json"
@@ -57,8 +56,12 @@ for profile in "${profiles[@]}"; do
 done
 
 "$HOME/.local/bin/tuifi" --version >/dev/null
+"$HOME/.local/bin/bw" --version >/dev/null
+"$HOME/.local/bin/resterm" --version >/dev/null
 "$MOBDESK_TEST_BIN" status --json > "$TEST_DIR/status.json"
-grep -q '"name": "tuifi"' "$TEST_DIR/status.json"
+for profile in "${profiles[@]}"; do
+    grep -q "\"name\": \"${profile}\"" "$TEST_DIR/status.json"
+done
 
 for profile in "${profiles[@]}"; do
     if ! "$MOBDESK_TEST_BIN" uninstall "$profile" --json > "$TEST_DIR/${profile}-uninstall.json"; then
@@ -72,7 +75,7 @@ for profile in "${profiles[@]}"; do
     fi
 done
 
-for executable in tuifi; do
+for executable in tuifi bw resterm; do
     test ! -e "$HOME/.local/bin/$executable"
 done
 printf '%s\n' 'Termux private user CLI test: PASS'

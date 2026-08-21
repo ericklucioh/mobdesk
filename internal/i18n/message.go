@@ -135,6 +135,8 @@ const (
 	AppPostingDescription     MessageID = "app.posting.description"
 	AppYaziDescription        MessageID = "app.yazi.description"
 	AppTuifiDescription       MessageID = "app.tuifi.description"
+	AppBitwardenDescription   MessageID = "app.bitwarden.description"
+	AppRestermDescription     MessageID = "app.resterm.description"
 	AppNeovimDescription      MessageID = "app.neovim.description"
 	AppOpencodeDescription    MessageID = "app.opencode_cli.description"
 	AppCodexDescription       MessageID = "app.codex_cli.description"
@@ -534,7 +536,7 @@ var requiredMessageIDs = []MessageID{
 	AppTmuxDescription, AppZellijDescription, AppMicroDescription, AppLazygitDescription,
 	AppTreeDescription, AppTTTDescription, AppHtopDescription, AppNcduDescription,
 	AppInxiDescription, AppSpeedtestDescription, AppPostingDescription, AppYaziDescription,
-	AppTuifiDescription, AppNeovimDescription, AppOpencodeDescription, AppCodexDescription,
+	AppTuifiDescription, AppBitwardenDescription, AppRestermDescription, AppNeovimDescription, AppOpencodeDescription, AppCodexDescription,
 	AppClaudeDescription, AppLeetgoDescription, ProfileLazyVimDescription,
 	ServiceInstallUnsupported, ServiceInstallDependency, ServiceInstallState, ServiceInstallLogs,
 	ServiceInstallRecord, ServiceInstallVerify, ServiceInstallRepair, ServiceInstallUpdate, ServiceInstallTool,

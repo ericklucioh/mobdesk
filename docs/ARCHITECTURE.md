@@ -110,11 +110,16 @@ contain setup state, installation records, operation logs and SSH files.
 
 Native profiles remain under `$PREFIX`. Curated user-profile tools publish only
 Mobdesk-owned executable links in `$HOME/.local/bin`; generated shell
-configuration adds that path. Their pipx runtime and each profile's environment
-remain private under `$HOME/.local/share/mobdesk/tools`. Installation and
-removal refuse a pre-existing or replaced link rather than modifying an
-unmanaged `$HOME/.local/bin` file. Control and installation commands remain
-Termux operations.
+configuration adds that path. Their pipx runtime, npm prefix and Go build
+directories remain private under `$HOME/.local/share/mobdesk/tools`. Bitwarden
+uses a private npm prefix and cache, then a private launcher that invokes the
+Termux Node executable directly because npm's standard `/usr/bin/env` shebang is
+not available. Resterm uses private `GOBIN`, `GOPATH` and `GOCACHE` paths.
+Its module cache remains writable so uninstall can remove the complete private
+profile directory.
+Installation and removal refuse a pre-existing or replaced link rather than
+modifying an unmanaged `$HOME/.local/bin` file. Control and installation commands
+remain Termux operations.
 
 New catalog apps must declare the same presentation contract as existing apps:
 localized description, concise usage, installation profile and storage

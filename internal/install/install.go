@@ -26,8 +26,8 @@ const (
 	StorageBlockBytes     = storageBlockBytes
 )
 
-// The first native catalog intentionally contains only tools verified through
-// the Termux package manager. Additional profiles are deferred.
+// The catalog contains native Termux packages and individually audited user
+// CLIs installed into private Mobdesk-owned directories.
 var catalog = []AppProfile{
 	{Name: "git", DescriptionID: i18n.AppGitDescription, Usage: "git <command> [options]", Package: "git", Executable: "git", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(35, 60, 0, 10)},
 	{Name: "neovim", Aliases: []string{"nvim"}, DescriptionID: i18n.AppNeovimDescription, Usage: "nvim [file or directory]", Package: "neovim", Executable: "nvim", VersionArg: []string{"--version"}, Kind: "editor", InstallKind: "pkg", StorageEstimate: plannedStorage(15, 30, 0, 20)},
@@ -52,6 +52,8 @@ var catalog = []AppProfile{
 	{Name: "yazi", Aliases: []string{"yazi-fm"}, DescriptionID: i18n.AppYaziDescription, Usage: "yazi [directory]", Package: "yazi", Executable: "yazi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "pkg", StorageEstimate: plannedStorage(25, 40, 0, 0)},
 	{Name: "micro", DescriptionID: i18n.AppMicroDescription, Usage: "micro [files...]", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(4, 8, 0, 2)},
 	{Name: "tuifi", Aliases: []string{"tuifimanager"}, DescriptionID: i18n.AppTuifiDescription, Usage: "tuifi [directory]", Package: "TUIFIManager==5.2.6", Executable: "tuifi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "pipx", Requires: []string{"python"}, UserBin: true, StorageEstimate: plannedStorage(20, 40, 90, 180)},
+	{Name: "bitwarden", Aliases: []string{"bw"}, DescriptionID: i18n.AppBitwardenDescription, Usage: "bw <command> [options]", Package: "@bitwarden/cli@2025.12.0", Executable: "bw", VersionArg: []string{"--version"}, Kind: "security", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(15, 30, 40, 100)},
+	{Name: "resterm", DescriptionID: i18n.AppRestermDescription, Usage: "resterm [file or directory]", Package: "github.com/unkn0wn-root/resterm/cmd/resterm@v1.2.1", Executable: "resterm", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "go", Requires: []string{"go"}, UserBin: true, StorageEstimate: plannedStorage(85, 100, 100, 300)},
 }
 
 var catalogEstimateMeasuredAt = time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
@@ -273,6 +275,10 @@ func installTool(ctx context.Context, runner CommandRunner, timeout time.Duratio
 		return runTermuxLogged(ctx, runner, timeout, logPath, "pkg", append([]string{"install", "-y"}, profilePackages(profile)...)...)
 	case "pipx":
 		return installPipx(ctx, runner, timeout, logPath, p, profile)
+	case "npm":
+		return installNPM(ctx, runner, timeout, logPath, p, profile)
+	case "go":
+		return installGo(ctx, runner, timeout, logPath, p, profile)
 	default:
 		return CommandResult{Err: fmt.Errorf("unsupported native install strategy %q", profile.InstallKind)}
 	}
@@ -310,6 +316,69 @@ func installPipx(ctx context.Context, runner CommandRunner, timeout time.Duratio
 	return result
 }
 
+func installNPM(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, p paths.Paths, profile AppProfile) CommandResult {
+	link, target, directory := managedExecutablePaths(p, profile)
+	if err := ensureManagedLink(link, target); err != nil {
+		return CommandResult{Err: err}
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
+		return CommandResult{Err: err}
+	}
+	result := runTermuxLogged(ctx, runner, timeout, logPath, "npm", "install", "--global", "--prefix", directory, "--cache", filepath.Join(directory, "cache"), "--no-audit", "--no-fund", profile.Package)
+	if result.Err != nil {
+		return result
+	}
+	if err := writeNPMLauncher(p, profile, target, directory); err != nil {
+		return CommandResult{Err: err}
+	}
+	if err := publishManagedLink(link, target); err != nil {
+		return CommandResult{Err: err}
+	}
+	return result
+}
+
+func writeNPMLauncher(p paths.Paths, profile AppProfile, target, directory string) error {
+	if profile.Name != "bitwarden" || profile.Package != "@bitwarden/cli@2025.12.0" {
+		return fmt.Errorf("unsupported managed npm profile %q", profile.Name)
+	}
+	entrypoint := filepath.Join(directory, "lib", "node_modules", "@bitwarden", "cli", "build", "bw.js")
+	if _, err := os.Stat(entrypoint); err != nil {
+		return fmt.Errorf("managed npm entrypoint %q was not created: %w", entrypoint, err)
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
+		return err
+	}
+	content := "#!" + filepath.Join(p.Prefix, "bin", "sh") + "\nexec " + shellQuote(filepath.Join(p.Prefix, "bin", "node")) + " " + shellQuote(entrypoint) + " \"$@\"\n"
+	return os.WriteFile(target, []byte(content), 0o700)
+}
+
+func shellQuote(value string) string {
+	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
+}
+
+func installGo(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, p paths.Paths, profile AppProfile) CommandResult {
+	link, target, directory := managedExecutablePaths(p, profile)
+	if err := ensureManagedLink(link, target); err != nil {
+		return CommandResult{Err: err}
+	}
+	if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
+		return CommandResult{Err: err}
+	}
+	result := runWithEnvironment(ctx, runner, timeout, logPath, []string{
+		"GOBIN=" + filepath.Dir(target),
+		"GOPATH=" + filepath.Join(directory, "gopath"),
+		"GOCACHE=" + filepath.Join(directory, "cache"),
+		"GOFLAGS=-modcacherw",
+	}, "go", "install", profile.Package)
+	if result.Err != nil {
+		return result
+	}
+	if err := publishManagedLink(link, target); err != nil {
+		return CommandResult{Err: err}
+	}
+	return result
+}
+
 func runWithEnvironment(ctx context.Context, runner CommandRunner, timeout time.Duration, logPath string, environment []string, name string, args ...string) CommandResult {
 	command := append(append([]string(nil), environment...), name)
 	command = append(command, args...)
@@ -328,6 +397,13 @@ func managedExecutablePaths(p paths.Paths, profile AppProfile) (link, target, di
 	switch profile.InstallKind {
 	case "pipx":
 		directory = filepath.Join(p.ManagedToolsDir(), "pipx", profile.Name)
+	case "npm":
+		directory = filepath.Join(p.ManagedToolsDir(), "npm", profile.Name)
+		target = filepath.Join(directory, "launcher", profile.Executable)
+	case "go":
+		directory = filepath.Join(p.ManagedToolsDir(), "go", profile.Name)
+	}
+	if target == "" {
 		target = filepath.Join(directory, "bin", profile.Executable)
 	}
 	return link, target, directory

@@ -270,8 +270,12 @@ user-owned files.
 
 - The `tuifi` profile installs the pinned `TUIFIManager==5.2.6` package through
   a private pipx runtime under `$HOME/.local/share/mobdesk/tools/pipx/runtime`.
-- Each pipx profile has its own private home and executable directory; Mobdesk
-  publishes only a verified `$HOME/.local/bin/tuifi` symlink.
+- Bitwarden CLI installs the pinned `@bitwarden/cli@2025.12.0` package through a
+  private npm prefix and cache. Resterm builds from the pinned
+  `github.com/unkn0wn-root/resterm/cmd/resterm@v1.2.1` module with private Go
+  paths.
+- Each user CLI has its own private executable directory; Mobdesk publishes
+  only verified `$HOME/.local/bin` symlinks.
 - Installation, idempotent reinstall, executable verification, `status --json`,
   cancellation record handling, link-conflict refusal and uninstall are covered
   by unit tests and `make user-cli-test` in the Termux Docker fixture.
@@ -284,11 +288,12 @@ user-owned files.
 
 ### Remaining Device Acceptance
 
-- Install, reinstall, run and remove TUIFI on a clean POCO F6 Termux setup.
-- Confirm Python/pip/venv availability, private-path permissions, storage use,
-  cancellation and link-conflict behavior on ARM64.
-- Record TUIFI and Python versions. Do not claim any rejected candidate as
-  supported without a new audit.
+- Install, reinstall, run and remove TUIFI, Bitwarden CLI and Resterm on a clean
+  POCO F6 Termux setup.
+- Confirm Python/pip/venv, Node/npm and Go availability; private-path
+  permissions; storage use; cancellation; and link-conflict behavior on ARM64.
+- Record TUIFI, Python, Bitwarden CLI, Node, Resterm and Go versions. Do not
+  claim any rejected candidate as supported without a new audit.
 
 ### Scope
 
@@ -296,8 +301,8 @@ user-owned files.
   arbitrary `npm` or `pipx` installer command.
 - Keep third-party package files out of `$PREFIX` and do not alter the user's
   global npm or pip prefix.
-- Use private pipx runtime, `PIPX_HOME` and `PIPX_BIN_DIR` paths for
-  Mobdesk-owned profiles.
+- Use private pipx runtime, `PIPX_HOME` and `PIPX_BIN_DIR` paths; private npm
+  prefixes and caches; and private Go build paths for Mobdesk-owned profiles.
 - Record package version, source, expected executables, files and hashes.
 - Refuse executable-name conflicts and preserve modified or unmanaged files on
   removal.

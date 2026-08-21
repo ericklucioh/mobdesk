@@ -121,6 +121,9 @@ func uninstallTool(ctx context.Context, runner CommandRunner, timeout time.Durat
 			result.Err = removeManagedLink(link, target)
 		}
 		return result
+	case "npm", "go":
+		link, target, _ := managedExecutablePaths(p, profile)
+		return CommandResult{Err: removeManagedLink(link, target)}
 	default:
 		return CommandResult{Err: fmt.Errorf("unsupported native uninstall strategy %q", strategy)}
 	}

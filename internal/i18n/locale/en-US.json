@@ -118,6 +118,8 @@
   "app.posting.description": "terminal HTTP client",
   "app.yazi.description": "file manager with previews",
   "app.tuifi.description": "visual file explorer",
+  "app.bitwarden.description": "password manager CLI",
+  "app.resterm.description": "terminal-native API workbench",
   "app.neovim.description": "modal editor",
   "app.opencode_cli.description": "AI assistant",
   "app.codex_cli.description": "AI assistant",

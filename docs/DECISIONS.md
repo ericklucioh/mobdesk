@@ -54,19 +54,25 @@ Java profile and verifies `mvn`. Mobdesk preserves Java while Maven depends on
 it. Spring Boot receives a separate networked fixture: it must build, test,
 serve a loopback health endpoint and stop the exact JAR process it started.
 
-### Curated user CLIs use private pipx environments
+### Curated user CLIs use private managed environments
 
 Only individually audited user CLIs enter the catalog. TUIFI is installed from
 the pinned `TUIFIManager==5.2.6` package in a private pipx runtime and profile
-environment below Mobdesk state, then exposed through a verified
-`$HOME/.local/bin/tuifi` link. Mobdesk never changes the user's global npm or
-pip prefix and refuses conflicting or replaced links on install and removal.
+environment below Mobdesk state. Bitwarden CLI is installed from the pinned
+`@bitwarden/cli@2025.12.0` package using a private npm prefix and cache. Resterm
+is built from the pinned `github.com/unkn0wn-root/resterm/cmd/resterm@v1.2.1`
+module with private Go paths. Each is exposed through a verified
+`$HOME/.local/bin` link. Mobdesk never changes the user's global npm, pip or Go
+paths and refuses conflicting or replaced links on install and removal. The
+Bitwarden launcher invokes the Termux Node executable directly because the npm
+package's `/usr/bin/env node` shebang is not portable to Termux. Resterm uses
+Go's `-modcacherw` option so its private module cache can be removed safely.
 
 The evaluated npm candidates `opencode-ai`, `@openai/codex` and
 `@anthropic-ai/claude-code` do not support Android and are not catalog profiles.
 Posting is also excluded: its current dependency set could not compile the
 required tree-sitter wheels in the Termux fixture. These are compatibility
-outcomes, not an arbitrary npm or pipx installation capability.
+outcomes, not an arbitrary npm, pipx or Go installation capability.
 
 ### The TUI remains in control after start
 

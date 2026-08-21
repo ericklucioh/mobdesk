@@ -18,6 +18,10 @@ Kotlin, Gradle and curated user CLI profiles are delivered separately from
 project wrappers and configuration profiles; all remain subject to device
 acceptance.
 
+The curated user CLI catalog currently includes TUIFI, Bitwarden CLI and
+Resterm. Their private installation paths preserve user-managed npm, pip and Go
+locations while real-device acceptance remains pending.
+
 ## Stage 1 - Termux-only foundation
 
 **Status:** active.
