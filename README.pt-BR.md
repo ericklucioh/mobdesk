@@ -29,6 +29,7 @@ gráfico ou módulos do kernel.
 - saída humana e JSON para automação e para a TUI;
 - instalação idempotente por `pkg` de Neovim, tmux, Go, Python, Node.js, Clang/C++,
   Lua, GitHub CLI, SQLite, MariaDB/MySQL, PostgreSQL, htop, ncdu e Micro;
+- os perfis de banco disponibilizam `sqlite3`, `mariadb`/`mysql` e `psql`/`postgres`;
 - perfis privados selecionados para TUIFI, Bitwarden CLI e Resterm;
 - fluxos offline de Git, Go, Python, Node/npm, C, C++, Lua, Neovim e tmux
   validados em Docker no workspace do Termux;
