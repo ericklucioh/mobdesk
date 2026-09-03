@@ -2,6 +2,7 @@ package workstation
 
 import (
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -33,6 +34,55 @@ func TestConfigureShellAddsOneManagedSourceBlock(t *testing.T) {
 	}
 	if count := strings.Count(string(contents), "# >>> mobdesk >>>"); count != 1 {
 		t.Fatalf("managed source block count = %d", count)
+	}
+	config, err := os.ReadFile(p.ShellConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(config), "Welcome to Mobdesk") {
+		t.Fatal("managed shell configuration does not contain the SSH welcome banner")
+	}
+}
+
+func TestShellBannerIsShownOnlyForInteractiveSSH(t *testing.T) {
+	bash, err := exec.LookPath("bash")
+	if err != nil {
+		t.Skip("bash is required to execute the generated shell configuration")
+	}
+
+	configPath := t.TempDir() + "/shell.bash"
+	if err := os.WriteFile(configPath, []byte(renderShellConfig("test-version")), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	run := func(sshTTY, sshConnection string) string {
+		command := exec.Command(bash, "--noprofile", "--norc", "-c", `source "$1"; exit`, "bash", configPath)
+		command.Env = append(os.Environ(),
+			"HOME="+t.TempDir(),
+			"HOSTNAME=mobdesk-host",
+			"USER=alice",
+			"SSH_TTY="+sshTTY,
+			"SSH_CONNECTION="+sshConnection,
+		)
+		output, err := command.CombinedOutput()
+		if err != nil {
+			t.Fatalf("execute generated shell configuration: %v\n%s", err, output)
+		}
+		return string(output)
+	}
+
+	sshOutput := run("/dev/pts/1", "192.0.2.10 45678 192.0.2.20 8022")
+	for _, expected := range []string{"Welcome to Mobdesk", "test-version", "192.0.2.20", "alice", "8022", "Goodbye from Mobdesk"} {
+		if !strings.Contains(sshOutput, expected) {
+			t.Fatalf("SSH output does not contain %q: %q", expected, sshOutput)
+		}
+	}
+
+	localOutput := run("", "")
+	for _, unexpected := range []string{"Welcome to Mobdesk", "Goodbye from Mobdesk"} {
+		if strings.Contains(localOutput, unexpected) {
+			t.Fatalf("local output unexpectedly contains %q: %q", unexpected, localOutput)
+		}
 	}
 }
 

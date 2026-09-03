@@ -24,6 +24,7 @@ systemd, a graphical desktop or kernel modules.
 
 - repeatable setup of Termux, SSH, networking, common CLI tools and workspace state;
 - a dedicated Mobdesk SSH server on port `8022`;
+- a colored Mobdesk welcome and goodbye banner for interactive SSH sessions;
 - local Termux shell access with `mobdesk shell`;
 - human-readable and JSON output for automation and the TUI;
 - idempotent `pkg` installation of Neovim, tmux, Go, Python, Node.js, Clang/C++,

@@ -25,6 +25,7 @@ root, a virtual machine, Docker on the phone, systemd or a graphical desktop.
 
 - repeatable setup of Termux, SSH, networking, common CLI tools and workspace state;
 - dedicated Mobdesk SSH server on port `8022`;
+- colored Mobdesk welcome and goodbye banner for interactive SSH sessions;
 - native local Termux shell access with `mobdesk shell`;
 - touch/mouse/keyboard TUI;
 - status and JSON output for automation;

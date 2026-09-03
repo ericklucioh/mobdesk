@@ -69,6 +69,11 @@ operations. They never execute package-manager commands directly.
 SSH sessions run in the same Termux workstation. The TUI therefore has one
 runtime model rather than a separate Ubuntu/PRoot remote mode.
 
+Interactive SSH sessions source the Mobdesk-managed shell configuration. It
+shows a colored welcome banner with Mobdesk version and connection metadata,
+and prints a goodbye message on normal shell exit. Local Termux shells do not
+show these SSH-only messages.
+
 ## Internal services
 
 - `internal/status` collects a shared environment snapshot and reconciles
