@@ -19,7 +19,7 @@ func TestToolRowHitRegionIncludesRenderedCard(t *testing.T) {
 func TestPopupButtonHitRegionIncludesPadding(t *testing.T) {
 	model := NewWithBackend(NewMockBackend("healthy"))
 	model.width = 80
-	model.openAppPopup(toolIndex(t, model, "git"))
+	model.openAppPopup(toolIndex(t, model, "sqlite"))
 	action := model.popupActions()[0]
 	label := popupActionLabelLocalized(action, contentWidth(model.width), model.localizer)
 	lines := []string{"", "     " + label + "  ", ""}

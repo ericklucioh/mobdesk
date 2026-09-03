@@ -82,7 +82,7 @@ func TestPopupOffersManagedPartialUninstall(t *testing.T) {
 func TestPopupDisablesMutationsDuringStatusRefresh(t *testing.T) {
 	m := NewWithBackend(NewMockBackend("healthy"))
 	m.busy, m.refreshing = true, true
-	m.openAppPopup(toolIndex(t, m, "git"))
+	m.openAppPopup(toolIndex(t, m, "sqlite"))
 	for _, action := range m.popupActions() {
 		if action.ID == "close" {
 			continue

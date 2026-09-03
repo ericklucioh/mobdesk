@@ -49,7 +49,7 @@ EXPECT_SCRIPT
 test -d "$WORKSPACE"
 test ! -L "$WORKSPACE"
 
-profiles=(git neovim tmux go java python node c cpp lua)
+profiles=(neovim tmux go java python node c cpp lua)
 for profile in "${profiles[@]}"; do
     "$MOBDESK_TEST_BIN" install "$profile" --json > "$TEST_DIR/${profile}-first.json"
     grep -q '"success":true' "$TEST_DIR/${profile}-first.json"

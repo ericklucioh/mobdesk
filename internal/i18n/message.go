@@ -127,6 +127,7 @@ const (
 	AppMicroDescription       MessageID = "app.micro.description"
 	AppLazygitDescription     MessageID = "app.lazygit.description"
 	AppTreeDescription        MessageID = "app.tree.description"
+	AppSQLiteDescription      MessageID = "app.sqlite.description"
 	AppTTTDescription         MessageID = "app.ttt.description"
 	AppHtopDescription        MessageID = "app.htop.description"
 	AppNcduDescription        MessageID = "app.ncdu.description"
@@ -137,6 +138,7 @@ const (
 	AppTuifiDescription       MessageID = "app.tuifi.description"
 	AppBitwardenDescription   MessageID = "app.bitwarden.description"
 	AppRestermDescription     MessageID = "app.resterm.description"
+	AppRcloneDescription      MessageID = "app.rclone.description"
 	AppNeovimDescription      MessageID = "app.neovim.description"
 	AppOpencodeDescription    MessageID = "app.opencode_cli.description"
 	AppCodexDescription       MessageID = "app.codex_cli.description"
@@ -534,7 +536,7 @@ var requiredMessageIDs = []MessageID{
 	AppGoDescription, AppJavaDescription, AppKotlinDescription, AppGradleDescription, AppMavenDescription, AppPythonDescription, AppNodeDescription, AppCDescription,
 	AppCPPDescription, AppLuaDescription, AppGitDescription, AppGHDescription,
 	AppTmuxDescription, AppZellijDescription, AppMicroDescription, AppLazygitDescription,
-	AppTreeDescription, AppTTTDescription, AppHtopDescription, AppNcduDescription,
+	AppTreeDescription, AppSQLiteDescription, AppTTTDescription, AppRcloneDescription, AppHtopDescription, AppNcduDescription,
 	AppInxiDescription, AppSpeedtestDescription, AppPostingDescription, AppYaziDescription,
 	AppTuifiDescription, AppBitwardenDescription, AppRestermDescription, AppNeovimDescription, AppOpencodeDescription, AppCodexDescription,
 	AppClaudeDescription, AppLeetgoDescription, ProfileLazyVimDescription,

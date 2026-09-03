@@ -42,7 +42,7 @@ set result [wait]
 if {[lindex $result 3] != 0} { exit [lindex $result 3] }
 EXPECT_SCRIPT
 
-profiles=(tuifi bitwarden resterm)
+profiles=(tuifi bitwarden resterm ttt)
 for profile in "${profiles[@]}"; do
     if ! "$MOBDESK_TEST_BIN" install "$profile" --json > "$TEST_DIR/${profile}-install.json"; then
         cat "$TEST_DIR/${profile}-install.json" >&2
@@ -75,7 +75,7 @@ for profile in "${profiles[@]}"; do
     fi
 done
 
-for executable in tuifi bw resterm; do
+for executable in tuifi bw resterm ttt; do
     test ! -e "$HOME/.local/bin/$executable"
 done
 printf '%s\n' 'Termux private user CLI test: PASS'

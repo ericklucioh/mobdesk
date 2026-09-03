@@ -156,7 +156,7 @@ func (r *mavenRunner) Run(_ context.Context, name string, args ...string) Comman
 
 func (r *nativeRunner) Run(_ context.Context, name string, args ...string) CommandResult {
 	r.commands = append(r.commands, name+" "+strings.Join(args, " "))
-	if name == "git" {
+	if name == "git" || name == "sqlite3" {
 		r.versions++
 		if r.versions == 1 {
 			return CommandResult{Err: errors.New("git missing")}
@@ -169,7 +169,7 @@ func (r *nativeRunner) Run(_ context.Context, name string, args ...string) Comma
 func TestInstallUsesNativePkg(t *testing.T) {
 	runner := &nativeRunner{}
 	p := paths.New(t.TempDir(), "")
-	result, err := Install(context.Background(), "git", Options{
+	result, err := Install(context.Background(), "sqlite", Options{
 		Paths:       p,
 		Runner:      runner,
 		Now:         time.Now,
@@ -181,17 +181,17 @@ func TestInstallUsesNativePkg(t *testing.T) {
 	if !result.Installed || !result.Changed {
 		t.Fatalf("unexpected installation result: %+v", result)
 	}
-	if !containsCommand(runner.commands, "pkg install -y git") {
+	if !containsCommand(runner.commands, "pkg install -y sqlite") {
 		t.Fatalf("native pkg command was not used: %v", runner.commands)
 	}
 }
 
 func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 	want := map[string]bool{
-		"git": true, "neovim": true, "tmux": true, "go": true, "python": true,
+		"neovim": true, "tmux": true, "go": true, "python": true,
 		"java": true, "maven": true, "kotlin": true, "gradle": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
-		"zellij": true, "lazygit": true, "tree": true, "htop": true, "ncdu": true, "inxi": true, "yazi": true, "micro": true,
-		"tuifi": true, "bitwarden": true, "resterm": true,
+		"zellij": true, "lazygit": true, "sqlite": true, "htop": true, "ncdu": true, "inxi": true, "yazi": true, "micro": true,
+		"tuifi": true, "bitwarden": true, "resterm": true, "rclone": true, "ttt": true,
 	}
 	for _, profile := range Catalog() {
 		if !want[profile.Name] {
@@ -212,7 +212,7 @@ func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 
 func TestNativePkgProfilesUseOfficialPackages(t *testing.T) {
 	for name, want := range map[string]string{
-		"gradle": "gradle", "inxi": "inxi", "kotlin": "kotlin", "lazygit": "lazygit", "yazi": "yazi", "zellij": "zellij",
+		"gradle": "gradle", "inxi": "inxi", "kotlin": "kotlin", "lazygit": "lazygit", "yazi": "yazi", "zellij": "zellij", "rclone": "rclone", "sqlite": "sqlite",
 	} {
 		profile, ok := Resolve(name)
 		if !ok || profile.InstallKind != "pkg" || profile.Package != want {
@@ -224,6 +224,13 @@ func TestNativePkgProfilesUseOfficialPackages(t *testing.T) {
 		if !sameStrings(profile.Requires, []string{"java"}) {
 			t.Fatalf("%s requirements = %v", name, profile.Requires)
 		}
+	}
+}
+
+func TestSQLiteProfile(t *testing.T) {
+	profile, ok := Resolve("sqlite3")
+	if !ok || profile.Name != "sqlite" || profile.Package != "sqlite" || profile.Executable != "sqlite3" || profile.InstallKind != "pkg" {
+		t.Fatalf("unexpected SQLite profile: %+v", profile)
 	}
 }
 
@@ -278,6 +285,13 @@ func TestRestermUsesPrivateGoStrategy(t *testing.T) {
 		t.Fatalf("Resterm did not use private Go paths: %v", runner.commands)
 	}
 	removeInstalledUserCLI(t, p, "resterm", directory, runner)
+}
+
+func TestTTTUsesPrivateGoStrategy(t *testing.T) {
+	profile, ok := Resolve("ttt")
+	if !ok || profile.InstallKind != "go" || !profile.UserBin || !sameStrings(profile.Requires, []string{"go"}) || profile.Package != "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0" {
+		t.Fatalf("unexpected TTT profile: %+v", profile)
+	}
 }
 
 func TestInstallUserCLIsRecordCancellation(t *testing.T) {

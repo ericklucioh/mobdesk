@@ -12,7 +12,6 @@ var catalogEstimateMeasuredAt = time.Date(2026, 8, 20, 0, 0, 0, 0, time.UTC)
 // catalog contains native Termux packages and individually audited user CLIs
 // installed into private Mobdesk-owned directories.
 var catalog = []AppProfile{
-	{Name: "git", DescriptionID: i18n.AppGitDescription, Usage: "git <command> [options]", Package: "git", Executable: "git", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(35, 60, 0, 10)},
 	{Name: "neovim", Aliases: []string{"nvim"}, DescriptionID: i18n.AppNeovimDescription, Usage: "nvim [file or directory]", Package: "neovim", Executable: "nvim", VersionArg: []string{"--version"}, Kind: "editor", InstallKind: "pkg", StorageEstimate: plannedStorage(15, 30, 0, 20)},
 	{Name: "tmux", DescriptionID: i18n.AppTmuxDescription, Usage: "tmux [command]", Package: "tmux", Executable: "tmux", VersionArg: []string{"-V"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(2, 5, 0, 2)},
 	{Name: "go", Aliases: []string{"golang"}, DescriptionID: i18n.AppGoDescription, Usage: "go [command]", Package: "golang", Executable: "go", VersionArg: []string{"version"}, Kind: "language", InstallKind: "pkg", StorageEstimate: plannedStorage(180, 300, 0, 50)},
@@ -28,12 +27,13 @@ var catalog = []AppProfile{
 	{Name: "gh", Aliases: []string{"github-cli"}, DescriptionID: i18n.AppGHDescription, Usage: "gh <command> [options]", Package: "gh", Executable: "gh", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg", StorageEstimate: plannedStorage(10, 20, 0, 5)},
 	{Name: "zellij", DescriptionID: i18n.AppZellijDescription, Usage: "zellij [options]", Package: "zellij", Executable: "zellij", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(20, 30, 0, 5)},
 	{Name: "lazygit", DescriptionID: i18n.AppLazygitDescription, Usage: "lazygit [directory]", Package: "lazygit", Executable: "lazygit", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "pkg", StorageEstimate: plannedStorage(15, 25, 0, 5)},
-	{Name: "tree", DescriptionID: i18n.AppTreeDescription, Usage: "tree [directory]", Package: "tree", Executable: "tree", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 2, 0, 1)},
+	{Name: "sqlite", Aliases: []string{"sqlite3"}, DescriptionID: i18n.AppSQLiteDescription, Usage: "sqlite3 [database]", Package: "sqlite", Executable: "sqlite3", VersionArg: []string{"--version"}, Kind: "database", InstallKind: "pkg", StorageEstimate: plannedStorage(2, 5, 0, 2)},
 	{Name: "htop", DescriptionID: i18n.AppHtopDescription, Usage: "htop", Package: "htop", Executable: "htop", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 3, 0, 1)},
 	{Name: "ncdu", DescriptionID: i18n.AppNcduDescription, Usage: "ncdu [directory]", Package: "ncdu", Executable: "ncdu", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg", StorageEstimate: plannedStorage(1, 2, 0, 1)},
 	{Name: "inxi", DescriptionID: i18n.AppInxiDescription, Usage: "inxi [options]", Package: "inxi", Executable: "inxi", VersionArg: []string{"--version"}, Kind: "monitoring", InstallKind: "pkg", StorageEstimate: plannedStorage(5, 15, 0, 5)},
 	{Name: "yazi", Aliases: []string{"yazi-fm"}, DescriptionID: i18n.AppYaziDescription, Usage: "yazi [directory]", Package: "yazi", Executable: "yazi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "pkg", StorageEstimate: plannedStorage(25, 40, 0, 0)},
 	{Name: "micro", DescriptionID: i18n.AppMicroDescription, Usage: "micro [files...]", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(4, 8, 0, 2)},
+	{Name: "rclone", DescriptionID: i18n.AppRcloneDescription, Usage: "rclone <command> [options]", Package: "rclone", Executable: "rclone", VersionArg: []string{"version"}, Kind: "file", InstallKind: "pkg", StorageEstimate: plannedStorage(25, 45, 0, 10)},
 	{
 		Name:            "tuifi",
 		Aliases:         []string{"tuifimanager"},
@@ -74,6 +74,19 @@ var catalog = []AppProfile{
 		Requires:        []string{"go"},
 		UserBin:         true,
 		StorageEstimate: plannedStorage(85, 100, 100, 300),
+	},
+	{
+		Name:            "ttt",
+		DescriptionID:   i18n.AppTTTDescription,
+		Usage:           "ttt [file or directory]",
+		Package:         "github.com/eugenioenko/ttt/cmd/ttt@v1.1.0",
+		Executable:      "ttt",
+		VersionArg:      []string{"--version"},
+		Kind:            "editor",
+		InstallKind:     "go",
+		Requires:        []string{"go"},
+		UserBin:         true,
+		StorageEstimate: plannedStorage(25, 45, 100, 350),
 	},
 }
 

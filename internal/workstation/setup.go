@@ -12,12 +12,17 @@ import (
 )
 
 const (
-	defaultTimezone  = "Etc/UTC"
-	shellSourceBlock = `# >>> mobdesk >>>
+	defaultTimezone      = "Etc/UTC"
+	setupPackagesVersion = "native-base-v2"
+	shellSourceBlock     = `# >>> mobdesk >>>
 [ -r "$HOME/.config/mobdesk/shell.bash" ] && . "$HOME/.config/mobdesk/shell.bash"
 # <<< mobdesk >>>
 `
 )
+
+var setupPackages = []string{
+	"openssh", "net-tools", "wget", "iproute2", "rsync", "dnsutils", "zip", "file", "jq", "ripgrep", "fd", "make", "git", "tree",
+}
 
 type SetupOptions struct {
 	UpgradeSystem       bool
@@ -77,8 +82,8 @@ func (s Service) Setup(ctx context.Context, options SetupOptions) (result SetupR
 			return result, err
 		}
 	}
-	if !s.setupPhaseDone("packages-installed") {
-		if err := s.run(ctx, "pkg", "install", "-y", "openssh", "net-tools"); err != nil {
+	if !s.setupPackagesDone() {
+		if err := s.run(ctx, "pkg", setupPackageArguments()...); err != nil {
 			return result, err
 		}
 		if err := complete("packages-installed"); err != nil {
@@ -187,6 +192,15 @@ func (s Service) setupPhaseDone(phase string) bool {
 	return err == nil
 }
 
+func (s Service) setupPackagesDone() bool {
+	contents, err := s.Deps.ReadFile(s.Paths.SetupPhase("packages-installed"))
+	return err == nil && strings.TrimSpace(string(contents)) == setupPackagesVersion
+}
+
+func setupPackageArguments() []string {
+	return append([]string{"install", "-y"}, setupPackages...)
+}
+
 func (s Service) androidTimezone(ctx context.Context) string {
 	if s.Deps.AndroidTimezone != nil {
 		return s.Deps.AndroidTimezone(ctx)
@@ -236,7 +250,11 @@ func (s Service) markSetupPhase(phase string) error {
 	if err := s.ensurePrivateDir(s.Paths.StateDir()); err != nil {
 		return fmt.Errorf("create state for phase %s: %w", phase, err)
 	}
-	if err := s.writePrivateFile(s.Paths.SetupPhase(phase), []byte("concluida\n")); err != nil {
+	contents := []byte("concluida\n")
+	if phase == "packages-installed" {
+		contents = []byte(setupPackagesVersion + "\n")
+	}
+	if err := s.writePrivateFile(s.Paths.SetupPhase(phase), contents); err != nil {
 		return fmt.Errorf("record phase %s: %w", phase, err)
 	}
 	return nil

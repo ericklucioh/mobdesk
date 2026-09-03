@@ -23,13 +23,13 @@ root, a virtual machine, Docker on the phone, systemd or a graphical desktop.
 
 ## What is available
 
-- repeatable setup of Termux, SSH, networking and workspace state;
+- repeatable setup of Termux, SSH, networking, common CLI tools and workspace state;
 - dedicated Mobdesk SSH server on port `8022`;
 - native local Termux shell access with `mobdesk shell`;
 - touch/mouse/keyboard TUI;
 - status and JSON output for automation;
-- idempotent Termux `pkg` installation profiles for Git, Neovim, tmux, Go,
-  Python, Node.js, C/C++, Lua, GitHub CLI, tree, htop, ncdu and Micro;
+- idempotent Termux `pkg` installation profiles for Neovim, tmux, Go, Python,
+  Node.js, C/C++, Lua, GitHub CLI, SQLite, htop, ncdu and Micro;
 - curated private user CLI profiles for TUIFI, Bitwarden CLI and Resterm;
 - Docker-validated offline Git, Go, Python, Node/npm, C, C++, Lua, Neovim and
   tmux workflows in the Termux workspace;

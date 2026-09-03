@@ -75,7 +75,7 @@ func TestReadReturnsLogsForEveryCatalogKind(t *testing.T) {
 	if err := os.MkdirAll(p.InstallLogsDir(), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	for _, value := range []struct{ name, kind string }{{"git", "terminal"}, {"neovim", "editor"}, {"gh", "development"}, {"htop", "monitoring"}} {
+	for _, value := range []struct{ name, kind string }{{"sqlite", "database"}, {"neovim", "editor"}, {"gh", "development"}, {"htop", "monitoring"}} {
 		if err := os.WriteFile(filepath.Join(p.InstallationsDir(), value.name+".json"), []byte(`{"name":"`+value.name+`","kind":"`+value.kind+`","state":"installed"}`), 0o600); err != nil {
 			t.Fatal(err)
 		}
