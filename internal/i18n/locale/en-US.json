@@ -111,6 +111,8 @@
   "app.lazygit.description": "interactive Git",
   "app.tree.description": "directory tree",
   "app.sqlite.description": "embedded SQL database",
+  "app.mariadb.description": "MySQL-compatible database server",
+  "app.postgresql.description": "object-relational database server",
   "app.ttt.description": "terminal editor and IDE",
   "app.rclone.description": "cloud storage sync",
   "app.htop.description": "system monitor",

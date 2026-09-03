@@ -156,12 +156,12 @@ func (r *mavenRunner) Run(_ context.Context, name string, args ...string) Comman
 
 func (r *nativeRunner) Run(_ context.Context, name string, args ...string) CommandResult {
 	r.commands = append(r.commands, name+" "+strings.Join(args, " "))
-	if name == "git" || name == "sqlite3" || name == "pi" {
+	if name == "git" || name == "sqlite3" || name == "pi" || name == "mariadb" || name == "psql" {
 		r.versions++
 		if r.versions == 1 {
-			return CommandResult{Err: errors.New("git missing")}
+			return CommandResult{Err: errors.New(name + " missing")}
 		}
-		return CommandResult{Stdout: []byte("git version 1.0\n")}
+		return CommandResult{Stdout: []byte(name + " version 1.0\n")}
 	}
 	return CommandResult{}
 }
@@ -190,7 +190,7 @@ func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 	want := map[string]bool{
 		"neovim": true, "tmux": true, "go": true, "python": true,
 		"java": true, "maven": true, "kotlin": true, "gradle": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
-		"zellij": true, "lazygit": true, "sqlite": true, "htop": true, "ncdu": true, "inxi": true, "yazi": true, "micro": true,
+		"zellij": true, "lazygit": true, "sqlite": true, "mariadb": true, "postgresql": true, "htop": true, "ncdu": true, "inxi": true, "yazi": true, "micro": true,
 		"tuifi": true, "bitwarden": true, "pi": true, "resterm": true, "rclone": true, "ttt": true,
 	}
 	for _, profile := range Catalog() {
@@ -212,7 +212,7 @@ func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 
 func TestNativePkgProfilesUseOfficialPackages(t *testing.T) {
 	for name, want := range map[string]string{
-		"gradle": "gradle", "inxi": "inxi", "kotlin": "kotlin", "lazygit": "lazygit", "yazi": "yazi", "zellij": "zellij", "rclone": "rclone", "sqlite": "sqlite",
+		"gradle": "gradle", "inxi": "inxi", "kotlin": "kotlin", "lazygit": "lazygit", "yazi": "yazi", "zellij": "zellij", "rclone": "rclone", "sqlite": "sqlite", "mariadb": "mariadb", "postgresql": "postgresql",
 	} {
 		profile, ok := Resolve(name)
 		if !ok || profile.InstallKind != "pkg" || profile.Package != want {
@@ -231,6 +231,15 @@ func TestSQLiteProfile(t *testing.T) {
 	profile, ok := Resolve("sqlite3")
 	if !ok || profile.Name != "sqlite" || profile.Package != "sqlite" || profile.Executable != "sqlite3" || profile.InstallKind != "pkg" {
 		t.Fatalf("unexpected SQLite profile: %+v", profile)
+	}
+}
+
+func TestDatabaseProfilesResolveAliases(t *testing.T) {
+	for alias, want := range map[string]string{"mysql": "mariadb", "postgres": "postgresql", "psql": "postgresql"} {
+		profile, ok := Resolve(alias)
+		if !ok || profile.Name != want || profile.InstallKind != "pkg" {
+			t.Fatalf("database alias %q = %+v, %t", alias, profile, ok)
+		}
 	}
 }
 

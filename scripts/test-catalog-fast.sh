@@ -42,7 +42,7 @@ set result [wait]
 if {[lindex $result 3] != 0} { exit [lindex $result 3] }
 EXPECT_SCRIPT
 
-profiles=(neovim tmux go java maven kotlin gradle python node c cpp lua gh zellij lazygit sqlite htop ncdu inxi yazi micro rclone)
+profiles=(neovim tmux go java maven kotlin gradle python node c cpp lua gh zellij lazygit sqlite mariadb postgresql htop ncdu inxi yazi micro rclone)
 for profile in "${profiles[@]}"; do
     "$MOBDESK_TEST_BIN" install "$profile" --json > "$TEST_DIR/${profile}-first.json"
     grep -q '"success":true' "$TEST_DIR/${profile}-first.json"
@@ -75,6 +75,9 @@ zellij --version >/dev/null
 lazygit --version >/dev/null
 tree --version >/dev/null
 sqlite3 --version >/dev/null
+mariadb --version >/dev/null
+mysql --version >/dev/null
+psql --version >/dev/null
 htop --version >/dev/null
 ncdu --version >/dev/null
 inxi --version >/dev/null

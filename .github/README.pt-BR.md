@@ -26,11 +26,13 @@ gráfico.
 
 - setup repetível do Termux, SSH, rede, ferramentas CLI básicas e workspace;
 - servidor SSH dedicado do Mobdesk na porta `8022`;
+- banner colorido de boas-vindas e despedida nas sessões SSH interativas;
 - acesso nativo ao shell local do Termux com `mobdesk shell`;
 - TUI com suporte a toque, mouse e teclado;
 - status e saída JSON para automação;
 - perfis de instalação idempotente pelo `pkg` do Termux para Neovim, tmux, Go,
-  Python, Node.js, C/C++, Lua, GitHub CLI, SQLite, htop, ncdu e Micro;
+  Python, Node.js, C/C++, Lua, GitHub CLI, SQLite, MariaDB/MySQL, PostgreSQL,
+  htop, ncdu e Micro;
 - perfis privados selecionados para TUIFI, Bitwarden CLI e Resterm;
 - fluxos offline de Git, Go, Python, Node/npm, C, C++, Lua, Neovim e tmux
   validados em Docker no workspace do Termux;

@@ -128,6 +128,8 @@ const (
 	AppLazygitDescription     MessageID = "app.lazygit.description"
 	AppTreeDescription        MessageID = "app.tree.description"
 	AppSQLiteDescription      MessageID = "app.sqlite.description"
+	AppMariaDBDescription     MessageID = "app.mariadb.description"
+	AppPostgreSQLDescription  MessageID = "app.postgresql.description"
 	AppTTTDescription         MessageID = "app.ttt.description"
 	AppHtopDescription        MessageID = "app.htop.description"
 	AppNcduDescription        MessageID = "app.ncdu.description"
@@ -536,7 +538,7 @@ var requiredMessageIDs = []MessageID{
 	AppGoDescription, AppJavaDescription, AppKotlinDescription, AppGradleDescription, AppMavenDescription, AppPythonDescription, AppNodeDescription, AppCDescription,
 	AppCPPDescription, AppLuaDescription, AppGitDescription, AppGHDescription,
 	AppTmuxDescription, AppZellijDescription, AppMicroDescription, AppLazygitDescription,
-	AppTreeDescription, AppSQLiteDescription, AppTTTDescription, AppRcloneDescription, AppHtopDescription, AppNcduDescription,
+	AppTreeDescription, AppSQLiteDescription, AppMariaDBDescription, AppPostgreSQLDescription, AppTTTDescription, AppRcloneDescription, AppHtopDescription, AppNcduDescription,
 	AppInxiDescription, AppSpeedtestDescription, AppPostingDescription, AppYaziDescription,
 	AppTuifiDescription, AppBitwardenDescription, AppRestermDescription, AppNeovimDescription, AppOpencodeDescription, AppCodexDescription,
 	AppClaudeDescription, AppLeetgoDescription, ProfileLazyVimDescription,
