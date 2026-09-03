@@ -28,7 +28,7 @@ systemd, a graphical desktop or kernel modules.
 - local Termux shell access with `mobdesk shell`;
 - human-readable and JSON output for automation and the TUI;
 - idempotent `pkg` installation of Neovim, tmux, Go, Python, Node.js, Clang/C++,
-  Lua, GitHub CLI, SQLite, htop, ncdu and Micro;
+  Lua, GitHub CLI, SQLite, MariaDB/MySQL, PostgreSQL, htop, ncdu and Micro;
 - curated private user CLI profiles for TUIFI, Bitwarden CLI and Resterm;
 - Docker-validated offline Git, Go, Python, Node/npm, C, C++, Lua, Neovim and
   tmux workflows in the Termux workspace;

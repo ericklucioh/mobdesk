@@ -111,6 +111,8 @@
   "app.lazygit.description": "Git interativo",
   "app.tree.description": "Árvore de diretórios",
   "app.sqlite.description": "Banco de dados SQL embutido",
+  "app.mariadb.description": "Servidor de banco compatível com MySQL",
+  "app.postgresql.description": "Servidor de banco objeto-relacional",
   "app.ttt.description": "Editor e IDE de terminal",
   "app.rclone.description": "Sincronização com armazenamento em nuvem",
   "app.htop.description": "Monitor do sistema",

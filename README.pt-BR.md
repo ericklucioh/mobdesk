@@ -28,7 +28,7 @@ gráfico ou módulos do kernel.
 - acesso local ao Termux com `mobdesk shell`;
 - saída humana e JSON para automação e para a TUI;
 - instalação idempotente por `pkg` de Neovim, tmux, Go, Python, Node.js, Clang/C++,
-  Lua, GitHub CLI, SQLite, htop, ncdu e Micro;
+  Lua, GitHub CLI, SQLite, MariaDB/MySQL, PostgreSQL, htop, ncdu e Micro;
 - perfis privados selecionados para TUIFI, Bitwarden CLI e Resterm;
 - fluxos offline de Git, Go, Python, Node/npm, C, C++, Lua, Neovim e tmux
   validados em Docker no workspace do Termux;
