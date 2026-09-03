@@ -261,7 +261,12 @@ func installNPM(ctx context.Context, runner CommandRunner, timeout time.Duration
 	if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
 		return CommandResult{Err: err}
 	}
-	result := runTermuxLogged(ctx, runner, timeout, logPath, "npm", "install", "--global", "--prefix", directory, "--cache", filepath.Join(directory, "cache"), "--no-audit", "--no-fund", profile.Package)
+	args := []string{"install", "--global", "--prefix", directory, "--cache", filepath.Join(directory, "cache"), "--no-audit", "--no-fund"}
+	if profile.Name == "pi" {
+		args = append(args, "--ignore-scripts")
+	}
+	args = append(args, profile.Package)
+	result := runTermuxLogged(ctx, runner, timeout, logPath, "npm", args...)
 	if result.Err != nil {
 		return result
 	}
@@ -275,10 +280,15 @@ func installNPM(ctx context.Context, runner CommandRunner, timeout time.Duration
 }
 
 func writeNPMLauncher(p paths.Paths, profile AppProfile, target, directory string) error {
-	if profile.Name != "bitwarden" || profile.Package != "@bitwarden/cli@2025.12.0" {
+	var entrypoint string
+	switch {
+	case profile.Name == "bitwarden" && profile.Package == "@bitwarden/cli@2025.12.0":
+		entrypoint = filepath.Join(directory, "lib", "node_modules", "@bitwarden", "cli", "build", "bw.js")
+	case profile.Name == "pi" && profile.Package == "@earendil-works/pi-coding-agent@0.84.4":
+		entrypoint = filepath.Join(directory, "lib", "node_modules", "@earendil-works", "pi-coding-agent", "dist", "bundle", "cli.js")
+	default:
 		return fmt.Errorf("unsupported managed npm profile %q", profile.Name)
 	}
-	entrypoint := filepath.Join(directory, "lib", "node_modules", "@bitwarden", "cli", "build", "bw.js")
 	if _, err := os.Stat(entrypoint); err != nil {
 		return fmt.Errorf("managed npm entrypoint %q was not created: %w", entrypoint, err)
 	}

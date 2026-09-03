@@ -156,7 +156,7 @@ func (r *mavenRunner) Run(_ context.Context, name string, args ...string) Comman
 
 func (r *nativeRunner) Run(_ context.Context, name string, args ...string) CommandResult {
 	r.commands = append(r.commands, name+" "+strings.Join(args, " "))
-	if name == "git" || name == "sqlite3" {
+	if name == "git" || name == "sqlite3" || name == "pi" {
 		r.versions++
 		if r.versions == 1 {
 			return CommandResult{Err: errors.New("git missing")}
@@ -191,7 +191,7 @@ func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 		"neovim": true, "tmux": true, "go": true, "python": true,
 		"java": true, "maven": true, "kotlin": true, "gradle": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
 		"zellij": true, "lazygit": true, "sqlite": true, "htop": true, "ncdu": true, "inxi": true, "yazi": true, "micro": true,
-		"tuifi": true, "bitwarden": true, "resterm": true, "rclone": true, "ttt": true,
+		"tuifi": true, "bitwarden": true, "pi": true, "resterm": true, "rclone": true, "ttt": true,
 	}
 	for _, profile := range Catalog() {
 		if !want[profile.Name] {
