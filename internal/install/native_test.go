@@ -191,7 +191,7 @@ func TestCatalogUsesOnlyNativeStrategies(t *testing.T) {
 		"git": true, "neovim": true, "tmux": true, "go": true, "python": true,
 		"java": true, "maven": true, "kotlin": true, "gradle": true, "node": true, "c": true, "cpp": true, "lua": true, "gh": true,
 		"zellij": true, "lazygit": true, "tree": true, "htop": true, "ncdu": true, "inxi": true, "yazi": true, "micro": true,
-		"tuifi": true, "bitwarden": true, "resterm": true,
+		"tuifi": true, "bitwarden": true, "resterm": true, "pi": true,
 	}
 	for _, profile := range Tools() {
 		if !want[profile.Name] {
