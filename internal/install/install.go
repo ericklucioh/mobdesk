@@ -53,6 +53,7 @@ var catalog = []AppProfile{
 	{Name: "micro", DescriptionID: i18n.AppMicroDescription, Usage: "micro [files...]", Package: "micro", Executable: "micro", VersionArg: []string{"--version"}, Kind: "terminal", InstallKind: "pkg", StorageEstimate: plannedStorage(4, 8, 0, 2)},
 	{Name: "tuifi", Aliases: []string{"tuifimanager"}, DescriptionID: i18n.AppTuifiDescription, Usage: "tuifi [directory]", Package: "TUIFIManager==5.2.6", Executable: "tuifi", VersionArg: []string{"--version"}, Kind: "file", InstallKind: "pipx", Requires: []string{"python"}, UserBin: true, StorageEstimate: plannedStorage(20, 40, 90, 180)},
 	{Name: "bitwarden", Aliases: []string{"bw"}, DescriptionID: i18n.AppBitwardenDescription, Usage: "bw <command> [options]", Package: "@bitwarden/cli@2025.12.0", Executable: "bw", VersionArg: []string{"--version"}, Kind: "security", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(15, 30, 40, 100)},
+	{Name: "pi", Aliases: []string{"pi-coding-agent"}, DescriptionID: i18n.AppCodexDescription, Usage: "pi [options] [@files...] [messages...]", Package: "@earendil-works/pi-coding-agent@0.84.4", Executable: "pi", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "npm", Requires: []string{"node"}, UserBin: true, StorageEstimate: plannedStorage(80, 180, 100, 250)},
 	{Name: "resterm", DescriptionID: i18n.AppRestermDescription, Usage: "resterm [file or directory]", Package: "github.com/unkn0wn-root/resterm/cmd/resterm@v1.2.1", Executable: "resterm", VersionArg: []string{"--version"}, Kind: "development", InstallKind: "go", Requires: []string{"go"}, UserBin: true, StorageEstimate: plannedStorage(85, 100, 100, 300)},
 }
 
@@ -324,7 +325,12 @@ func installNPM(ctx context.Context, runner CommandRunner, timeout time.Duration
 	if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
 		return CommandResult{Err: err}
 	}
-	result := runTermuxLogged(ctx, runner, timeout, logPath, "npm", "install", "--global", "--prefix", directory, "--cache", filepath.Join(directory, "cache"), "--no-audit", "--no-fund", profile.Package)
+	args := []string{"install", "--global", "--prefix", directory, "--cache", filepath.Join(directory, "cache"), "--no-audit", "--no-fund"}
+	if profile.Name == "pi" {
+		args = append(args, "--ignore-scripts")
+	}
+	args = append(args, profile.Package)
+	result := runTermuxLogged(ctx, runner, timeout, logPath, "npm", args...)
 	if result.Err != nil {
 		return result
 	}
@@ -338,10 +344,15 @@ func installNPM(ctx context.Context, runner CommandRunner, timeout time.Duration
 }
 
 func writeNPMLauncher(p paths.Paths, profile AppProfile, target, directory string) error {
-	if profile.Name != "bitwarden" || profile.Package != "@bitwarden/cli@2025.12.0" {
+	var entrypoint string
+	switch {
+	case profile.Name == "bitwarden" && profile.Package == "@bitwarden/cli@2025.12.0":
+		entrypoint = filepath.Join(directory, "lib", "node_modules", "@bitwarden", "cli", "build", "bw.js")
+	case profile.Name == "pi" && profile.Package == "@earendil-works/pi-coding-agent@0.84.4":
+		entrypoint = filepath.Join(directory, "lib", "node_modules", "@earendil-works", "pi-coding-agent", "dist", "bundle", "cli.js")
+	default:
 		return fmt.Errorf("unsupported managed npm profile %q", profile.Name)
 	}
-	entrypoint := filepath.Join(directory, "lib", "node_modules", "@bitwarden", "cli", "build", "bw.js")
 	if _, err := os.Stat(entrypoint); err != nil {
 		return fmt.Errorf("managed npm entrypoint %q was not created: %w", entrypoint, err)
 	}
